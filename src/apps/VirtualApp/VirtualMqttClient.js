@@ -512,14 +512,14 @@ class VirtualMqttClient extends Component {
   joinRoomInternal(user, isGroup, videoroom, selected_room, reconnect = true) {
     this.micMute();
 
-    const { id, timestamp, role, username } = user;
-    const d = { id, timestamp, role, display: username, is_group: isGroup, is_desktop: true };
+    const {id, timestamp, role, username} = user;
+    const d = {id, timestamp, role, display: username, is_group: isGroup, is_desktop: true};
 
     videoroom
       .join(selected_room, d)
       .then((data) => {
         log.info("[client] Joined respond :", data);
-        console.log('join room data:', data);
+        console.log("join room data:", data);
 
         // Feeds count with user role
         let feeds_count = userFeeds(data.publishers).length;
@@ -529,10 +529,10 @@ class VirtualMqttClient extends Component {
           return;
         }
 
-        const { id, room } = data;
+        const {id, room} = data;
         user.rfid = data.id;
 
-        const { audio, video } = this.state.media;
+        const {audio, video} = this.state.media;
         videoroom
           .publish(video.stream, audio.stream)
           .then((json) => {
@@ -544,7 +544,7 @@ class VirtualMqttClient extends Component {
               captureMessage("h264_profile", vst);
             }
 
-            this.setState({ user, myid: id, delay: false, sourceLoading: false });
+            this.setState({user, myid: id, delay: false, sourceLoading: false});
             updateSentryUser(user);
             updateGxyUser(user);
             //this.keepAlive();
@@ -577,7 +577,7 @@ class VirtualMqttClient extends Component {
         .leave()
         .then((data) => {
           log.info("[client] leave respond:", data);
-          console.log('leave data:', data);
+          console.log("leave data:", data);
 
           this.resetClient(reconnect, callback);
         })
@@ -590,23 +590,22 @@ class VirtualMqttClient extends Component {
   };
 
   resetClient = (reconnect, callback) => {
-    if (reconnect){
-        console.log('reconnecting...')
+    if (reconnect) {
+      console.log("reconnecting...");
 
-        mqtt.exit("galaxy/room/" + room);
-        mqtt.exit("galaxy/room/" + room + "/chat");
+      mqtt.exit("galaxy/room/" + room);
+      mqtt.exit("galaxy/room/" + room + "/chat");
 
-        this.reconnect();
-    }
-    else {
+      this.reconnect();
+    } else {
       let {janus, room, shidur} = this.state;
-      console.log('resetClient', janus, ' room: ', room, ' shidur: ', shidur);
+      console.log("resetClient", janus, " room: ", room, " shidur: ", shidur);
 
       this.clearKeepAlive();
 
       localStorage.setItem("question", false);
 
-      const params = {with_num_users: true}; 
+      const params = {with_num_users: true};
       api
         .fetchAvailableRooms(params)
         .then((data) => {
@@ -647,13 +646,13 @@ class VirtualMqttClient extends Component {
         isSettings: false,
         sourceLoading: true,
       });
-  
+
       if (typeof callback === "function") callback();
     }
   };
 
   reconnect = () => {
-    console.log('reconnect')
+    console.log("reconnect");
     const {videoroom, room, user, isGroup} = this.state;
 
     this.setState({exit_room: false});
@@ -661,10 +660,10 @@ class VirtualMqttClient extends Component {
     // const {id, timestamp, role, username} = user;
     // const d = {id, timestamp, role, display: username, is_group: isGroup, is_desktop: true};
 
-    if (videoroom){
+    if (videoroom) {
       this.joinRoomInternal(user, isGroup, videoroom, room);
     }
-  }
+  };
 
   makeSubscription = (newFeeds) => {
     log.info("[client] makeSubscription", newFeeds);
@@ -1079,7 +1078,6 @@ class VirtualMqttClient extends Component {
       JanusStream.setVideo(VIDEO_360P_OPTION_VALUE);
     }
 
-
     this.setState({muteOtherCams: !muteOtherCams});
   };
 
@@ -1145,10 +1143,9 @@ class VirtualMqttClient extends Component {
     const userName = user ? user.username : "";
 
     return (
-      <div className="video" key={index}>
+      <div className={classNames("video", {hidden: this.context.hideSelf})} key={index}>
         {this.renderVideoOverlay(!muted, question, cammuted, userName, isGroup)}
 
-        {this.renderVideo(cammuted, "localVideo", width, height)}
         {this.renderVideo(cammuted, "localVideo", width, height)}
       </div>
     );
@@ -1179,7 +1176,6 @@ class VirtualMqttClient extends Component {
         {this.renderVideoOverlay(talking, question, muteCamera, userName, isGroup)}
 
         {this.renderVideo(muteCamera, remoteVideoId, width, height)}
-
 
         <audio
           key={"a" + id}
@@ -1277,15 +1273,15 @@ class VirtualMqttClient extends Component {
           </ButtonGroup>
 
           <ButtonGroup className={classNames("bottom-toolbar__item")} variant="contained" disableElevation>
-            <Fullscreen t={t} isOn={isFullScreen()} action={toggleFullScreen}/>
-            <KliOlamiToggle isOn={isKliOlamiShown} action={this.toggleQuad}/>
+            <Fullscreen t={t} isOn={isFullScreen()} action={toggleFullScreen} />
+            <KliOlamiToggle isOn={isKliOlamiShown} action={this.toggleQuad} />
             <CloseBroadcast
               t={t}
               isOn={shidur}
               action={this.toggleShidur.bind(this)}
               disabled={room === "" || sourceLoading}
             />
-            <ShowSelfBtn/>
+            <ShowSelfBtn />
             <Layout
               t={t}
               active={layout}
@@ -1739,6 +1735,7 @@ class VirtualMqttClient extends Component {
 
     const groupMultiplier = "equal" === layout ? 0 : 3;
     let noOfVideos = remoteVideos.length + groupMultiplier * groupsNum;
+    if (this.context.hideSelf) noOfVideos -= 1;
 
     if (room !== "" && shidur && attachedSource) {
       if ("double" === layout) {
@@ -1747,7 +1744,6 @@ class VirtualMqttClient extends Component {
         noOfVideos += 1;
       }
     }
-
 
     if (isKliOlamiShown && kliOlamiAttached) {
       if ("double" === layout) {
@@ -1828,7 +1824,7 @@ class VirtualMqttClient extends Component {
   }
 }
 
-VirtualMqttClient.contextType = GlobalOptionsContext
+VirtualMqttClient.contextType = GlobalOptionsContext;
 const WrappedClass = withTranslation()(withTheme(VirtualMqttClient));
 
 export default class WrapperForThemes extends React.Component {
@@ -1836,7 +1832,7 @@ export default class WrapperForThemes extends React.Component {
     return (
       <ThemeSwitcher>
         <GlobalOptions>
-          <WrappedClass/>
+          <WrappedClass />
         </GlobalOptions>
       </ThemeSwitcher>
     );
