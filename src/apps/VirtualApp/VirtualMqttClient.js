@@ -366,7 +366,7 @@ class VirtualMqttClient extends Component {
 
         janus.attach(videoroom).then((data) => {
           log.info("[client] Publisher Handle: ", data);
-          this.joinRoom(false, janus, videoroom, user);
+          this.joinRoom(true, janus, videoroom, user);
         });
 
         janus.attach(subscriber).then((data) => {
@@ -484,6 +484,10 @@ class VirtualMqttClient extends Component {
 
     this.setState({janus, videoroom, user, room: selected_room});
 
+    this.joinRoomInternal(user, isGroup, videoroom, selected_room, reconnect);
+  };
+
+  joinRoomInternal(user, isGroup, videoroom, selected_room, reconnect = true) {
     this.micMute();
 
     const {id, timestamp, role, username} = user;
@@ -491,6 +495,7 @@ class VirtualMqttClient extends Component {
 
     videoroom.join(selected_room, d).then((data) => {
         log.info("[client] Joined respond :", data);
+        console.log("join room data:", data);
 
         // Feeds count with user role
         let feeds_count = userFeeds(data.publishers).length;
@@ -522,83 +527,115 @@ class VirtualMqttClient extends Component {
             mqtt.join("galaxy/room/" + selected_room + "/chat", true);
             if(isGroup) videoroom.setBitrate(600000);
 
-            log.info("[client] Pulbishers list: ", data.publishers);
+            log.info("[client] Publishers list: ", data.publishers);
 
             this.makeSubscription(data.publishers);
           }).catch((err) => {
             log.error("[client] Publish error :", err);
-            this.exitRoom(false);
+            this.exitRoom(reconnect);
           });
       }).catch((err) => {
         log.error("[client] Join error :", err);
-        this.exitRoom(false);
+        this.exitRoom(reconnect);
       });
-  };
+  }
 
   exitRoom = (reconnect, callback) => {
     this.setState({delay: true, exit_room: true});
     const {videoroom} = this.state;
 
-    if(videoroom) {
-      videoroom.leave().then((data) => {
-        log.info("[client] leave respond:", data);
-        this.resetClient(reconnect, callback);
-      }).catch(e => {
-        this.resetClient(reconnect, callback);
-      });
+    if (videoroom) {
+      videoroom
+        .leave()
+        .then((data) => {
+          log.info("[client] leave respond:", data);
+          console.log("leave data:", data);
+
+          this.resetClient(reconnect, callback);
+        })
+        .catch((e) => {
+          this.resetClient(reconnect, callback);
+        });
     } else {
       this.resetClient(reconnect, callback);
     }
   };
 
   resetClient = (reconnect, callback) => {
-    let {janus, room, shidur} = this.state;
+    if (reconnect) {
+      console.log("reconnecting...");
 
-    //this.clearKeepAlive();
+      mqtt.exit("galaxy/room/" + room);
+      mqtt.exit("galaxy/room/" + room + "/chat");
 
-    localStorage.setItem("question", false);
+      this.reconnect();
+    } else {
+      let {janus, room, shidur} = this.state;
+      console.log("resetClient", janus, " room: ", room, " shidur: ", shidur);
 
-    const params = {with_num_users: true};
-    api.fetchAvailableRooms(params).then(data => {
-        const {rooms} = data;
-        this.setState({rooms});
-      }).catch((err) => {
-        log.error("[client] Error exiting room", err);
+      this.clearKeepAlive();
+
+      localStorage.setItem("question", false);
+
+      const params = {with_num_users: true};
+      api
+        .fetchAvailableRooms(params)
+        .then((data) => {
+          const {rooms} = data;
+          this.setState({rooms});
+        })
+        .catch((err) => {
+          log.error("[client] Error exiting room", err);
+        });
+
+      mqtt.exit("galaxy/room/" + room);
+      mqtt.exit("galaxy/room/" + room + "/chat");
+
+      if (shidur) {
+        JanusStream.destroy();
+      }
+
+      if (isFullScreen()) {
+        toggleFullScreen();
+      }
+
+      if (janus) janus.destroy();
+
+      this.setState({
+        muted: false,
+        question: false,
+        feeds: [],
+        mids: [],
+        localAudioTrack: null,
+        localVideoTrack: null,
+        remoteFeed: null,
+        videoroom: null,
+        subscriber: null,
+        janus: null,
+        delay: reconnect,
+        room: reconnect ? room : "",
+        chatMessagesCount: 0,
+        isSettings: false,
+        sourceLoading: true,
       });
 
-    mqtt.exit("galaxy/room/" + room);
-    mqtt.exit("galaxy/room/" + room + "/chat");
-
-    if(shidur && !reconnect) {
-      JanusStream.destroy();
+      if (typeof callback === "function") callback();
     }
+  };
 
-    if(!reconnect && isFullScreen()) {
-      toggleFullScreen();
+  reconnect = () => {
+    console.log("reconnect");
+    const {videoroom, room, user, isGroup} = this.state;
+
+    this.setState({exit_room: false});
+
+    // const {id, timestamp, role, username} = user;
+    // const d = {id, timestamp, role, display: username, is_group: isGroup, is_desktop: true};
+
+    if (videoroom) {
+      this.joinRoomInternal(user, isGroup, videoroom, room);
     }
-
-    if(janus) janus.destroy();
-
-    this.setState({
-      muted: false,
-      question: false,
-      feeds: [],
-      mids: [],
-      localAudioTrack: null,
-      localVideoTrack: null,
-      remoteFeed: null,
-      videoroom: null,
-      subscriber: null,
-      janus: null,
-      delay: reconnect,
-      room: reconnect ? room : "",
-      chatMessagesCount: 0,
-      isSettings: false,
-      sourceLoading: true
-    });
-
-    if(typeof callback === "function") callback();
-  }
+  };
 
   makeSubscription = (newFeeds) => {
     log.info("[client] makeSubscription", newFeeds);
@@ -1067,7 +1104,7 @@ class VirtualMqttClient extends Component {
     const userName = user ? user.username : "";
 
     return (
-      <div className={classNames("video", {"hidden": this.context.hideSelf})} key={index}>
+      <div className={classNames("video", {hidden: this.context.hideSelf})} key={index}>
         {this.renderVideoOverlay(!muted, question, cammuted, userName, isGroup)}
 
         {this.renderVideo(cammuted, "localVideo", width, height)}
@@ -1170,15 +1207,15 @@ class VirtualMqttClient extends Component {
           </ButtonGroup>
 
           <ButtonGroup className={classNames("bottom-toolbar__item")} variant="contained" disableElevation>
-            <Fullscreen t={t} isOn={isFullScreen()} action={toggleFullScreen}/>
-            <KliOlamiToggle isOn={isKliOlamiShown} action={this.toggleQuad}/>
+            <Fullscreen t={t} isOn={isFullScreen()} action={toggleFullScreen} />
+            <KliOlamiToggle isOn={isKliOlamiShown} action={this.toggleQuad} />
             <CloseBroadcast
               t={t}
               isOn={shidur}
               action={this.toggleShidur.bind(this)}
               disabled={room === "" || sourceLoading}
             />
-            <ShowSelfBtn/>
+            <ShowSelfBtn />
             <Layout
               t={t}
               active={layout}
@@ -1302,6 +1339,7 @@ class VirtualMqttClient extends Component {
             user={user}
             i18n={i18n}
           />
+          <ButtonMD onClick={() => this.reconnect()}> Reconnect </ButtonMD>
           <ButtonMD
             color="info"
             variant="contained"
@@ -1589,8 +1627,7 @@ class VirtualMqttClient extends Component {
 
     const groupMultiplier = "equal" === layout ? 0 : 3;
     let noOfVideos = remoteVideos.length + groupMultiplier * groupsNum;
-    if (this.context.hideSelf)
-      noOfVideos -= 1;
+    if (this.context.hideSelf) noOfVideos -= 1;
 
     if (room !== "" && shidur && attachedSource) {
       if ("double" === layout) {
@@ -1675,7 +1712,7 @@ class VirtualMqttClient extends Component {
   }
 }
 
-VirtualMqttClient.contextType = GlobalOptionsContext
+VirtualMqttClient.contextType = GlobalOptionsContext;
 const WrappedClass = withTranslation()(withTheme(VirtualMqttClient));
 
 export default class WrapperForThemes extends React.Component {
@@ -1683,7 +1720,7 @@ export default class WrapperForThemes extends React.Component {
     return (
       <ThemeSwitcher>
         <GlobalOptions>
-          <WrappedClass/>
+          <WrappedClass />
         </GlobalOptions>
       </ThemeSwitcher>
     );
