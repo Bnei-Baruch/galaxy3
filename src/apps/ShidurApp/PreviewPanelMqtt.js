@@ -33,7 +33,7 @@ class PreviewPanelMqtt extends Component {
   }
 
   cleanUp = (callback) => {
-    let {mids} = this.state;
+    let {mids, subscriber} = this.state;
     mids.forEach(f => {
       let e = this.refs["pv" + f.feed_id];
       if (e) {
@@ -42,9 +42,9 @@ class PreviewPanelMqtt extends Component {
         e.remove();
       }
     })
-    if (this.state.subscriber) {
-      this.state.subscriber.detach();
-      this.setState({remoteFeed: null, mids: [], subscriber: null}, () => {
+    if (subscriber) {
+      subscriber.detach();
+      this.setState({mids: [], subscriber: null}, () => {
         if(typeof callback === "function") callback();
       });
     } else {
@@ -109,22 +109,7 @@ class PreviewPanelMqtt extends Component {
   subscribeTo = (subscription, inst) => {
     const {gateways} = this.props;
     let janus = gateways[inst];
-    let {creatingFeed, remoteFeed, subscriber, room} = this.state
-
-    if (remoteFeed) {
-      subscriber.sub(subscription);
-      return;
-    }
-
-    if (creatingFeed) {
-      setTimeout(() => {
-        this.subscribeTo(subscription);
-      }, 500);
-      return;
-    }
-
-    if(subscriber)
-      subscriber.detach()
+    let {subscriber, room} = this.state
 
     subscriber = new SubscriberPlugin();
     subscriber.onTrack = this.onRemoteTrack;
@@ -136,7 +121,6 @@ class PreviewPanelMqtt extends Component {
       subscriber.join(subscription, room).then(data => {
         log.info("["+inst+"] Subscriber join: ", data)
         this.onUpdateStreams(data.streams);
-        this.setState({remoteFeed: true, creatingFeed: false});
       });
     })
   };
