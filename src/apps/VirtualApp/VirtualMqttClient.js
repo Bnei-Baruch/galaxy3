@@ -49,7 +49,6 @@ import Donations from "./buttons/Donations";
 import version from './Version.js';
 import {PopUp} from "./components/PopUp"
 import {BroadcastNotification} from "./components/BroadcastNotification";
-import VideoPanelOptions from "./components/VideoPanelOptions/VideoPanelOptions";
 import GlobalOptions, {GlobalOptionsContext} from "./components/GlobalOptions/GlobalOptions";
 import ShowSelfBtn from "./buttons/ShowSelfBtn";
 
@@ -171,7 +170,7 @@ class VirtualMqttClient extends Component {
     user.extra = {};
 
     let browser = platform.parse(system);
-    if (!/Safari|Firefox|Chrome|Edge/.test(browser.name)) {
+    if (!/Safari|Firefox|Chrome|Yandex Browser|Edge/.test(browser.name)) {
       alert(t("oldClient.browserNotSupported"));
       return;
     }
@@ -1069,7 +1068,6 @@ class VirtualMqttClient extends Component {
 
     return (
       <div className={classNames("video", {"hidden": this.context.hideSelf})} key={index}>
-        <VideoPanelOptions/>
         {this.renderVideoOverlay(!muted, question, cammuted, userName, isGroup)}
 
         {this.renderVideo(cammuted, "localVideo", width, height)}
@@ -1169,7 +1167,6 @@ class VirtualMqttClient extends Component {
               disabled={media.video.device === null || delay}
               isOn={cammuted}
             />
-            <ShowSelfBtn/>
           </ButtonGroup>
 
           <ButtonGroup className={classNames("bottom-toolbar__item")} variant="contained" disableElevation>
@@ -1181,6 +1178,7 @@ class VirtualMqttClient extends Component {
               action={this.toggleShidur.bind(this)}
               disabled={room === "" || sourceLoading}
             />
+            <ShowSelfBtn/>
             <Layout
               t={t}
               active={layout}

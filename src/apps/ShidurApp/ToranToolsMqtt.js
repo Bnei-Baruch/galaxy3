@@ -362,7 +362,8 @@ class ToranToolsMqtt extends Component {
       const next = data.description === next_group;
       const active = group && group.room === room;
       const pn = (<Label circular content={pnum[room]} />);
-      const vip = extra?.vip || extra?.vip2 || extra?.vip3 || extra?.vip4 || extra?.vip5? (<Label size='mini' color='green' circular content="vip" />) : null;
+      const vip = extra?.vip || extra?.vip2 || extra?.vip3 || extra?.vip4 || extra?.vip5
+        ? (<Label size='mini' color='green' circular content="vip" />) : extra?.group ? (<Label size='mini' color='green' circular content="kvz" />) : null;
       //const pr = presets.find(pst => pst.room === room);
       const pr = false;
       const p = pr ? (
@@ -373,7 +374,7 @@ class ToranToolsMqtt extends Component {
       return (
         <Table.Row
           positive={group && group.description === description}
-          className={active ? "active" : next ? "warning" : extra?.vip || extra?.vip2 || extra?.vip3 || extra?.vip4 || extra?.vip5? "vip" : "no"}
+          className={active ? "active" : next ? "warning" : extra?.vip || extra?.vip2 || extra?.vip3 || extra?.vip4 || extra?.vip5 ? "vip" : "no"}
           key={room}
           onClick={() => this.selectGroup(data, i)}
           onContextMenu={(e) => this.selectMenuGroup(e, data)}
@@ -422,7 +423,8 @@ class ToranToolsMqtt extends Component {
       const next = data.description === next_group;
       const active = group && group.room === room;
       const pn = (<Label circular content={pnum[room]} />);
-      const vip = extra?.vip || extra?.vip2 || extra?.vip3 || extra?.vip4 || extra?.vip5? (<Label size='mini' color='green' circular content="vip" />) : null;
+      const vip = extra?.vip || extra?.vip2 || extra?.vip3 || extra?.vip4 || extra?.vip5
+        ? (<Label size='mini' color='green' circular content="vip" />) : extra?.group ? (<Label size='mini' color='green' circular content="kvz" />) : null;
       //const pr = presets.find(pst => pst.room === room);
       const pr = false;
       const p = pr ? (
@@ -453,7 +455,8 @@ class ToranToolsMqtt extends Component {
       const next = data.description === next_group;
       const active = group && group.room === room;
       const pn = (<Label circular content={pnum[room]} />);
-      const vip = extra?.vip || extra?.vip2 || extra?.vip3 || extra?.vip4 || extra?.vip5? (<Label size='mini' color='green' circular content="vip" />) : null;
+      const vip = extra?.vip || extra?.vip2 || extra?.vip3 || extra?.vip4 || extra?.vip5
+        ? (<Label size='mini' color='green' circular content="vip" />) : extra?.group ? (<Label size='mini' color='green' circular content="kvz" />) : null;
       //const pr = presets.find(pst => pst.room === room);
       const pr = false;
       const p = pr ? (
@@ -817,6 +820,12 @@ class ToranToolsMqtt extends Component {
               color="teal"
               content="Beyahad"
               onClick={() => this.shidurMode("beyahad")}
+            />
+            <Button
+              disabled={shidur_mode === "kvutzot"}
+              color="teal"
+              content="kvutzot"
+              onClick={() => this.shidurMode("kvutzot")}
             />
           </Button.Group>
         </Grid.Column>

@@ -37,26 +37,19 @@ class JanusHandleMqtt extends Component {
   }
 
   initVideoRoom = (room, inst) => {
-    const {user, q, col} = this.props;
+    const {gateways, user, q, col} = this.props;
+    let janus = gateways[inst];
     const mit = "col" + col + "_q" + (q+1) + "_" + inst
 
     log.info("["+mit+"] Init room: ", room, inst, ConfigStore.globalConfig)
     log.info("["+mit+"] mit", mit)
 
-    this.initVideoHandles(room, user, inst)
+    this.setState({mit, janus});
+
+    this.initVideoHandles(janus, room, user, mit)
   }
 
-  initVideoHandles = (room, user, mit) => {
-    const {gateways} = this.props;
-    const janus = gateways[mit]
-    if(janus?.isConnected !== true) {
-      setTimeout(() => {
-        log.info("["+mit+"] Not connected, waiting... ", janus)
-        this.initVideoHandles(room, user, mit)
-      }, 1000)
-      return
-    }
-    this.setState({mit, janus});
+  initVideoHandles = (janus, room, user, mit) => {
     let videoroom = new PublisherPlugin();
     videoroom.subTo = this.onJoinFeed;
     videoroom.unsubFrom = this.unsubscribeFrom
@@ -144,25 +137,27 @@ class JanusHandleMqtt extends Component {
   }
 
   exitPlugins = (callback) => {
-    const {subscriber, videoroom, janus, mit, feeds} = this.state;
-    if(subscriber) janus?.detach(subscriber)
-    janus?.detach(videoroom).then(() => {
-      feeds.forEach(f => {
-        let e = this.refs["pv" + f.id];
-        if (e) {
-          e.src = "";
-          e.srcObject = null;
-          e.remove();
-        }
+    const {subscriber, videoroom, janus, mit} = this.state;
+    if(janus) {
+      if(subscriber) janus.detach(subscriber)
+      janus.detach(videoroom).then(() => {
+        log.info("["+mit+"] plugin detached:");
+        this.setState({feeds: [], mids: [], remoteFeed: false, videoroom: null, subscriber: null, janus: null});
+        if(typeof callback === "function") callback();
       })
-      log.info("["+mit+"] plugin detached:");
-      this.setState({feeds: [], mids: [], remoteFeed: false, videoroom: null, subscriber: null, janus: null});
-      if(typeof callback === "function") callback();
-    })
+    }
   }
 
   exitVideoRoom = (roomid, callback) => {
-    const {videoroom, mit} = this.state;
+    const {videoroom, mit, feeds} = this.state;
+    feeds.forEach(f => {
+      let e = this.refs["pv" + f.id];
+      if (e) {
+        e.src = "";
+        e.srcObject = null;
+        e.remove();
+      }
+    })
     if(videoroom) {
       videoroom.leave().then(r => {
         log.info("["+mit+"] leave respond:", r);

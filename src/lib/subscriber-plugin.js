@@ -96,10 +96,10 @@ export class SubscriberPlugin extends EventEmitter {
         log.info("[subscriber] join: ", param)
         const {data, json} = param
 
-        if(data)
+        if(data) {
           resolve(data);
-
-        this.initPcEvents()
+          this.initPcEvents();
+        }
 
         if(json?.jsep) {
           log.debug('[subscriber] Got jsep: ', json.jsep)
@@ -153,53 +153,55 @@ export class SubscriberPlugin extends EventEmitter {
   }
 
   initPcEvents() {
-    this.pc.onicecandidate = (e) => {
-      log.debug('[subscriber] onicecandidate set', e.candidate)
-      let candidate = {completed: true}
-      if (!e.candidate || e.candidate.candidate.indexOf('endOfCandidates') > 0) {
-        log.debug("[subscriber] End of candidates")
-      } else {
-        // JSON.stringify doesn't work on some WebRTC objects anymore
-        // See https://code.google.com/p/chromium/issues/detail?id=467366
-        candidate = {
-          "candidate": e.candidate.candidate,
-          "sdpMid": e.candidate.sdpMid,
-          "sdpMLineIndex": e.candidate.sdpMLineIndex
-        };
-      }
-      if(candidate) {
-        return this.transaction('trickle', { candidate })
-      }
-    };
+    if(this.pc) {
+      this.pc.onicecandidate = (e) => {
+        log.debug('[subscriber] onicecandidate set', e.candidate)
+        let candidate = {completed: true}
+        if (!e.candidate || e.candidate.candidate.indexOf('endOfCandidates') > 0) {
+          log.debug("[subscriber] End of candidates")
+        } else {
+          // JSON.stringify doesn't work on some WebRTC objects anymore
+          // See https://code.google.com/p/chromium/issues/detail?id=467366
+          candidate = {
+            "candidate": e.candidate.candidate,
+            "sdpMid": e.candidate.sdpMid,
+            "sdpMLineIndex": e.candidate.sdpMLineIndex
+          };
+        }
+        if(candidate) {
+          return this.transaction('trickle', { candidate })
+        }
+      };
 
-    this.pc.onconnectionstatechange = (e) => {
-      log.info("[subscriber] ICE State: ", e.target.connectionState)
-      this.iceState = e.target.connectionState
-      if(this.iceState === "disconnected") {
-        this.iceRestart()
-      }
-      // ICE restart does not help here, peer connection will be down
-      if(this.iceState === "failed") {
-        //this.iceFailed("subscriber")
-      }
-    };
+      this.pc.onconnectionstatechange = (e) => {
+        log.debug("[subscriber] ICE State: ", e.target.connectionState)
+        this.iceState = e.target.connectionState
+        if(this.iceState === "disconnected") {
+          this.iceRestart()
+        }
+        // ICE restart does not help here, peer connection will be down
+        if(this.iceState === "failed") {
+          //this.iceFailed("subscriber")
+        }
+      };
 
-    this.pc.ontrack = (e) => {
-      log.info("[subscriber] Got track: ", e)
-      this.onTrack(e.track, e.streams[0], true)
+      this.pc.ontrack = (e) => {
+        log.debug("[subscriber] Got track: ", e)
+        this.onTrack(e.track, e.streams[0], true)
 
-      e.track.onmute = (ev) => {
-        log.debug("[subscriber] onmute event: ", ev)
-      }
+        e.track.onmute = (ev) => {
+          log.debug("[subscriber] onmute event: ", ev)
+        }
 
-      e.track.onunmute = (ev) => {
-        log.debug("[subscriber] onunmute event: ", ev)
-      }
+        e.track.onunmute = (ev) => {
+          log.debug("[subscriber] onunmute event: ", ev)
+        }
 
-      e.track.onended = (ev) => {
-        log.debug("[subscriber] onended event: ", ev)
-      }
-    };
+        e.track.onended = (ev) => {
+          log.debug("[subscriber] onended event: ", ev)
+        }
+      };
+    }
   }
 
   iceRestart() {
@@ -285,9 +287,6 @@ export class SubscriberPlugin extends EventEmitter {
 
   detach() {
     if(this.pc) {
-      this.pc.onicecandidate = null;
-      this.pc.ontrack = null;
-      this.pc.oniceconnectionstatechange = null;
       this.pc.getTransceivers().forEach((transceiver) => {
         if(transceiver) {
           if(transceiver.receiver && transceiver.receiver.track)
@@ -296,6 +295,12 @@ export class SubscriberPlugin extends EventEmitter {
         }
       });
       this.pc.close()
+      this.pc.onicecandidate = null;
+      this.pc.ontrack = null;
+      this.pc.oniceconnectionstatechange = null;
+      this.pc.onremovetrack = null;
+      this.pc.onicecandidate = null;
+      this.pc.onsignalingstatechange = null;
       this.removeAllListeners()
       this.pc = null
       this.janus = null

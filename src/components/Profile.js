@@ -1,7 +1,6 @@
 import React from "react";
 import {useTranslation} from "react-i18next";
 import {Dropdown} from "semantic-ui-react";
-import {updateSentryUser} from "../shared/sentry";
 
 export const Profile = (props) => {
   const {title = "", kc} = props;
@@ -19,7 +18,6 @@ export const Profile = (props) => {
           text={t("oldClient.signOut")}
           onClick={() => {
             kc.logout();
-            updateSentryUser(null);
           }}
         />
       </Dropdown.Menu>
