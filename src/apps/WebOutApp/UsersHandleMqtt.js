@@ -164,16 +164,26 @@ class UsersHandle extends Component {
 
   exitPlugins = (callback) => {
     const {subscriber, videoroom, janus, mit} = this.state;
-    if(subscriber) janus.detach(subscriber)
-    janus.detach(videoroom).then(() => {
-      log.info("["+mit+"] plugin detached:");
-      this.setState({feeds: [], mids: [], remoteFeed: false, videoroom: null, subscriber: null, janus: null});
-      if(typeof callback === "function") callback();
-    })
+    if(janus) {
+      if(subscriber) janus.detach(subscriber)
+      janus.detach(videoroom).then(() => {
+        log.info("["+mit+"] plugin detached:");
+        this.setState({feeds: [], mids: [], remoteFeed: false, videoroom: null, subscriber: null, janus: null});
+        if(typeof callback === "function") callback();
+      })
+    }
   }
 
   exitVideoRoom = (roomid, callback) => {
-    const {videoroom, mit} = this.state;
+    const {videoroom, mit, feeds} = this.state;
+    feeds.forEach(f => {
+      let e = this.refs["pv" + f.id];
+      if (e) {
+        e.src = "";
+        e.srcObject = null;
+        e.remove();
+      }
+    })
     if(videoroom) {
       videoroom.leave().then(r => {
         log.info("["+mit+"] leave respond:", r);
@@ -191,7 +201,7 @@ class UsersHandle extends Component {
   subscribeTo = (room, subscription) => {
     let {janus, creatingFeed, remoteFeed, subscriber, mit} = this.state
 
-    if (remoteFeed) {
+    if (remoteFeed && subscriber) {
       subscriber.sub(subscription);
       return;
     }
