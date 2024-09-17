@@ -13,9 +13,11 @@ class UsersHandle extends Component {
     mids: [],
     name: "",
     room: "",
-    myid: null,
-    mystream: null,
     num_videos: 0,
+    remoteFeed: null,
+    janus: null,
+    videoroom: null,
+    subscriber: null
   };
 
   componentDidMount() {
@@ -171,6 +173,9 @@ class UsersHandle extends Component {
         this.setState({feeds: [], mids: [], remoteFeed: false, videoroom: null, subscriber: null, janus: null});
         if(typeof callback === "function") callback();
       })
+    } else {
+      this.setState({feeds: [], mids: [], remoteFeed: false, videoroom: null, subscriber: null, janus: null});
+      if(typeof callback === "function") callback();
     }
   }
 
@@ -195,7 +200,6 @@ class UsersHandle extends Component {
     } else {
       this.exitPlugins(callback)
     }
-
   };
 
   subscribeTo = (room, subscription) => {

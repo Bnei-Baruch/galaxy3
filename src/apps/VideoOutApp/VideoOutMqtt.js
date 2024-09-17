@@ -43,7 +43,7 @@ class VideoOutMqtt extends Component {
     this.initApp();
     setTimeout(() => {
       this.getVideoOut()
-    },1000)
+    },3000)
   }
 
   componentWillUnmount() {

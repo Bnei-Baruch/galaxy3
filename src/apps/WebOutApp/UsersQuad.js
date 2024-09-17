@@ -82,7 +82,7 @@ class UsersQuad extends Component {
   };
 
   render() {
-    const {full_feed, fullscr, vquad = [null, null, null, null]} = this.state;
+    const {col, full_feed, fullscr, vquad = [null, null, null, null]} = this.state;
     const {roomsStatistics = {}, qst} = this.props;
 
     let program = vquad.map((g, i) => {
@@ -115,7 +115,7 @@ class UsersQuad extends Component {
         >
           {qst_mark}
           <div className={fullscr ? "fullscrvideo_title" : "video_title"}>{name}</div>
-          <UsersHandleMqtt key={"q" + i} g={g} index={i} {...this.props} />
+          <UsersHandleMqtt key={"q" + i} g={g} q={i} col={col} index={i} {...this.props} />
         </div>
       );
     });
