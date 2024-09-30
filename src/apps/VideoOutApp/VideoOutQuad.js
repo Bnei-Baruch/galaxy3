@@ -27,7 +27,6 @@ class VideoOutQuad extends Component {
 
     let program = vquad.map((g, i) => {
       let qst_group = g?.room === qst?.room;
-      let qst_border = !fullscr && full_feed === i && qst_group
       let qst_mark = "";
       let name = "";
       if (g) {
@@ -48,7 +47,7 @@ class VideoOutQuad extends Component {
         >
           {qst_mark}
           <div className={fullscr ? "fullscrvideo_title" : "video_title"}>{name}</div>
-          <VideoHandleMqtt key={"q" + i} g={g} q={i} col={col} qst={qst_border} {...this.props} />
+          <VideoHandleMqtt key={"q" + i} g={g} q={i} col={col} qst_group={qst_group} {...this.props} />
         </div>
       );
     });
