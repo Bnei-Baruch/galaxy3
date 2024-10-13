@@ -140,7 +140,11 @@ class VirtualMqttClient extends Component {
     user.role = getUserRole();
     user.isClient = true;
     if (user.role !== null) {
-      this.initApp(user);
+      api.fetchMembershipInfo(user.id).then(({data}) => {
+        user.membership = data;
+      }).catch(err => {
+        console.error('Error fetching membership data', err);
+      }).finally(() => this.initApp(user));
     } else {
       alert("Access denied!");
       kc.logout();
@@ -1643,7 +1647,7 @@ class VirtualMqttClient extends Component {
         )}
         {user && !notApproved && !Boolean(room) && (
           <Settings
-            userDisplay={user.display}
+            user={user}
             rooms={rooms}
             selectRoom={this.selectRoom.bind(this)}
             selectedRoom={selected_room}

@@ -121,7 +121,16 @@ export const resources = {
         </p>
         <p>
             The management of the "Bnei Baruch - Kabbalah La’Am" association.
-        </p>`
+        </p>`,
+        membership: {
+          notice: "Important Notice:",
+          announcement: "Starting Nov 1st 2024, access to our Virtual Home is for members only.",
+          learnMore: "Learn more",
+          statusMessage: "The membership status for {{email}} is: ",
+          statusActive: "ACTIVE",
+          statusInactive:"INACTIVE",
+          manage: "Manage membership",
+        }
       },
       feedback: {
         feedbackHelp: "Feedback/Help",
@@ -364,7 +373,16 @@ export const resources = {
         </p>
         <p>
         Dirección de la Asociación Bnei Baruj
-        </p>`
+        </p>`,
+        membership: {
+          notice: "Aviso Importante:",
+          announcement: "A partir del 1 de noviembre de 2024, el acceso a nuestro Hogar Virtual es solo para miembros.",
+          learnMore: "Obtén más información",
+          statusMessage: "El estado de la membresía para {{email}} es: ",
+          statusActive: "ACTIVA",
+          statusInactive:"INACTIVA",
+          manage: "Gestionar membresía",
+        }
       },
       feedback: {
         feedbackHelp: "Comentarios/Ayuda",
@@ -606,7 +624,16 @@ export const resources = {
         </p>
         <p>
         הנהלת עמותת "בני ברוך - קבלה לעם"
-        </p>`
+        </p>`,
+        membership: {
+          notice: "הודעה חשובה:",
+          announcement: `החל מיום שישי, 1.11.2024, הגישה ל"מערכת הערבות" תהיה למנויים בלבד.`,
+          learnMore: "למידע נוסף",
+          statusMessage: "סטטוס המנוי שלך עבור {{email}} הוא: ",
+          statusActive: "פעיל",
+          statusInactive:"לא פעיל",
+          manage: "להסדרת המנוי",
+        }
       },
       feedback: {
         feedbackHelp: "משוב/עזרה",
@@ -839,7 +866,16 @@ export const resources = {
         </p>
         <p>
         Руководство ассоциации "Бней Барух - Каббала ле-ам".
-        </p>`
+        </p>`,
+        membership: {
+          notice: "",
+          announcement: `С пятницы, 1 ноября 2024 года, доступ к "Системе Арвут" будет только для подписчиков.`,
+          learnMore: "Для получения дополнительной информации.",
+          statusMessage: "Статус вашей подписки для {{email}}: ",
+          statusActive: "активен",
+          statusInactive:"неактивен",
+          manage: "Для оформления подписки",
+        }
       },
       feedback: {
         feedbackHelp: "Фидбек/Помощь",
