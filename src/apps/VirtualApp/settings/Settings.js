@@ -232,7 +232,7 @@ const Settings = (props) => {
           <div>
             <Typography variant="h6" display="inline" color="warning.light">{t("settings.membership.notice")}</Typography>
             &nbsp;{t("settings.membership.announcement")}&nbsp;
-            <Link href="https://kli.one/membership/faq" color="info.link" underline="always">
+            <Link href="https://kli.one/faq" color="info.link" underline="always">
               {t("settings.membership.learnMore")}
             </Link>
           </div>
