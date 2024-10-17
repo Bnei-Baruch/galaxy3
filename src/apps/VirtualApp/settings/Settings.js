@@ -8,6 +8,7 @@ import {
   Divider,
   FormControlLabel,
   Grid,
+  Link,
   MenuItem,
   Modal,
   TextField,
@@ -70,7 +71,7 @@ const Settings = (props) => {
   const {classes} = useStyles();
   const [shidurMuted, setShidurMuted] = useState(JanusStream.audioElement.muted)
 
-  const {t} = useTranslation();
+  const {t, i18n: {language}} = useTranslation();
   const {palette: {background: {paper}}} = useTheme();
   const {isDark, toggleTheme} = useContext(ThemeContext);
 
@@ -92,7 +93,7 @@ const Settings = (props) => {
     videoSettings,
     audioDevice = audio.devices[0]?.deviceId,
     videoDevice = video?.devices[0]?.deviceId,
-    userDisplay,
+    user,
     delay,
     startLocalMedia,
     stopLocalMedia,
@@ -221,16 +222,44 @@ const Settings = (props) => {
 
   const renderHeader = () => (
     <>
+      <Grid item xs={12} >
+        <Box sx={{ 
+          bgcolor: 'info.main',
+          color: 'info.contrastText', 
+          typography: 'h6', 
+          padding: 2, 
+          direction: (language=='he') ? 'rtl' :'inherit'}}>
+          <div>
+            <Typography variant="h6" display="inline" color="warning.light">{t("settings.membership.notice")}</Typography>
+            &nbsp;{t("settings.membership.announcement")}&nbsp;
+            <Link href="https://kli.one/faq" color="info.link" underline="always">
+              {t("settings.membership.learnMore")}
+            </Link>
+          </div>
+          <div>
+            {t("settings.membership.statusMessage", {email: user.email})}
+            {
+              user.membership?.active ? 
+              <Typography variant="h6" display="inline" color="success.main">{t("settings.membership.statusActive")}</Typography> :
+              <Typography variant="h6" display="inline" color="warning.main">{t("settings.membership.statusInactive")}</Typography>
+            }
+            .&nbsp;
+            <Link href="https://kli.one/dash/membership" color="info.link" underline="always">
+            {t("settings.membership.manage")}
+            </Link>
+          </div>
+        </Box>
+      </Grid>
       <Grid item xs={8}>
         <Typography variant="h4" display={"block"} color="textPrimary">
-          {t("settings.helloUser", {name: userDisplay})}
+          {t("settings.helloUser", {name: user.display})}
         </Typography>
         <Typography color="textPrimary">{t("settings.beforeConnecting")}</Typography>
       </Grid>
       <Grid item xs={4}>
         <Grid container justify="flex-end" spacing={2}>
           <Grid item>
-            <LogoutDropdown display={userDisplay}/>
+            <LogoutDropdown display={user.display}/>
           </Grid>
           <Grid item>
             <Support/>
@@ -254,7 +283,7 @@ const Settings = (props) => {
             label={t("settings.screenName")}
             fullWidth={true}
             variant="outlined"
-            value={userDisplay}
+            value={user.display}
             disabled
           />
         </Grid>

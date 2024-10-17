@@ -147,9 +147,17 @@ class Api {
   fetchUserInfo = () =>
     this.logAndParse(`refresh user info`, fetch(this.authUrlFor("/my_info"), this.defaultOptions()));
 
+  // Virtual Home API
+
+  fetchMembershipInfo = (keycloadId) =>
+    this.logAndParse(`fetch membership info`, fetch(`${this.vhUrlFor("/profile/v1/membership/kcid/")}${keycloadId}`, this.defaultOptions()));
+
+  // helpers
+  
   urlFor = (path) => API_BACKEND + path;
   authUrlFor = (path) => AUTH_API_BACKEND + path;
   adminUrlFor = (name) => "https://" + name + JANUS_ADMIN_GXY;
+  vhUrlFor = (path) => "https://api.kli.one" + path;
 
   defaultOptions = () => {
     const auth = this.accessToken ? `Bearer ${this.accessToken}` : `Basic ${btoa(`${this.username}:${this.password}`)}`;

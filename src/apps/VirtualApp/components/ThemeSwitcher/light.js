@@ -1,6 +1,5 @@
 import {createTheme} from "@mui/material/styles";
-import {green, grey, red} from "@mui/material/colors";
-import indigo from "@mui/material/colors/indigo";
+import {green, grey, red, lightBlue, indigo, deepOrange} from "@mui/material/colors";
 
 const light = createTheme(
 {
@@ -13,10 +12,11 @@ const light = createTheme(
       },
       info: {
         main: indigo[500],
+        link: lightBlue[100]
       },
       success: {
         main: green[400],
-      },
+      }
     },
     paper: {
       main: grey[500],
