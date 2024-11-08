@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Avatar, Box, Button, Card, CardHeader, CardContent, CardActions, Container, Grid, Typography } from "@mui/material";
-import { PlaylistAddCheck, HowToReg, Theaters, Favorite, PlayCircleOutline, Tune } from "@mui/icons-material";
+import { CheckCircleOutline, HighlightOff, PlaylistAddCheck, PauseCircleOutline, HowToReg, Theaters, Favorite, PlayCircleOutline, Tune } from "@mui/icons-material";
 import { makeStyles } from "tss-react/mui";
-import { blue, pink, teal } from "@mui/material/colors";
+import { blue, green, pink, red, teal } from "@mui/material/colors";
 import { userRolesEnum } from "../../../shared/enums";
 import { RegistrationForm } from "./RegistrationForm";
 
@@ -22,8 +22,18 @@ const useStyles = makeStyles()(() => ({
   teal: {
     backgroundColor: teal[300],
   },
+  green: {
+    color: green[500],
+  },
+  red: {
+    color: red[500],
+  },
   card: {
     maxWidth: 345,
+  },
+  card_header_action: {
+    alignSelf: "center",
+    marginTop: 0
   }
 }));
 
@@ -65,6 +75,12 @@ const OnboardingDoor = ({ user }) => {
           avatar={<Avatar aria-label="registration" className={classes.teal}><HowToReg /></Avatar>}
           title={t("onboarding.registration.title")}
           titleTypographyProps={{ variant: "h5" }}
+          action={user.role === userRolesEnum.user ?
+            <CheckCircleOutline fontSize="large" className={classes.green} /> :
+            user.role === userRolesEnum.pending_approve ?
+              <PauseCircleOutline fontSize="large" color="primary" /> :
+              <HighlightOff fontSize="large" className={classes.red} />}
+          classes={{ action: classes.card_header_action }}
           sx={avatarSX}
         />
         <CardContent>
@@ -102,6 +118,10 @@ const OnboardingDoor = ({ user }) => {
           avatar={<Avatar aria-label="membership" className={classes.pink}><Favorite /></Avatar>}
           title={t("onboarding.membership.title")}
           titleTypographyProps={{ variant: "h5" }}
+          action={user.membership?.active ?
+            <CheckCircleOutline fontSize="large" className={classes.green} /> :
+            <HighlightOff fontSize="large" className={classes.red} />}
+          classes={{ action: classes.card_header_action }}
           sx={avatarSX}
         />
         <CardContent>
