@@ -8,7 +8,6 @@ import {
   Divider,
   FormControlLabel,
   Grid,
-  Link,
   MenuItem,
   Modal,
   TextField,
@@ -27,7 +26,6 @@ import {AccountCircle, Mic, Videocam} from "@mui/icons-material";
 import {ThemeContext} from "../components/ThemeSwitcher/ThemeSwitcher";
 import {Support} from "../components/Support";
 import JanusStream from "../../../shared/streaming-utils";
-import DonationModal from "../components/DonationModal";
 
 const settingsList = vsettings_list.map(({key, text, value}) => ({key, text, value: JSON.stringify(value)}));
 const mapDevice = ({label, deviceId}) => ({text: label, value: deviceId});
@@ -222,34 +220,6 @@ const Settings = (props) => {
 
   const renderHeader = () => (
     <>
-      <Grid item xs={12} >
-        <Box sx={{ 
-          bgcolor: 'info.main',
-          color: 'info.contrastText', 
-          typography: 'h6', 
-          padding: 2, 
-          direction: (language=='he') ? 'rtl' :'inherit'}}>
-          <div>
-            <Typography variant="h6" display="inline" color="warning.light">{t("settings.membership.notice")}</Typography>
-            &nbsp;{t("settings.membership.announcement")}&nbsp;
-            <Link href="https://kli.one/faq" color="info.link" underline="always">
-              {t("settings.membership.learnMore")}
-            </Link>
-          </div>
-          <div>
-            {t("settings.membership.statusMessage", {email: user.email})}
-            {
-              user.membership?.active ? 
-              <Typography variant="h6" display="inline" color="success.main">{t("settings.membership.statusActive")}</Typography> :
-              <Typography variant="h6" display="inline" color="warning.main">{t("settings.membership.statusInactive")}</Typography>
-            }
-            .&nbsp;
-            <Link href="https://kli.one/dash/membership" color="info.link" underline="always">
-            {t("settings.membership.manage")}
-            </Link>
-          </div>
-        </Box>
-      </Grid>
       <Grid item xs={8}>
         <Typography variant="h4" display={"block"} color="textPrimary">
           {t("settings.helloUser", {name: user.display})}
@@ -389,7 +359,6 @@ const Settings = (props) => {
       <Modal open={true} componentsProps={{backdrop: {style: {backgroundColor: paper}}}} className={classes.modal}>
         <Box className={classes.paper}>{renderContent()}</Box>
       </Modal>
-      <DonationModal/>
     </>
   );
 };

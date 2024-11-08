@@ -22,7 +22,7 @@ import {captureMessage, updateSentryUser} from "../../shared/sentry";
 import GxyJanus from "../../shared/janus-utils";
 import ConfigStore from "../../shared/ConfigStore";
 import {isFullScreen, toggleFullScreen} from "./FullScreenHelper";
-import {AppBar, Badge, Box, Button as ButtonMD, ButtonGroup, Grid, IconButton} from "@mui/material";
+import {AppBar, Badge, Box, Button as ButtonMD, ButtonGroup, Container, Grid, IconButton} from "@mui/material";
 import {ChevronLeft, ChevronRight, PlayCircleOutline} from "@mui/icons-material";
 import {grey} from "@mui/material/colors";
 import {AskQuestion, AudioMode, CloseBroadcast, Fullscreen, Layout, Mute, MuteVideo, Vote} from "./buttons";
@@ -31,7 +31,6 @@ import SettingsJoined from "./settings/SettingsJoined";
 import HomerLimud from "./components/HomerLimud";
 import {initCrisp, Support} from "./components/Support";
 import SendQuestionContainer from "./components/SendQuestions/container";
-import {RegistrationModals} from "./components/RegistrationModals";
 import {getUserRole, userRolesEnum} from "../../shared/enums";
 import QuadStream from "./components/QuadStream";
 import KliOlamiToggle from "./buttons/KliOlamiToggle";
@@ -51,6 +50,7 @@ import {PopUp} from "./components/PopUp"
 import {BroadcastNotification} from "./components/BroadcastNotification";
 import GlobalOptions, {GlobalOptionsContext} from "./components/GlobalOptions/GlobalOptions";
 import ShowSelfBtn from "./buttons/ShowSelfBtn";
+import OnboardingDoor from "./components/OnboardingDoor.js";
 
 const sortAndFilterFeeds = (feeds) =>
   feeds
@@ -143,8 +143,12 @@ class VirtualMqttClient extends Component {
       api.fetchMembershipInfo(user.id).then(({data}) => {
         user.membership = data;
       }).catch(err => {
-        console.error('Error fetching membership data', err);
-      }).finally(() => this.initApp(user));
+        console.error('Error fetching membership data: ', err?.message);
+        user.membership = {active: false, error: err?.message};
+      }).finally(() => {
+        user.allowed = !!user.membership.active && user.role === userRolesEnum.user;
+        this.initApp(user);
+      });
     } else {
       alert("Access denied!");
       kc.logout();
@@ -153,15 +157,15 @@ class VirtualMqttClient extends Component {
   };
 
   initApp = (user) => {
-    JanusStream.setUser(user);
     initCrisp(user, this.props.i18n.language);
 
-    this.initMQTT(user);
-
-    // Clients not authorized to app may see shidur only
-    if (user.role !== userRolesEnum.user) {
+    if (!user.allowed) {
+      this.setState({user});
       return;
     }
+
+    JanusStream.setUser(user);
+    this.initMQTT(user);
 
     const {t} = this.props;
     localStorage.setItem("question", false);
@@ -1292,8 +1296,6 @@ class VirtualMqttClient extends Component {
     const {t, i18n} = this.props;
     const {user, asideMsgCounter, leftAsideName, rightAsideName, isOpenTopMenu} = this.state;
 
-    const notApproved = user && user.role !== userRolesEnum.user;
-
     return (
       <AppBar color="default" position="static">
         <Toolbar className="top-toolbar">
@@ -1302,7 +1304,6 @@ class VirtualMqttClient extends Component {
             openSettings={() => this.setState({isSettings: true})}
             open={isOpenTopMenu}
             setOpen={(isOpen) => this.setState({isOpenTopMenu: isOpen})}
-            notApproved={notApproved}
             user={user}
             i18n={i18n}
           />
@@ -1316,78 +1317,67 @@ class VirtualMqttClient extends Component {
           >
             {t("oldClient.myProfile")}
           </ButtonMD>
-          <ButtonGroup
-            variant="outlined"
-            color="primary"
-            size="small"
-            disableElevation
-            className={classNames("top-toolbar__item", "top-toolbar__toggle")}
-          >
-            <Badge color="error" badgeContent={asideMsgCounter.drawing} showZero={false} overlap="circular">
-              <ButtonMD
-                variant={leftAsideName === "drawing" ? "contained" : "outlined"}
-                onClick={() => this.toggleLeftAside("drawing")}
+          { user?.allowed && (
+            <>
+              <ButtonGroup
+                variant="outlined"
+                color="primary"
+                size="small"
                 disableElevation
+                className={classNames("top-toolbar__item", "top-toolbar__toggle")}
               >
-                {t("oldClient.drawing")}
-              </ButtonMD>
-            </Badge>
-            <ButtonMD
-              variant={leftAsideName === "material" ? "contained" : "outlined"}
-              onClick={() => this.toggleLeftAside("material")}
-            >
-              {t("oldClient.material")}
-            </ButtonMD>
-          </ButtonGroup>
-          {/*  button of congress
-          <ButtonMD
-            color="secondary"
-            variant="contained"
-            onClick={() =>
-              window.open(`https://convention.kli.one/${i18n.language === "en" ? "" : i18n.language}`, "_blank")
-            }
-            className="top-toolbar__item"
-            disableElevation
-            style={{backgroundColor: "#97119e"}}
-          >
-            <OpenInNewOutlined style={{marginRight: "5px"}} />
-            {t("temp.linkToCongress")}
-          </ButtonMD>*/}
+                <Badge color="error" badgeContent={asideMsgCounter.drawing} showZero={false} overlap="circular">
+                  <ButtonMD
+                    variant={leftAsideName === "drawing" ? "contained" : "outlined"}
+                    onClick={() => this.toggleLeftAside("drawing")}
+                    disableElevation
+                  >
+                    {t("oldClient.drawing")}
+                  </ButtonMD>
+                </Badge>
+                <ButtonMD
+                  variant={leftAsideName === "material" ? "contained" : "outlined"}
+                  onClick={() => this.toggleLeftAside("material")}
+                >
+                  {t("oldClient.material")}
+                </ButtonMD>
+              </ButtonGroup>
+            
+              <Typography variant="h6" align="center" className={classNames("top-toolbar__item", "top-toolbar__title")}>
+                {user?.group}
+              </Typography>
 
-          <Typography variant="h6" align="center" className={classNames("top-toolbar__item", "top-toolbar__title")}>
-            {user?.group}
-          </Typography>
-
-          <ButtonGroup
-            variant="outlined"
-            color="primary"
-            size="small"
-            disableElevation
-            className={classNames("top-toolbar__item", "top-toolbar__toggle")}
-          >
-            <Badge badgeContent={asideMsgCounter.chat} showZero={false} color="error" overlap="circular">
-              <ButtonMD
-                variant={rightAsideName === "chat" ? "contained" : "outlined"}
-                onClick={() => {
-                  this.toggleRightAside("chat");
-                  this.setState({isRoomChat: true});
-                }}
+              <ButtonGroup
+                variant="outlined"
+                color="primary"
+                size="small"
                 disableElevation
+                className={classNames("top-toolbar__item", "top-toolbar__toggle")}
               >
-                {t("oldClient.chat")}
-              </ButtonMD>
-            </Badge>
-            <ButtonMD
-              onClick={() => this.toggleRightAside("question")}
-              variant={rightAsideName === "question" ? "contained" : "outlined"}
-            >
-              {t("oldClient.sendQuestion")}
-            </ButtonMD>
-          </ButtonGroup>
+                <Badge badgeContent={asideMsgCounter.chat} showZero={false} color="error" overlap="circular">
+                  <ButtonMD
+                    variant={rightAsideName === "chat" ? "contained" : "outlined"}
+                    onClick={() => {
+                      this.toggleRightAside("chat");
+                      this.setState({isRoomChat: true});
+                    }}
+                    disableElevation
+                  >
+                    {t("oldClient.chat")}
+                  </ButtonMD>
+                </Badge>
+                <ButtonMD
+                  onClick={() => this.toggleRightAside("question")}
+                  variant={rightAsideName === "question" ? "contained" : "outlined"}
+                >
+                  {t("oldClient.sendQuestion")}
+                </ButtonMD>
+              </ButtonGroup>
+            </>)
+          }
 
           <Support />
           <Donations />
-          {/* ---------- */}
         </Toolbar>
       </AppBar>
     );
@@ -1456,7 +1446,6 @@ class VirtualMqttClient extends Component {
     return (
       <div className={classNames("vclient", {"vclient--chat-open": chatVisible})}>
         {this.renderTopBar(isDeb)}
-        <RegistrationModals user={user} language={i18n.language} updateUserRole={this.updateUserRole.bind(this)} />
 
         <Grid container className="vclient__main">
           {this.renderLeftAside()}
@@ -1500,6 +1489,17 @@ class VirtualMqttClient extends Component {
       </div>
     );
   };
+
+  renderNotAllowed = (isDeb) => {
+    const {user} = this.state;
+
+    return (
+      <div className={classNames("vclient")}>
+        {this.renderTopBar(isDeb)}
+        <OnboardingDoor user={user} />  
+      </div>
+    );
+  }
 
   updateUserRole = () => {
     //getUser(this.checkPermission);
@@ -1616,13 +1616,15 @@ class VirtualMqttClient extends Component {
 
     const isDeb = new URL(window.location.href).searchParams.has("deb");
 
-    let content = this.renderNewVersionContent(layout, isDeb, source, otherFeedHasQuestion, noOfVideos, remoteVideos);
+    let content = user?.allowed ? 
+      this.renderNewVersionContent(layout, isDeb, source, otherFeedHasQuestion, noOfVideos, remoteVideos) :
+      this.renderNotAllowed(isDeb);
 
     return (
       <Fragment>
         <PopUp show={show_notification} setClose={() => this.setState({show_notification: false})}/>
         <BroadcastNotification show={show_message} msg={broadcast_message} setClose={() => this.setState({show_message: false})} />
-        {user && Boolean(room) && (
+        {user?.allowed && Boolean(room) && (
           <SettingsJoined
             userDisplay={user.display}
             isOpen={isSettings}
@@ -1645,7 +1647,7 @@ class VirtualMqttClient extends Component {
             toggleUsersDisplays={this.toggleUsersDisplays.bind(this)}
           />
         )}
-        {user && !notApproved && !Boolean(room) && (
+        {user?.allowed && !Boolean(room) && (
           <Settings
             user={user}
             rooms={rooms}

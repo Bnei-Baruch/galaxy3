@@ -26,7 +26,7 @@ const useStyles = makeStyles()(() => ({
   },
 }));
 
-export const TopMenu = ({t, openSettings, open = false, setOpen, notApproved, i18n, user}) => {
+export const TopMenu = ({t, openSettings, open = false, setOpen, i18n, user}) => {
   const {classes} = useStyles();
   const menuRef = useRef();
   const [openLanguages, setOpenLanguages] = useState(false);
@@ -59,7 +59,14 @@ export const TopMenu = ({t, openSettings, open = false, setOpen, notApproved, i1
             <AccountBox />
           </ListItemSecondaryAction>
         </ListItemButton>
-        {notApproved ? (
+        {user?.allowed ? (
+          <ListItemButton key={"settings"} onClick={openSettings}>
+            <ListItemText>{t("oldClient.settings")}</ListItemText>
+            <ListItemSecondaryAction>
+              <Settings />
+            </ListItemSecondaryAction>
+          </ListItemButton>
+        ) : (
           <>
             <ListItemButton key={"languages"} onClick={() => setOpenLanguages(!openLanguages)}>
               <ListItemText>{t("oldClient.language")}</ListItemText>
@@ -73,13 +80,6 @@ export const TopMenu = ({t, openSettings, open = false, setOpen, notApproved, i1
               </List>
             </Collapse>
           </>
-        ) : (
-          <ListItemButton key={"settings"} onClick={openSettings}>
-            <ListItemText>{t("oldClient.settings")}</ListItemText>
-            <ListItemSecondaryAction>
-              <Settings />
-            </ListItemSecondaryAction>
-          </ListItemButton>
         )}
         <ListItemButton
           key={"signOut"}
