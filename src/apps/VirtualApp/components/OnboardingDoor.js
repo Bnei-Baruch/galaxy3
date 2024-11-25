@@ -118,7 +118,7 @@ const OnboardingDoor = ({ user }) => {
           avatar={<Avatar aria-label="membership" className={classes.pink}><Favorite /></Avatar>}
           title={t("onboarding.membership.title")}
           titleTypographyProps={{ variant: "h5" }}
-          action={user.membership?.active ?
+          action={user.vhinfo?.active ?
             <CheckCircleOutline fontSize="large" className={classes.green} /> :
             <HighlightOff fontSize="large" className={classes.red} />}
           classes={{ action: classes.card_header_action }}
@@ -127,13 +127,13 @@ const OnboardingDoor = ({ user }) => {
         <CardContent>
           {t("onboarding.membership.statusMessage")}
           {
-            user.membership?.active ?
+            user.vhinfo?.active ?
               <Typography component="span" display="inline" color="success.main">{t("onboarding.membership.statusActive")}</Typography> :
               <Typography component="span" color="warning.main">{t("onboarding.membership.statusInactive")}</Typography>
           }
           .&nbsp;<br />
           {
-            user.membership?.active ?
+            user.vhinfo?.active ?
               t("onboarding.membership.good_to_go") :
               t("onboarding.membership.activate")
           }

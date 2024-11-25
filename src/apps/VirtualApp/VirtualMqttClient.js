@@ -140,13 +140,13 @@ class VirtualMqttClient extends Component {
     user.role = getUserRole();
     user.isClient = true;
     if (user.role !== null) {
-      api.fetchMembershipInfo(user.id).then(({data}) => {
-        user.membership = data;
+      api.fetchVHInfo(user.id).then((data) => {
+        user.vhinfo = data;
       }).catch(err => {
-        console.error('Error fetching membership data: ', err?.message);
-        user.membership = {active: false, error: err?.message};
+        console.error('Error fetching VH info data: ', err?.message);
+        user.vhinfo = {active: false, error: err?.message};
       }).finally(() => {
-        user.allowed = !!user.membership.active && user.role === userRolesEnum.user;
+        user.allowed = !!user.vhinfo.active && user.role === userRolesEnum.user;
         this.initApp(user);
       });
     } else {
