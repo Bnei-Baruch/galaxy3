@@ -149,8 +149,8 @@ class Api {
 
   // Virtual Home API
 
-  fetchMembershipInfo = (keycloadId) =>
-    this.logAndParse(`fetch membership info`, fetch(`${this.vhUrlFor("/profile/v1/membership/kcid/")}${keycloadId}`, this.defaultOptions()));
+  fetchVHInfo = (keycloadId) =>
+    this.logAndParse(`fetch vh info`, fetch(`${this.vhUrlFor("/profile/v1/profile/")}${keycloadId}/short`, this.defaultOptions()));
 
   // helpers
   
