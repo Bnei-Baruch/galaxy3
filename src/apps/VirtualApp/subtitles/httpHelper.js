@@ -1,35 +1,10 @@
-import ReconnectingWebSocket from "reconnectingwebsocket";
-import {WEB_SOCKET_WORKSHOP_QUESTION} from "../../../shared/env";
-import {MSGS_TYPES} from "./MessageManager";
 import mqtt from "../../../shared/mqtt";
 import kc from "../../../components/UserManager";
-import {getUserRole, userRolesEnum} from "../../../shared/enums";
+import {getUserRole} from "../../../shared/enums";
+import markdownit from 'markdown-it'
 
-let currentMqttLang;
-export const initWQ = (onMessage) => {
-  const ws = new ReconnectingWebSocket(WEB_SOCKET_WORKSHOP_QUESTION);
-  ws.onmessage = ({data}) => {
-    let msg;
-    try {
-      msg = JSON.parse(data);
-    } catch (e) {
-      msg = buildClear();
-    }
-
-    const {questions} = msg;
-    if (questions) {
-      questions.map((q) => wsToMsgAdapter(q)).forEach(onMessage);
-      return;
-    }
-
-    if (msg.clear || msg.questions === null) msg = buildClear();
-    onMessage(wsToMsgAdapter(msg));
-  };
-
-  return new Promise((res, rej) => {
-    ws.onopen = (r) => res();
-  });
-};
+const md = markdownit({html: true})
+const TOPIC = "subtitles/morning_lesson/";
 
 export const initSubtitle = (lang, onMessage, attempts = 0) => {
   if (!lang) return;
@@ -55,31 +30,34 @@ export const initSubtitle = (lang, onMessage, attempts = 0) => {
     );
   }
 
-  const topic = role !== userRolesEnum.user ? "msg/subtitles/galaxy/" : "subtitles/galaxy/";
-  currentMqttLang && mqtt.exit(topic + currentMqttLang);
-  currentMqttLang = lang;
-  mqtt.join(topic + lang);
+  mqtt.join(`${TOPIC}${lang}/slide`);
+  mqtt.join(`${TOPIC}+/question`);
 
-  mqtt.mq.on("MqttSubtitlesEvent", (json) => {
-    let msg = JSON.parse(json);
+  mqtt.mq.on("MqttSubtitlesEvent", ({data, lang}) => {
+    let msg = JSON.parse(data);
     if (msg.message === "on_air") return;
     console.log("[mqtt] MqttSubtitlesEvent subtitle mqtt listener ", msg);
     if (msg.message === "clear") msg = buildClear();
-    onMessage(mqttToMsgAdapter(msg));
+    onMessage(mqttToMsgAdapter({...msg, lang}));
   });
 };
 
-const mqttToMsgAdapter = ({message, language}) => {
-  return {
-    message: message?.content ? message.content : message,
-    type: MSGS_TYPES.subtitle,
-    date: Date.now(),
-    language,
-  };
+export const exitSubtitle = lang => {
+  if (!lang) return;
+
+  mqtt.exit(`${TOPIC}${lang}/slide`);
+  mqtt.exit(`${TOPIC}+/question`);
+  mqtt.mq.removeAllListeners("MqttSubtitlesEvent")
 };
 
-const wsToMsgAdapter = ({message, language}) => {
-  return {message, type: MSGS_TYPES.workshop, date: Date.now(), language};
+const mqttToMsgAdapter = ({slide, lang, type, date, visible}) => {
+  return {
+    message: md.render(slide),
+    type: type,
+    date,
+    language: lang,
+    visible
+  };
 };
 
 const buildClear = (language = "all") => {

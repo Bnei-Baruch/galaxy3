@@ -2,7 +2,7 @@ import {subtitle_options} from "../../../shared/consts";
 
 export const MSGS_TYPES = {
   subtitle: "subtitle",
-  workshop: "workshop",
+  workshop: "question",
 };
 
 export class MessageManager {
@@ -24,9 +24,8 @@ export class MessageManager {
     this.getAvailableLangs = this.getAvailableLangs.bind(this);
   }
 
-  push(data, lang) {
-    const {message, language, type} = data;
-    const msg = {message, type, language, addedAt: Date.now()};
+  push(msg, lang) {
+    const {language, type} = msg;
 
     switch (type) {
       case MSGS_TYPES.subtitle:
@@ -41,15 +40,9 @@ export class MessageManager {
     return this.last(lang);
   }
 
-  clear({type}, language) {
-    switch (type) {
-      case MSGS_TYPES.subtitle:
-        this.subtitleMsgs = [];
-        break;
-      case MSGS_TYPES.workshop:
-        this.wqMsgs = [];
-        break;
-    }
+  clear(language) {
+    this.subtitleMsgs = [];
+    this.wqMsgs = [];
     return this.last(language);
   }
 
@@ -63,7 +56,7 @@ export class MessageManager {
             (m.type === MSGS_TYPES.subtitle && m.language === lang) ||
             (m.type === MSGS_TYPES.workshop && m.language === wLang)
         )
-        .sort((a, b) => b.addedAt - a.addedAt)[0]
+        .sort((a, b) => b.date - a.date)[0]
     );
   }
 
