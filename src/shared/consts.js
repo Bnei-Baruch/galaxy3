@@ -28,6 +28,7 @@ export const NO_VIDEO_OPTION_VALUE = -1;
 export const VIDEO_240P_OPTION_VALUE = 11;
 export const VIDEO_360P_OPTION_VALUE = 1;
 export const VIDEO_720P_OPTION_VALUE = 16;
+export const VIDEO_IS_AV1_360P_OPTION_VALUE = 132;
 
 export const videos_options = [
   {key: 1, text: "240p", value: VIDEO_240P_OPTION_VALUE},
@@ -40,6 +41,15 @@ export const videos_options2 = [
   {key: 1, text: "oldClient.lowQuality", description: "240p", value: 11},
   {key: 2, text: "oldClient.mediumQuality", description: "360p", value: 1},
   {key: 3, text: "oldClient.highQuality", description: "720p", value: 16},
+  {divider: true},
+  {key: 4, text: "oldClient.noVideo", description: "oldClient.audioOnly", value: NO_VIDEO_OPTION_VALUE},
+];
+
+export const videos_options_av1 = [
+  {key: 1, text: "oldClient.lowQuality", description: "240p", value: 133},
+  {key: 2, text: "oldClient.mediumQuality", description: "360p", value: 132},
+  {key: 3, text: "oldClient.highQuality", description: "720p", value: 131},
+  {key: 5, text: "oldClient.HDQuality", description: "1080p", value: 130},
   {divider: true},
   {key: 4, text: "oldClient.noVideo", description: "oldClient.audioOnly", value: NO_VIDEO_OPTION_VALUE},
 ];
@@ -390,10 +400,10 @@ export const LANGUAGES = [
 ];
 
 export const LANG_MAP = {
-    Spanish: "es",
-    English: "en",
-    Hebrew: "he",
-    Russian: "ru"
+  Spanish: "es",
+  English: "en",
+  Hebrew: "he",
+  Russian: "ru"
 }
 
 export const sketchesByLang = {he: "Hebrew", ru: "Russian", es: "Spanish", en: "English"};

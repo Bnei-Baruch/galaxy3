@@ -1,9 +1,9 @@
-import {gxycol, trllang, NO_VIDEO_OPTION_VALUE, NOTRL_STREAM_ID, audiog_options2} from "./consts";
+import {audiog_options2, gxycol, NO_VIDEO_OPTION_VALUE, NOTRL_STREAM_ID, trllang} from "./consts";
 import {JanusMqtt} from "../lib/janus-mqtt";
 import {StreamingPlugin} from "../lib/streaming-plugin";
 import log from "loglevel";
 import GxyJanus from "./janus-utils";
-import {captureMessage} from "./sentry";
+import {getVideosFromLocalstorage} from "./tools";
 
 class JanusStream {
   constructor() {
@@ -23,7 +23,7 @@ class JanusStream {
     this.trlAudioJanusStream = null;
     this.trlAudioMediaStream = null;
 
-    this.videos = Number(localStorage.getItem("vrt_video")) || 1;
+    this.videos = getVideosFromLocalstorage()
     this.audios = Number(localStorage.getItem("vrt_lang")) || 2;
     this.mixvolume = null;
     this.talking = null;
@@ -396,6 +396,15 @@ class JanusStream {
 
   onTalking(callback) {
     this.showOn = callback;
+  }
+
+  toggleAv1(videos) {
+    this.videos = videos
+    if (!this.janus)
+      return
+    this.janus.detach(this.videoJanusStream);
+    this.videoJanusStream = null;
+    this.initVideoStream()
   }
 }
 

@@ -48,6 +48,7 @@ export const resources = {
         lowQuality: "Low quality",
         mediumQuality: "Medium quality",
         highQuality: "High quality",
+        HDQuality: "HD quality",
         low: "Low",
         medium: "Medium",
         high: "High",
@@ -85,6 +86,8 @@ export const resources = {
         shidurMuted: "Mute broadcast",
         translationOn: "Translation On",
         translationOff: "translation Off",
+        av1On: "Codec AV1 On",
+        av1Off: "Codec AV1 Off",
       },
       settings: {
         selectCamera: "Select camera",
