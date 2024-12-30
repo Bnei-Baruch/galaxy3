@@ -250,7 +250,10 @@ export const createContext = (e) => {
   }
 }
 
-export const getVideosFromLocalstorage = (isAv1 = false) => (Number(localStorage.getItem("vrt_video")) || isAv1 ? 132 : 1)
+export const getVideosFromLocalstorage = (isAv1 = false) => {
+  const v = Number(localStorage.getItem("vrt_video"))
+  return v || (isAv1 ? 132 : 1)
+}
 export const getIsAv1FromLocalstorage = () => Boolean(localStorage.getItem("vrt_is_av1"));
 
 export const getNextVideosByIsAv1 = (prevVideos, isAv1) => {
