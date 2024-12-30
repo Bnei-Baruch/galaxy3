@@ -227,9 +227,13 @@
 
   &__toggle {
     align-self: center;
+    padding: 0 5px;
 
     &.ui.toggle.checkbox input~label {
       color: white !important;
+    }
+    &.ui.toggle.checkbox label:before {
+      background: grey;
     }
   }
 
