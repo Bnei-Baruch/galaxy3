@@ -106,7 +106,7 @@ class VirtualStreaming extends Component {
     if (this.props.audios !== NOTRL_STREAM_ID) {
       let prev_lang = Number(localStorage.getItem("trl_lang"))
       let curr_lang = Number(localStorage.getItem("vrt_lang")) || 2;
-      if(!prev_lang) {
+      if (!prev_lang) {
         const audio_option = audiog_options2.find((option) => option.value === curr_lang);
         localStorage.setItem("trl_lang", curr_lang);
         localStorage.setItem("vrt_langtext", audio_option.eng_text);
@@ -141,10 +141,17 @@ class VirtualStreaming extends Component {
             <div className="controls">
               <div className="controls__top">
                 <button>
-                  <Icon name="close" onClick={closeShidur} />
+                  <Icon name="close" onClick={closeShidur}/>
                 </button>
               </div>
               <div className="controls__bottom">
+                <Radio
+                  toggle
+                  className="controls__toggle"
+                  checked={isAv1}
+                  onChange={this.toggleIsAv1}
+                  label={t(`oldClient.${isAv1 ? "av1On" : "av1Off"}`)}
+                />
                 <Dropdown
                   upward
                   floating
@@ -170,7 +177,7 @@ class VirtualStreaming extends Component {
                           <Dropdown.Header className="ui blue" icon={option.icon}>
                             {t(option.text)}
                             {option.description ? (
-                              <Header as="div" size="tiny" color="grey" content={t(option.description)} />
+                              <Header as="div" size="tiny" color="grey" content={t(option.description)}/>
                             ) : (
                               ""
                             )}
@@ -199,7 +206,7 @@ class VirtualStreaming extends Component {
                   selectOnBlur={false}
                   trigger={
                     <button>
-                      {audio_option.icon ? <Icon name={audio_option.icon} /> : ""}
+                      {audio_option.icon ? <Icon name={audio_option.icon}/> : ""}
                       {audio_option.text ? `${audio_option.text}` : ""}
                     </button>
                   }
@@ -207,16 +214,16 @@ class VirtualStreaming extends Component {
                 >
                   <Dropdown.Menu className="controls__dropdown">
                     {audiog_options2.map((option, i) => {
-                      if (option.divider === true) return <Dropdown.Divider key={i} />;
+                      if (option.divider === true) return <Dropdown.Divider key={i}/>;
                       if (option.header === true)
                         return (
                           <Dropdown.Header className="ui blue" key={i}>
-                            <Icon name={option.icon} />
+                            <Icon name={option.icon}/>
                             <div>
                               {t(option.text)}
-                              <br />
+                              <br/>
                               {option.description ? (
-                                <Header as="span" size="tiny" color="grey" content={t(option.description)} />
+                                <Header as="span" size="tiny" color="grey" content={t(option.description)}/>
                               ) : (
                                 ""
                               )}
@@ -244,20 +251,13 @@ class VirtualStreaming extends Component {
                   onChange={this.toggleTranslation}
                   label={t(`oldClient.${this.props.audios !== NOTRL_STREAM_ID ? "translationOn" : "translationOff"}`)}
                 />
-                <Radio
-                  toggle
-                  className="controls__toggle"
-                  checked={this.state.isAv1}
-                  onChange={this.toggleIsAv1}
-                  label={t(`oldClient.${this.state.isAv1 ? "av1On" : "av1Off"}`)}
-                />
                 <div className="controls__spacer"></div>
                 <button onClick={this.toggleFullScreen}>
                   <Icon name={isFullScreen(this.videoWrapper) ? "compress" : "expand"}/>
                 </button>
                 {!attached ? null : (
                   <button onClick={this.toggleNewWindow}>
-                    <Icon name="external square" />
+                    <Icon name="external square"/>
                   </button>
                 )}
               </div>
@@ -269,7 +269,7 @@ class VirtualStreaming extends Component {
           </div>
           {talking && (
             <Label className="talk" size="massive" color="red">
-              <Icon name="microphone" />
+              <Icon name="microphone"/>
               On
             </Label>
           )}
@@ -279,7 +279,7 @@ class VirtualStreaming extends Component {
             <Grid verticalAlign="middle" columns={1} centered>
               <Grid.Row>
                 <Grid.Column>
-                  <Image className="noVideoPlayerIcon" src={audioOnly} />
+                  <Image className="noVideoPlayerIcon" src={audioOnly}/>
                 </Grid.Column>
               </Grid.Row>
             </Grid>

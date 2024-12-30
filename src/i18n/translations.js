@@ -86,8 +86,8 @@ export const resources = {
         shidurMuted: "Mute broadcast",
         translationOn: "Translation On",
         translationOff: "translation Off",
-        av1On: "Codec AV1 On",
-        av1Off: "Codec AV1 Off",
+        av1On: "AV1 ON",
+        av1Off: "AV1 OFF",
       },
       settings: {
         selectCamera: "Select camera",
@@ -213,7 +213,7 @@ export const resources = {
       },
       onboarding: {
         welcome: "Welcome {{name}}",
-        general_note:`The system is only accessible for verified accounts with an active membership.
+        general_note: `The system is only accessible for verified accounts with an active membership.
         You are seeing this page because one of these conditions is not met.`,
         email_note: "You are currently logged in with: {{email}}.",
         registration: {
@@ -239,7 +239,7 @@ export const resources = {
           title: "Membership",
           statusMessage: "Your membership status is: ",
           statusActive: "ACTIVE",
-          statusInactive:"INACTIVE",
+          statusInactive: "INACTIVE",
           manage: "Manage membership",
           activate: "Please activate your membership in the Virtual Home dashboard.",
           good_to_go: "All set. Thank you."
@@ -486,9 +486,9 @@ export const resources = {
         hideSelfView: "Ocultar vista propia",
         showSelfView: "Mostrar visión propia"
       },
-      onboarding:{
+      onboarding: {
         welcome: "Bienvenido/a {{name}}",
-        general_note:`El sistema sólo es accesible para cuentas verificadas con una membresía activa.
+        general_note: `El sistema sólo es accesible para cuentas verificadas con una membresía activa.
         Estás viendo esta página porque no se cumple una de estas condiciones.`,
         email_note: "Actualmente estás conectado con: {{email}}.",
         registration: {
@@ -514,7 +514,7 @@ export const resources = {
           title: "Suscripción",
           statusMessage: "Su estado de membresía es: ",
           statusActive: "ACTIVA",
-          statusInactive:"INACTIVA",
+          statusInactive: "INACTIVA",
           manage: "Gestionar membresía",
           activate: "Por favor, active su membresía en el panel de control de Virtual Home.",
           good_to_go: "Todo listo. Gracias."
@@ -769,9 +769,9 @@ export const resources = {
         manageFontSize: "להגדיר את גודל האותיות",
         inProcess: "בתהליך... זמין בשפות",
       },
-      onboarding:{
+      onboarding: {
         welcome: "ברוך הבא {{name}}",
-        general_note:`מערכת ה"ערבות" פועלת עבור משתמשים רשומים בעלי מנוי פעיל. על מנת להמשיך יש להשלים את התנאים המופיעים מטה.`,
+        general_note: `מערכת ה"ערבות" פועלת עבור משתמשים רשומים בעלי מנוי פעיל. על מנת להמשיך יש להשלים את התנאים המופיעים מטה.`,
         email_note: " הכתובת שלך היא: {{email}}.",
         registration: {
           title: "רישום",
@@ -796,7 +796,7 @@ export const resources = {
           title: "מנוי",
           statusMessage: "הסטטוס הנוכחי של המנוי שלך: ",
           statusActive: "פעיל",
-          statusInactive:"לא פעיל",
+          statusInactive: "לא פעיל",
           manage: "להסדרת המנוי",
           activate: "נא להסדיר את המנוי כדי לצפות בשידורים.",
           good_to_go: "הכל מוכן. תודה רבה ובהצלחה."
@@ -1045,7 +1045,7 @@ export const resources = {
       },
       onboarding: {
         welcome: "Добро пожаловать, {{name}}",
-        general_note:`Система доступна только для проверенных учетных записей с активным подписка.
+        general_note: `Система доступна только для проверенных учетных записей с активным подписка.
         Вы видите эту страницу, потому что одно из этих условий не выполнено.`,
         email_note: "В данный момент вы вошли в систему с помощью: {{email}}",
         registration: {
@@ -1071,7 +1071,7 @@ export const resources = {
           title: "Подписка",
           statusMessage: "Статус вашей подписки: ",
           statusActive: "активен",
-          statusInactive:"неактивен",
+          statusInactive: "неактивен",
           manage: "Для оформления подписки",
           activate: "Активируйте подписку на панели управления Виртуального Дома.",
           good_to_go: "Все готово. Спасибо."
