@@ -254,7 +254,7 @@ export const getVideosFromLocalstorage = (isAv1 = false) => {
   const v = Number(localStorage.getItem("vrt_video"))
   return v || (isAv1 ? 132 : 1)
 }
-export const getIsAv1FromLocalstorage = () => Boolean(localStorage.getItem("vrt_is_av1"));
+export const getIsAv1FromLocalstorage = () => localStorage.getItem("vrt_is_av1") === "true";
 
 export const getNextVideosByIsAv1 = (prevVideos, isAv1) => {
   const {current, other} = getVideoOptionsByIsAv1(!isAv1)
