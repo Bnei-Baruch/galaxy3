@@ -91,9 +91,8 @@ class VirtualStreaming extends Component {
     const isAv1 = !prevIsAv1
     const nextVideos = getNextVideosByIsAv1(videos, isAv1)
     JanusStream.toggleAv1(nextVideos)
-    console.log("video_option video_options toggleIsAv1", isAv1, videos, nextVideos)
     this.props.setVideo(nextVideos, isAv1)
-    localStorage.setItem("vrt_video", videos);
+    localStorage.setItem("vrt_video", nextVideos);
     localStorage.setItem("vrt_is_av1", isAv1.toString());
   }
 
