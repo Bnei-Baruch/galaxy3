@@ -1,31 +1,31 @@
-import {Janus} from "../lib/janus";
-import {STUN_SRV_GXY, WKLI_ENTER, WKLI_LEAVE} from "./env";
-import api from "./Api";
+//import {Janus} from "../lib/janus";
+import {WKLI_ENTER, WKLI_LEAVE} from "./env";
 import mqtt from "./mqtt";
+import {videos_options2, videos_options_av1} from "./consts";
 
-export const initJanus = (cb, er, server, token = "", iceServers = [{urls: STUN_SRV_GXY}]) => {
-  Janus.init({
-    debug: process.env.NODE_ENV !== "production" ? ["log", "error"] : ["log", "error"],
-    callback: () => {
-      let janus = new Janus({
-        server,
-        token,
-        iceServers,
-        success: () => {
-          Janus.log(" :: Connected to JANUS");
-          cb(janus);
-        },
-        error: (error) => {
-          Janus.error(error);
-          er(error);
-        },
-        destroyed: () => {
-          Janus.error(" :: Janus destroyed :: ");
-        },
-      });
-    },
-  });
-};
+// export const initJanus = (cb, er, server, token = "", iceServers = [{urls: STUN_SRV_GXY}]) => {
+//   Janus.init({
+//     debug: process.env.NODE_ENV !== "production" ? ["log", "error"] : ["log", "error"],
+//     callback: () => {
+//       let janus = new Janus({
+//         server,
+//         token,
+//         iceServers,
+//         success: () => {
+//           Janus.log(" :: Connected to JANUS");
+//           cb(janus);
+//         },
+//         error: (error) => {
+//           Janus.error(error);
+//           er(error);
+//         },
+//         destroyed: () => {
+//           Janus.error(" :: Janus destroyed :: ");
+//         },
+//       });
+//     },
+//   });
+// };
 
 export const notifyMe = (title, message, tout) => {
   if (!!window.Notification) {
@@ -248,4 +248,25 @@ export const createContext = (e) => {
       width: 0,
     }),
   }
+}
+
+export const getVideosFromLocalstorage = (isAv1 = false) => {
+  const v = Number(localStorage.getItem("vrt_video"))
+  return v || (isAv1 ? 132 : 1)
+}
+export const getIsAv1FromLocalstorage = () => localStorage.getItem("vrt_is_av1") === "true";
+
+export const getNextVideosByIsAv1 = (prevVideos, isAv1) => {
+  const {current, other} = getVideoOptionsByIsAv1(!isAv1)
+  let prevKey = current.find(x => x.value === prevVideos)?.key
+  //next for 1080 will be 720
+  if (prevKey === 5)
+    prevKey = 3
+  return other.find(x => x.key === prevKey)?.value || 1
+}
+
+export const getVideoOptionsByIsAv1 = isAv1 => {
+  if (isAv1)
+    return {current: videos_options_av1, other: videos_options2}
+  return {current: videos_options2, other: videos_options_av1}
 }

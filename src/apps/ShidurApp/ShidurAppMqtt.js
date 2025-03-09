@@ -96,7 +96,7 @@ class ShidurAppMqtt extends Component {
   };
 
   initApp = (user) => {
-    log.info(" :: Version :: ", version);
+    console.log(" :: Version :: ", version);
     this.setState({user});
     api.fetchConfig().then(data => {
       ConfigStore.setGlobalConfig(data);
@@ -186,6 +186,8 @@ class ShidurAppMqtt extends Component {
           rooms = rooms.filter((r) => r.description.match(/^W /));
         } else if (shidur_mode === "gvarim") {
           rooms = rooms.filter((r) => !r.description.match(/^W /));
+        } else if (shidur_mode === "kvutzot") {
+          rooms = rooms.filter((r) => r.extra?.group);
         } else if (shidur_mode === "beyahad") {
           this.setState({shidur_mode: ""});
         }
@@ -195,8 +197,10 @@ class ShidurAppMqtt extends Component {
 
           if (preusers_count !== "Off") {
             pre_groups = rooms.filter((r) => !r.extra?.disabled && r.users.filter((r) => r.camera).length < preusers_count);
-            let new_groups = rooms.filter((r) => r.users.filter((r) => r.camera).length >= preusers_count && !r.extra?.disabled);
+            let new_groups = rooms.filter((r) => r.users.filter((r) => r.camera).length >= preusers_count && !r.extra?.disabled || r.extra?.group);
 
+            // Put groups with dynamic users count at the end of main list
+            // FIXME: It's cause many time to switch main list filter
             for (let i=0; i<groups.length; i++) {
               let exist_group = new_groups.find(g => g.room === groups[i].room);
               if(exist_group) {
@@ -288,7 +292,7 @@ class ShidurAppMqtt extends Component {
     } else if (data.type === "reload-config") {
       this.reloadConfig();
     } else if (data.type === "state") {
-      console.log(data)
+      log.info(data)
       this.setState({...data})
     }
   };

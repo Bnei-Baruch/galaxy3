@@ -48,6 +48,7 @@ export const resources = {
         lowQuality: "Low quality",
         mediumQuality: "Medium quality",
         highQuality: "High quality",
+        HDQuality: "HD quality",
         low: "Low",
         medium: "Medium",
         high: "High",
@@ -85,6 +86,8 @@ export const resources = {
         shidurMuted: "Mute broadcast",
         translationOn: "Translation On",
         translationOff: "translation Off",
+        av1On: "AV1 ON",
+        av1Off: "AV1 OFF",
       },
       settings: {
         selectCamera: "Select camera",
@@ -207,6 +210,45 @@ export const resources = {
         copyQuestion: "Copy question",
         manageFontSize: "Manage font size",
         inProcess: "In process... Available in",
+      },
+      onboarding: {
+        welcome: "Welcome {{name}}",
+        general_note: `The system is only accessible for verified accounts with an active membership.
+        You are seeing this page because one of these conditions is not met.`,
+        email_note: "You are currently logged in with: {{email}}.",
+        registration: {
+          title: "Registration",
+          register: "Register",
+          status_approved: "You are registered successfully. All set. Thank you.",
+          status_pending: "Thank you for registering. Your account is currently pending approval.",
+          status_new: "Please complete your registration in order to verify your account.",
+          form_text: "In order to grant you with a full access, we will need to verify your account. Please tell us about you:",
+          selectCountry: "Country",
+          groupCity: "City",
+          selectGender: "Gender",
+          selectLanguage: "Language",
+          selectGroup: "Ten Name",
+          telephone: "Mobile Phone",
+          male: "Male",
+          female: "Female",
+          aboutYou: "About my study framework in Bnei Baruch...",
+          submit: "SUBMIT FOR APPROVAL",
+          cancel: "CANCEL",
+        },
+        membership: {
+          title: "Membership",
+          statusMessage: "Your membership status is: ",
+          statusActive: "ACTIVE",
+          statusInactive: "INACTIVE",
+          manage: "Manage membership",
+          activate: "Please activate your membership in the Virtual Home dashboard.",
+          good_to_go: "All set. Thank you."
+        },
+        broadcast: {
+          title: "Live Stream",
+          body: "To watch a live stream, check out the broadcast area in the Virtual Home dashboard.",
+          goto: "Go to Broadcast"
+        }
       },
       registration: {
         continueAsGuest: "Continue as a guest",
@@ -443,6 +485,45 @@ export const resources = {
         continueAsGuest: "Continuar como invitado",
         hideSelfView: "Ocultar vista propia",
         showSelfView: "Mostrar visión propia"
+      },
+      onboarding: {
+        welcome: "Bienvenido/a {{name}}",
+        general_note: `El sistema sólo es accesible para cuentas verificadas con una membresía activa.
+        Estás viendo esta página porque no se cumple una de estas condiciones.`,
+        email_note: "Actualmente estás conectado con: {{email}}.",
+        registration: {
+          title: "Registro",
+          register: "Registro",
+          status_approved: "Te has registrado correctamente. Listo. Gracias.",
+          status_pending: "Gracias por registrarse. Su cuenta está actualmente pendiente de aprobación.",
+          status_new: "Por favor complete su registro para verificar su cuenta.",
+          form_text: "Para otorgarle acceso completo, necesitaremos verificar su cuenta. Cuéntenos sobre usted:",
+          selectCountry: "País",
+          groupCity: "Ciudad",
+          selectGender: "Género",
+          selectLanguage: "Idioma",
+          selectGroup: "Nombre de decena",
+          telephone: "Teléfono móvil",
+          male: "Hombre",
+          female: "Mujer",
+          aboutYou: "Acerca de mi marco de estudio en Bnei Baruj",
+          submit: "ENVIAR PARA APROBACIÓN",
+          cancel: "CANCELAR",
+        },
+        membership: {
+          title: "Suscripción",
+          statusMessage: "Su estado de membresía es: ",
+          statusActive: "ACTIVA",
+          statusInactive: "INACTIVA",
+          manage: "Gestionar membresía",
+          activate: "Por favor, active su membresía en el panel de control de Virtual Home.",
+          good_to_go: "Todo listo. Gracias."
+        },
+        broadcast: {
+          title: "Transmisión",
+          body: "Para ver una transmisión en vivo, consulte el área de transmisión en el panel de control de Virtual Home.",
+          goto: "Ir a transmisión"
+        }
       },
       registration: {
         continueAsGuest: "Continuar como invitado",
@@ -688,6 +769,44 @@ export const resources = {
         manageFontSize: "להגדיר את גודל האותיות",
         inProcess: "בתהליך... זמין בשפות",
       },
+      onboarding: {
+        welcome: "ברוך הבא {{name}}",
+        general_note: `מערכת ה"ערבות" פועלת עבור משתמשים רשומים בעלי מנוי פעיל. על מנת להמשיך יש להשלים את התנאים המופיעים מטה.`,
+        email_note: " הכתובת שלך היא: {{email}}.",
+        registration: {
+          title: "רישום",
+          register: "להרשמה",
+          status_approved: "הרישום שלך הסתיים בהצלחה. בהצלחה וצפייה מהנה!",
+          status_pending: "תודה רבה על הרשמתך. החשבון שלך ממתין לאישור.",
+          status_new: "לפני השימוש במערכת עליך להשלים את ההרשמה.",
+          form_text: "על מנת לאשר את החשבון שלך לשימוש מלא במערכת אנו צריכים מספר פרטים אודותיך:",
+          selectCountry: "מדינה",
+          groupCity: "עיר",
+          selectGender: "מגדר",
+          selectLanguage: "שפה",
+          selectGroup: "שם העשיריה",
+          telephone: "טלפון נייד",
+          male: "זכר",
+          female: "נקבה",
+          aboutYou: "על מסגרת הלימוד שלי ב״בני ברוך״...",
+          submit: "שלח לאישור",
+          cancel: "נקה",
+        },
+        membership: {
+          title: "מנוי",
+          statusMessage: "הסטטוס הנוכחי של המנוי שלך: ",
+          statusActive: "פעיל",
+          statusInactive: "לא פעיל",
+          manage: "להסדרת המנוי",
+          activate: "נא להסדיר את המנוי כדי לצפות בשידורים.",
+          good_to_go: "הכל מוכן. תודה רבה ובהצלחה."
+        },
+        broadcast: {
+          title: "שידור חי",
+          body: "לצפייה בשידור חי נא לגשת לדף השידור בבית הוירטואלי.",
+          goto: "שידור חי"
+        }
+      },
       registration: {
         continueAsGuest: "המשך כאורח",
         selectCountry: "מדינה",
@@ -923,6 +1042,45 @@ export const resources = {
         copyQuestion: "Копировать вопрос",
         manageFontSize: "Изменить размер шрифта",
         inProcess: "В процессе... Доступно на",
+      },
+      onboarding: {
+        welcome: "Добро пожаловать, {{name}}",
+        general_note: `Система доступна только для проверенных учетных записей с активным подписка.
+        Вы видите эту страницу, потому что одно из этих условий не выполнено.`,
+        email_note: "В данный момент вы вошли в систему с помощью: {{email}}",
+        registration: {
+          title: "Регистрация",
+          register: "Зарегистрироваться",
+          status_approved: "Вы успешно зарегистрированы. Все готово. Спасибо.",
+          status_pending: "Спасибо за регистрацию. Ваша учетная запись в настоящее время ожидает одобрения.",
+          status_new: "Пожалуйста, завершите регистрацию, чтобы подтвердить свою учетную запись.",
+          form_text: "Чтобы предоставить вам полный доступ, нам нужно будет проверить вашу учетную запись. Пожалуйста, расскажите нам о себе:",
+          selectCountry: "Страна",
+          groupCity: "Город",
+          selectGender: "Пол",
+          selectLanguage: "Язык",
+          selectGroup: "Название десятки",
+          telephone: "Мобильный телефон",
+          male: "мужчина",
+          female: "женщина",
+          aboutYou: "О моих учебных рамках в Бней Барухе",
+          submit: "ОТПРАВИТЬ НА УТВЕРЖДЕНИЕ",
+          cancel: "Отмена",
+        },
+        membership: {
+          title: "Подписка",
+          statusMessage: "Статус вашей подписки: ",
+          statusActive: "активен",
+          statusInactive: "неактивен",
+          manage: "Для оформления подписки",
+          activate: "Активируйте подписку на панели управления Виртуального Дома.",
+          good_to_go: "Все готово. Спасибо."
+        },
+        broadcast: {
+          title: "Трансляции",
+          body: "Чтобы посмотреть прямую трансляцию, перейдите в область трансляции на панели управления Виртуального Дома.",
+          goto: "Перейти к трансляции"
+        }
       },
       registration: {
         continueAsGuest: "Продолжить как гость",

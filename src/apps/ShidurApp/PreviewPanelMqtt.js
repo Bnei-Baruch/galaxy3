@@ -8,7 +8,6 @@ import log from "loglevel";
 class PreviewPanelMqtt extends Component {
   state = {
     delay: false,
-    feeds: [],
     subscriber: null,
     mids: [],
     name: "",
@@ -19,22 +18,37 @@ class PreviewPanelMqtt extends Component {
     this.attachPreview(this.props.pg);
   }
 
+  componentWillUnmount() {
+    this.cleanUp()
+  }
+
   componentDidUpdate(prevProps) {
     let {pg} = this.props;
-    let {room, feeds} = this.state;
+    let {room} = this.state;
     if (pg && JSON.stringify(pg) !== JSON.stringify(prevProps.pg) && pg.room !== room) {
-      if (this.state.subscriber) this.state.subscriber.detach();
-      feeds.forEach(f => {
-        let e = this.refs["pv" + f.id];
-        if (e) {
-          e.src = "";
-          e.srcObject = null;
-          e.remove();
-        }
-      })
-      this.setState({remoteFeed: null, mids: [], feeds: [], subscriber: null}, () => {
+      this.cleanUp(() => {
         this.attachPreview(this.props.pg);
+      })
+    }
+  }
+
+  cleanUp = (callback) => {
+    let {mids, subscriber} = this.state;
+    mids.forEach(f => {
+      let e = this.refs["pv" + f.feed_id];
+      if (e) {
+        e.src = "";
+        e.srcObject = null;
+        e.remove();
+      }
+    })
+    if (subscriber) {
+      subscriber.detach();
+      this.setState({mids: [], subscriber: null}, () => {
+        if(typeof callback === "function") callback();
       });
+    } else {
+      if(typeof callback === "function") callback();
     }
   }
 
@@ -42,12 +56,14 @@ class PreviewPanelMqtt extends Component {
     this.setState({delay: true});
     setTimeout(() => {
       this.setState({delay: false});
-    }, 3000);
+    }, 1000);
   };
 
   nextGroup = () => {
     this.setDelay()
-    this.props.nextInQueue();
+    this.cleanUp(() => {
+      this.props.nextInQueue();
+    })
   };
 
   attachPreview = (g) => {
@@ -93,22 +109,7 @@ class PreviewPanelMqtt extends Component {
   subscribeTo = (subscription, inst) => {
     const {gateways} = this.props;
     let janus = gateways[inst];
-    let {creatingFeed, remoteFeed, subscriber, room} = this.state
-
-    if (remoteFeed) {
-      subscriber.sub(subscription);
-      return;
-    }
-
-    if (creatingFeed) {
-      setTimeout(() => {
-        this.subscribeTo(subscription);
-      }, 500);
-      return;
-    }
-
-    if(subscriber)
-      subscriber.detach()
+    let {subscriber, room} = this.state
 
     subscriber = new SubscriberPlugin();
     subscriber.onTrack = this.onRemoteTrack;
@@ -120,7 +121,6 @@ class PreviewPanelMqtt extends Component {
       subscriber.join(subscription, room).then(data => {
         log.info("["+inst+"] Subscriber join: ", data)
         this.onUpdateStreams(data.streams);
-        this.setState({remoteFeed: true, creatingFeed: false});
       });
     })
   };
@@ -136,11 +136,17 @@ class PreviewPanelMqtt extends Component {
   }
 
   onRemoteTrack = (track, stream, on) => {
-    const mid = track.id;
+    const mid = stream.id;
     if (track.kind === "video" && on) {
       let remotevideo = this.refs["pv" + mid];
       if (remotevideo) remotevideo.srcObject = stream;
     }
+  }
+
+  handleButton = (c, pg) => {
+    this.cleanUp(() => {
+      this.props.closePopup(c, pg)
+    })
   }
 
   render() {
@@ -152,14 +158,14 @@ class PreviewPanelMqtt extends Component {
     const muted = true;
 
     let program_feeds = mids.map((mid) => {
-      if (mid?.mid) {
-        let id = mid.mid;
+      if (mid && mid.feed_id) {
+        let id = mid.feed_id;
         return (
           <div className="video" key={"prov" + id} ref={"provideo" + id} id={"provideo" + id}>
             <video
-              key={"key" + id}
+              key={id}
               ref={"pv" + id}
-              id={"pv" + mid.mid}
+              id={"pv" + id}
               width={width}
               height={height}
               autoPlay={autoPlay}
@@ -184,7 +190,7 @@ class PreviewPanelMqtt extends Component {
                   size="mini"
                   color="red"
                   icon="close"
-                  onClick={() => this.props.closePopup(true, this.props.pg)}
+                  onClick={() => this.handleButton(true, this.props.pg)}
                 />
                 <Button
                   className="hide_button"
@@ -202,14 +208,14 @@ class PreviewPanelMqtt extends Component {
                   size="mini"
                   color="red"
                   icon="close"
-                  onClick={() => this.props.closePopup(true, this.props.pg)}
+                  onClick={() => this.handleButton(true, this.props.pg)}
                 />
                 <Button
                   className="hide_button"
                   size="mini"
                   color="orange"
                   icon="window minimize"
-                  onClick={() => this.props.closePopup(false, this.props.pg)}
+                  onClick={() => this.handleButton(false, this.props.pg)}
                 />
               </div>
             )}

@@ -1,4 +1,4 @@
-import {Janus} from "../lib/janus";
+//import {Janus} from "../lib/janus";
 import {DATA_PORT, PROTOCOL_ROOM, SDIOUT_ID, SERVICE_ROOM, SHIDUR_ID, SNDMAN_ID, STORAN_ID} from "./consts";
 import {SECRET} from "./env";
 import {getDateString} from "./tools";
@@ -60,30 +60,30 @@ class GxyJanus extends EventTarget {
 
   init = () => {
     return new Promise((resolve, reject) => {
-      Janus.init({
-        debug: process.env.NODE_ENV !== "production" ? ["error"] : ["error"],
-        callback: () => {
-          const config = this.getConfig();
-          this.gateway = new Janus({
-            server: config.url,
-            iceServers: config.iceServers,
-            token: config.token,
-            success: () => {
-              this.log("Connected to JANUS");
-              resolve();
-            },
-            error: (err) => {
-              this.error("Janus.init error", err);
-              this.dispatchEvent(new CustomEvent("net-lost", {detail: err}));
-              resolve();
-              this.reconnect();
-            },
-            destroyed: () => {
-              this.error(":: Janus destroyed ::");
-            },
-          });
-        },
-      });
+      // Janus.init({
+      //   debug: process.env.NODE_ENV !== "production" ? ["error"] : ["error"],
+      //   callback: () => {
+      //     const config = this.getConfig();
+      //     this.gateway = new Janus({
+      //       server: config.url,
+      //       iceServers: config.iceServers,
+      //       token: config.token,
+      //       success: () => {
+      //         this.log("Connected to JANUS");
+      //         resolve();
+      //       },
+      //       error: (err) => {
+      //         this.error("Janus.init error", err);
+      //         this.dispatchEvent(new CustomEvent("net-lost", {detail: err}));
+      //         resolve();
+      //         this.reconnect();
+      //       },
+      //       destroyed: () => {
+      //         this.error(":: Janus destroyed ::");
+      //       },
+      //     });
+      //   },
+      // });
     });
   };
 

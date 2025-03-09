@@ -4,7 +4,6 @@ import LoginPage from "../components/LoginPage";
 import {kc} from "../components/UserManager";
 import {withTranslation} from "react-i18next";
 import {languagesOptions, setLanguage} from "../i18n/i18n";
-import {updateSentryUser} from "../shared/sentry";
 import {getUserRole} from "../shared/enums";
 
 class GalaxyApp extends Component {
@@ -34,13 +33,11 @@ class GalaxyApp extends Component {
 
     if (options.length > 1 && allow !== null) {
       this.setState({user, roles: user.roles});
-      updateSentryUser(user);
     } else if (allow !== null && options.length === 1) {
       window.location = "/user";
     } else {
       alert("Access denied.");
       kc.logout();
-      updateSentryUser(null);
     }
   };
 

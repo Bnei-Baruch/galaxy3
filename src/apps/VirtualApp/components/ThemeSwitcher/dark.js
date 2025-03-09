@@ -1,6 +1,5 @@
 import {createTheme} from "@mui/material/styles";
-import {green, grey, red} from "@mui/material/colors";
-import indigo from "@mui/material/colors/indigo";
+import {green, grey, red, indigo, deepOrange, lightBlue} from "@mui/material/colors";
 
 const dark = createTheme(
  {
@@ -14,10 +13,11 @@ const dark = createTheme(
       },
       info: {
         main: indigo[500],
+        link: lightBlue[100]
       },
       success: {
         main: green[500],
-      },
+      }
     },
     overrides: {
       MuiButton: {

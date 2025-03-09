@@ -1,53 +1,28 @@
-import React, {useEffect, useState} from "react";
-import {useTranslation} from "react-i18next";
-
-import {Box, Button, CircularProgress, Divider, Grid, MenuItem, Modal, TextField, Typography,} from "@mui/material";
+import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Button, CircularProgress, Dialog, DialogTitle, DialogActions, DialogContent, DialogContentText, Grid, MenuItem, TextField } from "@mui/material";
 import Autocomplete from "@mui/material/Autocomplete";
-import {green} from "@mui/material/colors";
-import {createTheme, StyledEngineProvider, ThemeProvider} from "@mui/material/styles";
-import {makeStyles} from "tss-react/mui";
 import countries from "i18n-iso-countries";
 
-import {LANGUAGES} from "../../../shared/consts";
-import LogoutDropdown from "../settings/LogoutDropdown";
-import {AUTH_API_BACKEND, REGISTRATION_FORM_FIELDS, REGISTRATION_FORM_URL} from "../../../shared/env";
-
+import { LANGUAGES } from "../../../shared/consts";
+import { AUTH_API_BACKEND, REGISTRATION_FORM_FIELDS, REGISTRATION_FORM_URL } from "../../../shared/env";
 import api from "../../../shared/Api";
-import {SelectViewLanguage} from "./SelectViewLanguage";
-import RTL from "../../../components/RTL";
-
-const rtlTheme = createTheme({direction: "rtl"});
-const ltrTheme = createTheme({direction: "ltr"});
-
-const useStyles = makeStyles()(() => ({
-  container: {
-    backgroundColor: "white",
-    padding: "0 2em 10em",
-  },
-  button: {
-    background: green[700],
-    color: "white",
-    fontWeight: "bold",
-  },
-}));
 
 let countryById;
 const fetchCountriesByLang = (lang = "en") => {
   countries.registerLocale(require(`i18n-iso-countries/langs/en.json`));
   if (lang !== "en") countries.registerLocale(require(`i18n-iso-countries/langs/${lang}.json`));
-  countryById = countries.getNames(lang, {select: "official"});
+  countryById = countries.getNames(lang, { select: "official" });
   return Object.keys(countryById);
 };
 
 export const RegistrationForm = ({
-  user: {familyname, username, email, display},
+  user: { familyname, username, email },
   id,
   onClose,
   onSubmit,
-  isOpen,
-  language,
+  isOpen
 }) => {
-  const {classes} = useStyles();
   const [city, setCity] = useState();
   const [countryIds, setCountryIds] = useState([]);
   const [country, setCountry] = useState();
@@ -59,30 +34,30 @@ export const RegistrationForm = ({
   const [isProgress, setIsProgress] = useState(false);
 
   const [userLanguage, setUserLanguage] = useState();
-  const {t} = useTranslation();
+  const { t, i18n: { language } } = useTranslation();
 
-  const isRtl = language === "he";
+  const isRTL = language === "he";
 
   useEffect(() => {
     const ids = fetchCountriesByLang(language);
     setCountryIds(ids);
   }, [language]);
 
-  const handleCityChange = ({target: {value}}) => {
+  const handleCityChange = ({ target: { value } }) => {
     deleteErrorByKey("city");
     setCity(value);
   };
-  const handleGenderChange = ({target: {value}}) => {
+  const handleGenderChange = ({ target: { value } }) => {
     deleteErrorByKey("gender");
     setGender(value);
   };
-  const handleTelephoneChange = ({target: {value}}) => {
+  const handleTelephoneChange = ({ target: { value } }) => {
     deleteErrorByKey("telephone");
     setTelephone(value);
   };
-  const handleAboutYouChange = ({target: {value}}) => setAboutYou(value);
+  const handleAboutYouChange = ({ target: { value } }) => setAboutYou(value);
 
-  const handleTenChange = ({target: {value}}) => setTen(value);
+  const handleTenChange = ({ target: { value } }) => setTen(value);
 
   const handleCountryChange = (e, op) => {
     deleteErrorByKey("country");
@@ -98,7 +73,7 @@ export const RegistrationForm = ({
 
   const deleteErrorByKey = (key) => {
     if (!errors[key]) return;
-    const newErr = {...errors};
+    const newErr = { ...errors };
     delete newErr[key];
     setErrors(newErr);
   };
@@ -112,16 +87,15 @@ export const RegistrationForm = ({
           options={countryIds}
           getOptionLabel={(id) => countryById[id]}
           onChange={handleCountryChange}
+          fullWidth
           renderInput={(params) => (
             <TextField
               {...params}
-              label={t("registration.selectCountry")}
+              label={t("onboarding.registration.selectCountry")}
               variant="outlined"
               required
-              error={errors.country}
-            />
-          )}
-        />
+              error={errors.country} />
+          )} />
       )
     );
   };
@@ -135,16 +109,15 @@ export const RegistrationForm = ({
           options={LANGUAGES}
           getOptionLabel={(r) => r.nativeName}
           onChange={handleLanguageChange}
+          fullWidth
           renderInput={(params) => (
             <TextField
               {...params}
-              label={t("registration.selectLanguage")}
+              label={t("onboarding.registration.selectLanguage")}
               variant="outlined"
               required
-              error={errors.language}
-            />
-          )}
-        />
+              error={errors.language} />
+          )} />
       )
     );
   };
@@ -152,19 +125,18 @@ export const RegistrationForm = ({
   const renderGender = () => (
     <TextField
       select
-      fullWidth={true}
+      fullWidth
       variant="outlined"
-      label={t("registration.selectGender")}
+      label={t("onboarding.registration.selectGender")}
       onChange={handleGenderChange}
       value={gender}
       required
-      error={errors.gender}
-    >
+      error={errors.gender}>
       <MenuItem key="male" value="male">
-        {t("registration.male")}
+        {t("onboarding.registration.male")}
       </MenuItem>
       <MenuItem key="female" value="female">
-        {t("registration.female")}
+        {t("onboarding.registration.female")}
       </MenuItem>
     </TextField>
   );
@@ -214,8 +186,7 @@ export const RegistrationForm = ({
 
   const buildRequestBody = () => {
     const body = new FormData();
-    console.log("buildRequestBody", countries.getName(country, "en", {select: "official"}));
-    body.set(REGISTRATION_FORM_FIELDS.country, countries.getName(country, "en", {select: "official"}));
+    body.set(REGISTRATION_FORM_FIELDS.country, countries.getName(country, "en", { select: "official" }));
     body.set(REGISTRATION_FORM_FIELDS.city, city);
     body.set(REGISTRATION_FORM_FIELDS.aboutYou, aboutYou);
     body.set(REGISTRATION_FORM_FIELDS.gender, gender);
@@ -236,109 +207,80 @@ export const RegistrationForm = ({
   };
 
   const renderForm = () => (
-    <>
-      <Typography variant="h4" display={"block"} paragraph>
-        {t("registration.welcome", {name: display})}
-      </Typography>
-      <Typography paragraph>{t("registration.needVerifyAccount")}</Typography>
-      <Typography paragraph>{t("registration.tellAboutYou")}</Typography>
-
-      <Grid container spacing={6}>
-        <Grid item xs={6}>
-          {renderCountries()}
-        </Grid>
-        <Grid item xs={6}>
-          <TextField
-            label={t("registration.groupCity")}
-            variant="outlined"
-            onChange={handleCityChange}
-            value={city}
-            fullWidth
-            required
-            error={errors.city}
-          />
-        </Grid>
-        <Grid item xs={6}>
-          {renderGender()}
-        </Grid>
-        <Grid item xs={6}>
-          {renderLanguages()}
-        </Grid>
-        <Grid item xs={6}>
-          <TextField
-            label={t("registration.telephone")}
-            variant="outlined"
-            onChange={handleTelephoneChange}
-            value={telephone}
-            fullWidth
-            required
-            error={errors.telephone}
-          />
-        </Grid>
-        <Grid item xs={6}>
-          <TextField
-            label={t("registration.selectGroup")}
-            variant="outlined"
-            onChange={handleTenChange}
-            value={ten}
-            fullWidth
-          />
-        </Grid>
-        <Grid item xs={12}>
-          <TextField
-            label={t("registration.aboutYou")}
-            variant="outlined"
-            onChange={handleAboutYouChange}
-            value={aboutYou}
-            multiline
-            fullWidth
-          />
-        </Grid>
-        <Grid container justifyContent="center">
-          <Button variant="contained" onClick={submit} className={classes.button} disabled={isProgress}>
-            {t("registration.submit")}
-            {isProgress ? <CircularProgress /> : null}
-          </Button>
-        </Grid>
+    <Grid container spacing={3} p={3}>
+      <Grid item md={6} xs={12}>
+        {renderCountries()}
       </Grid>
-    </>
+      <Grid item md={6} xs={12}>
+        <TextField
+          label={t("onboarding.registration.groupCity")}
+          variant="outlined"
+          onChange={handleCityChange}
+          value={city}
+          fullWidth
+          required
+          error={errors.city} />
+      </Grid>
+      <Grid item md={6} xs={12}>
+        {renderGender()}
+      </Grid>
+      <Grid item md={6} xs={12}>
+        {renderLanguages()}
+      </Grid>
+      <Grid item md={6} xs={12}>
+        <TextField
+          label={t("onboarding.registration.telephone")}
+          variant="outlined"
+          onChange={handleTelephoneChange}
+          value={telephone}
+          fullWidth
+          required
+          error={errors.telephone} />
+      </Grid>
+      <Grid item md={6} xs={12}>
+        <TextField
+          label={t("onboarding.registration.selectGroup")}
+          variant="outlined"
+          onChange={handleTenChange}
+          value={ten}
+          fullWidth />
+      </Grid>
+      <Grid item xs={12}>
+        <TextField
+          label={t("onboarding.registration.aboutYou")}
+          variant="outlined"
+          onChange={handleAboutYouChange}
+          value={aboutYou}
+          multiline
+          fullWidth />
+      </Grid>
+    </Grid>
   );
 
-  return (
-    <RTL>
-      <StyledEngineProvider injectFirst>
-        <ThemeProvider theme={isRtl ? rtlTheme : ltrTheme}>
-          <Modal open={isOpen} onClose={onClose} style={{verticalAlign: "middle"}}>
-            <Box className={classes.container} maxWidth="md" dir={isRtl ? "rtl" : "ltr"} m={10}>
-              <Grid container spacing={5}>
-                <Grid item xs={7}>
-                  {renderForm()}
-                </Grid>
-                <Grid item xs={1}>
-                  <Divider variant="middle" orientation="vertical" />
-                </Grid>
-                <Grid item xs={4}>
-                  <Grid container justifyContent="flex-end">
-                    <SelectViewLanguage size={"small"} fullWidth={false} hasLabel={false} />
-                    <Divider style={{marginRight: "2em"}} />
-                    <LogoutDropdown display={display} />
-                  </Grid>
-                  <Box style={{marginTop: "10em"}}>
-                    <Typography paragraph style={{fontSize: "1.2em"}}>
-                      {t("registration.asGuestYouCan")}
-                    </Typography>
-                    <Grid container justifyContent="center">
-                      <Button variant="contained" onClick={onClose} className={classes.button}>
-                        {t("galaxyApp.continueAsGuest")}
-                      </Button>
-                    </Grid>
-                  </Box>
-                </Grid>
-              </Grid>
-            </Box>
-          </Modal>
-        </ThemeProvider>
-      </StyledEngineProvider>
-    </RTL>
-  );
+  return <Dialog
+    open={isOpen}
+    onClose={onClose}
+    aria-labelledby="form-dialog-title"
+    sx={{ direction: isRTL ? "rtl" : "inherit" }}>
+    <DialogTitle id="form-dialog-title">{t("onboarding.registration.title")}</DialogTitle>
+    <DialogContent>
+      <DialogContentText>
+        {t("onboarding.registration.form_text")}
+      </DialogContentText>
+      {renderForm()}
+    </DialogContent>
+    <DialogActions>
+      <Button onClick={onClose} color="primary" variant="outlined">
+        {t("onboarding.registration.cancel")}
+      </Button>
+      <Button onClick={submit} color="info" variant="contained"
+        sx={{
+          marginRight: isRTL ? "8px" : "0",
+          marginLeft: isRTL ? "0" : "8px"
+        }}>
+        {t("onboarding.registration.submit")}
+        {isProgress ? <CircularProgress /> : null}
+      </Button>
+    </DialogActions>
+  </Dialog>
 };

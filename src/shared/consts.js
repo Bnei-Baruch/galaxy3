@@ -28,6 +28,7 @@ export const NO_VIDEO_OPTION_VALUE = -1;
 export const VIDEO_240P_OPTION_VALUE = 11;
 export const VIDEO_360P_OPTION_VALUE = 1;
 export const VIDEO_720P_OPTION_VALUE = 16;
+export const VIDEO_IS_AV1_360P_OPTION_VALUE = 132;
 
 export const videos_options = [
   {key: 1, text: "240p", value: VIDEO_240P_OPTION_VALUE},
@@ -44,11 +45,21 @@ export const videos_options2 = [
   {key: 4, text: "oldClient.noVideo", description: "oldClient.audioOnly", value: NO_VIDEO_OPTION_VALUE},
 ];
 
+export const videos_options_av1 = [
+  {key: 1, text: "oldClient.lowQuality", description: "240p", value: 133},
+  {key: 2, text: "oldClient.mediumQuality", description: "360p", value: 132},
+  {key: 3, text: "oldClient.highQuality", description: "720p", value: 131},
+  {key: 5, text: "oldClient.HDQuality", description: "1080p", value: 130},
+  {divider: true},
+  {key: 4, text: "oldClient.noVideo", description: "oldClient.audioOnly", value: NO_VIDEO_OPTION_VALUE},
+];
+
 export const subtitle_options = [
   {key: "he", value: "he", eng_text: "Hebrew", text: "עברית"},
   {key: "ru", value: "ru", eng_text: "Russian", text: "Русский"},
   {key: "en", value: "en", eng_text: "English", text: "English"},
   {key: "es", value: "es", eng_text: "Spanish", text: "Español"},
+  {key: "tr", value: "tr", eng_text: "Turkish", text: "Türkçe"},
 ];
 export const audiog_options2 = [
   {
@@ -97,6 +108,11 @@ export const audiog_options2 = [
   {key: "ar", value: 62, icon: "crosshairs", eng_text: "Arabic", text: "اَلْعَرَبِيَّةُ"},
   {key: "in", value: 63, icon: "crosshairs", eng_text: "Indonesian", text: "Bahasa Indonesia"},
   {key: "hy", value: 65, icon: "crosshairs", eng_text: "Armenian", text: "Հայերէն"},
+  {key: "da", value: 66, icon: "crosshairs", eng_text: "Danish", text: "Dansk"},
+  {key: "et", value: 67, icon: "crosshairs", eng_text: "Estonian", text: "eesti keel"},
+  {key: "el", value: 68, icon: "crosshairs", eng_text: "Greek", text: "ελληνικά"},
+  {key: "tl", value: 69, icon: "crosshairs", eng_text: "Tagalog", text: "ᜏᜒᜃᜅ᜔ ᜆᜄᜎᜓᜄ᜔"},
+  {key: "az", value: 70, icon: "crosshairs", eng_text: "Azerbaijani", text: "Азәрбајҹан дили"},
   {divider: true},
   {
     header: true,
@@ -148,6 +164,11 @@ export const audiog_options = [
   {key: "ar", value: 62, text: "Arabic"},
   {key: "in", value: 63, text: "Indonesian"},
   {key: "hy", value: 65, text: "Armenian"},
+  {key: "da", value: 66, text: "Danish"},
+  {key: "et", value: 67, text: "Estonian"},
+  {key: "el", value: 68, text: "Greek"},
+  {key: "tl", value: 69, text: "Tagalog"},
+  {key: "az", value: 70, text: "Azerbaijani"},
   {key: 99, value: 99, text: "Special", disabled: true, icon: "tags", selected: true},
   {key: "heru", value: 10, text: "Heb-Rus"},
   {key: "heen", value: 17, text: "Heb-Eng"},
@@ -379,10 +400,10 @@ export const LANGUAGES = [
 ];
 
 export const LANG_MAP = {
-    Spanish: "es",
-    English: "en",
-    Hebrew: "he",
-    Russian: "ru"
+  Spanish: "es",
+  English: "en",
+  Hebrew: "he",
+  Russian: "ru"
 }
 
 export const sketchesByLang = {he: "Hebrew", ru: "Russian", es: "Spanish", en: "English"};

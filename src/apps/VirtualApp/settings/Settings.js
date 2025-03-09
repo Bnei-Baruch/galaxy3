@@ -26,7 +26,6 @@ import {AccountCircle, Mic, Videocam} from "@mui/icons-material";
 import {ThemeContext} from "../components/ThemeSwitcher/ThemeSwitcher";
 import {Support} from "../components/Support";
 import JanusStream from "../../../shared/streaming-utils";
-import DonationModal from "../components/DonationModal";
 
 const settingsList = vsettings_list.map(({key, text, value}) => ({key, text, value: JSON.stringify(value)}));
 const mapDevice = ({label, deviceId}) => ({text: label, value: deviceId});
@@ -70,7 +69,7 @@ const Settings = (props) => {
   const {classes} = useStyles();
   const [shidurMuted, setShidurMuted] = useState(JanusStream.audioElement.muted)
 
-  const {t} = useTranslation();
+  const {t, i18n: {language}} = useTranslation();
   const {palette: {background: {paper}}} = useTheme();
   const {isDark, toggleTheme} = useContext(ThemeContext);
 
@@ -92,7 +91,7 @@ const Settings = (props) => {
     videoSettings,
     audioDevice = audio.devices[0]?.deviceId,
     videoDevice = video?.devices[0]?.deviceId,
-    userDisplay,
+    user,
     delay,
     startLocalMedia,
     stopLocalMedia,
@@ -223,14 +222,14 @@ const Settings = (props) => {
     <>
       <Grid item xs={8}>
         <Typography variant="h4" display={"block"} color="textPrimary">
-          {t("settings.helloUser", {name: userDisplay})}
+          {t("settings.helloUser", {name: user.display})}
         </Typography>
         <Typography color="textPrimary">{t("settings.beforeConnecting")}</Typography>
       </Grid>
       <Grid item xs={4}>
         <Grid container justify="flex-end" spacing={2}>
           <Grid item>
-            <LogoutDropdown display={userDisplay}/>
+            <LogoutDropdown display={user.display}/>
           </Grid>
           <Grid item>
             <Support/>
@@ -254,7 +253,7 @@ const Settings = (props) => {
             label={t("settings.screenName")}
             fullWidth={true}
             variant="outlined"
-            value={userDisplay}
+            value={user.display}
             disabled
           />
         </Grid>
@@ -360,7 +359,6 @@ const Settings = (props) => {
       <Modal open={true} componentsProps={{backdrop: {style: {backgroundColor: paper}}}} className={classes.modal}>
         <Box className={classes.paper}>{renderContent()}</Box>
       </Modal>
-      <DonationModal/>
     </>
   );
 };
