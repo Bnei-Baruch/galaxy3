@@ -147,7 +147,7 @@ class MqttMsg {
       switch (root) {
         case "subtitles":
           console.log("[mqtt] On subtitles msg from topic", topic);
-          this.mq.emit("MqttSubtitlesEvent", {data, lang: id});
+          this.mq.emit("MqttSubtitlesEvent", {data, language: id, target});
           break;
         case "galaxy":
           // FIXME: we need send cmd messages to separate topic

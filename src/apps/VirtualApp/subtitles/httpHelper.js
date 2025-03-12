@@ -33,11 +33,11 @@ export const initSubtitle = (lang, onMessage, attempts = 0) => {
   mqtt.join(`${TOPIC}${lang}/slide`);
   mqtt.join(`${TOPIC}+/question`);
 
-  mqtt.mq.on("MqttSubtitlesEvent", ({data, lang}) => {
+  mqtt.mq.on("MqttSubtitlesEvent", ({data, lang, target}) => {
     let msg = JSON.parse(data);
-    if (msg.message === "on_air") return;
     console.log("[mqtt] MqttSubtitlesEvent subtitle mqtt listener ", msg);
-    if (msg.message === "clear") msg = buildClear();
+    if (msg.type === "none" || !msg.slide)
+      msg = buildClear();
     onMessage(mqttToMsgAdapter({...msg, lang}));
   });
 };
@@ -52,7 +52,7 @@ export const exitSubtitle = lang => {
 
 const mqttToMsgAdapter = ({slide, lang, type, date, visible}) => {
   return {
-    message: md.render(slide),
+    message: slide && md.render(slide),
     type: type,
     date,
     language: lang,
@@ -61,5 +61,5 @@ const mqttToMsgAdapter = ({slide, lang, type, date, visible}) => {
 };
 
 const buildClear = (language = "all") => {
-  return {message: "clear", language};
+  return {message: "clear", language, visible: false};
 };
