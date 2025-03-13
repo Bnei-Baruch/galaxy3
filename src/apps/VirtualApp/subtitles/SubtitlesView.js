@@ -20,11 +20,12 @@ const WQ_FONT_SIZE = "wq-font-size";
 
 const tagARegEx = /<a[^>]*>([^<]+)<\/a>/;
 
-export const SubtitlesView = ({last}) => {
-  const {t, i18n: {language}} = useTranslation();
-  const {message, isRtl, type, slide} = last || {};
+export const SubtitlesView = ({msgState}) => {
+  const {msg: {message, isRtl, slide} = {}, wqLangs, display_status} = msgState;
 
-  const [fontSize, setFontSize] = useState(localStorage.getItem(WQ_FONT_SIZE) || (FONT_SIZE_MAX + FONT_SIZE_MIN) / 2);
+  const {t, i18n: {language}} = useTranslation();
+  const _initFontSize = Number.parseInt(localStorage.getItem(WQ_FONT_SIZE) || (FONT_SIZE_MAX + FONT_SIZE_MIN) / 2)
+  const [fontSize, setFontSize] = useState(_initFontSize);
   const [fontPop, setFontPop] = useState(false);
   const [settings, setSettings] = useState(false);
   const [showQuestion, setShowQuestion] = useState(true);
@@ -45,22 +46,23 @@ export const SubtitlesView = ({last}) => {
 
   const handleSwitchWqLang = (l) => messageManager.switchWqLang(l)
 
-  const renderLanguags = () => {
+  const renderLanguages = () => {
     return (
-      <div className={classNames("in-process show-question")}>
+      <div className={classNames("in-process")}>
         <div className={classNames("in-process-text", {rtl: language === "he"})}>
-          {subtitle_options.map((o) => (
-            <Button
-              compact
-              key={o.key}
-              content={<Flag name={flagByLang[o.value] || o.value}/>}
-              onClick={() => handleSwitchWqLang(o.value)}
-            />
-          ))}
+          {
+            subtitle_options
+              .filter(o => wqLangs.includes(o.value))
+              .map((o) => (
+                <Button
+                  compact
+                  key={o.key}
+                  content={<Flag name={flagByLang[o.value] || o.value}/>}
+                  onClick={() => handleSwitchWqLang(o.value)}
+                />
+              ))
+          }
         </div>
-        {/*<div key={availableSel} className={classNames("other-question", {rtl: availableSel === "he"})}>
-          {getWQByLang(availableSel)?.message}
-        </div>*/}
       </div>
     );
   };
@@ -68,10 +70,19 @@ export const SubtitlesView = ({last}) => {
   const renderMsg = () => {
     return (
       <div className="wq__question" style={{fontSize: `${fontSize}px`}}>
-        <div
-          className={classNames("lang-question message", {"show-question": message, rtl: isRtl})}
-          dangerouslySetInnerHTML={{__html: message}}
-        />
+        {
+          message ? (
+              <div
+                className={classNames("lang-question message", {rtl: isRtl})}
+                dangerouslySetInnerHTML={{__html: message}}
+              />
+            ) :
+            (
+              <div className={classNames("lang-question message")}>
+                {t("workshop.inProcess")}
+              </div>
+            )
+        }
       </div>
     );
   };
@@ -154,8 +165,8 @@ export const SubtitlesView = ({last}) => {
         <div className="subtitle_link" dangerouslySetInnerHTML={{__html: message}}/>
       ) : (
         <div className="wq-container">
-          {(type === MSGS_QUESTION.type) && renderLanguags()}
           <div className={classNames("question-container", {"overlay-visible": showQuestion})}>
+            {(display_status === MSGS_QUESTION.display_status) && renderLanguages()}
             {renderMsg()}
             {renderSettings()}
           </div>
