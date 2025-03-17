@@ -12,10 +12,8 @@ export const SubtitlesContainer = ({playerLang, layout}) => {
   const wqLang = localStorage.getItem(WQ_LANG) || playerLang;
   const subLang = localStorage.getItem(SUBTITLE_LANG) || playerLang;
 
-  const handleOnMsg = (state) => {
-    console.log("SubtitlesContainer handleOnMsg", state);
-    setMsgState(state)
-  }
+  const handleOnMsg = (state) => setMsgState(state)
+
   useEffect(() => {
     messageManager.init(subLang, wqLang, handleOnMsg);
     return () => messageManager.exit();
