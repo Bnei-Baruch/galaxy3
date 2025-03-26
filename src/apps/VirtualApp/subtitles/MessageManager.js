@@ -67,9 +67,9 @@ export class MessageManager {
         return;
 
       if (
-        msg.display_status === MSGS_NONE.display_status
+        msg.display_status === MSGS_NONE.display_status 
         || msg.display_status !== infoByType?.display_status
-        || !msg.visible
+        || (!msg.visible && msg.type === MSGS_QUESTION.type)
       ) {
         this.clearByTopic(topic, language);
       } else {
