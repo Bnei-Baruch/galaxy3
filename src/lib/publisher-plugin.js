@@ -17,6 +17,7 @@ export class PublisherPlugin extends EventEmitter {
     this.talkEvent = null
     this.iceState = null
     this.iceFailed = null
+    this.tricle = null
     this.pc = new RTCPeerConnection({
       iceServers: list
     })
@@ -278,6 +279,13 @@ export class PublisherPlugin extends EventEmitter {
     if(data?.publishers) {
       log.info('[publisher] New feed enter: ', data.publishers[0])
       this.subTo(data.publishers)
+    }
+
+    if(data?.candidate) {
+      if(data?.candidate?.completed)
+        this.pc.addIceCandidate(this.tricle)
+      //this.pc.addIceCandidate(data.candidate)
+      this.tricle = data.candidate
     }
 
     if(data?.unpublished) {

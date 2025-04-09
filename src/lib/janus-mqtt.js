@@ -457,6 +457,40 @@ export class JanusMqtt {
       return
     }
 
+    if (janus === 'trickle') {
+      log.debug("[janus] Got trickle", json)
+      const sender = json.sender
+      if (!sender) {
+        log.warn('[janus] Missing sender...')
+        return
+      }
+      // const pluginData = json.plugindata
+      // if (pluginData === undefined || pluginData === null) {
+      //   log.error('[janus] Missing plugindata...')
+      //   return
+      // }
+
+      const pluginHandle = this.pluginHandles[sender]
+      if (!pluginHandle) {
+        log.debug('%c[janus] This handle is not attached to this session' + sender, "color: darkgrey")
+        return
+      }
+
+      // const data = pluginData.data
+      // const transaction = this.getTransaction(json)
+      // if (transaction) {
+      //   if (data.error_code) {
+      //     transaction.reject({ data, json })
+      //   } else {
+      //     transaction.resolve({ data, json })
+      //   }
+      //   return
+      // }
+
+      pluginHandle.onmessage(json)
+      return
+    }
+
     log.warn('[janus] Unknown message/event ' + janus + ' on session ' + this.sessionId)
   }
 }

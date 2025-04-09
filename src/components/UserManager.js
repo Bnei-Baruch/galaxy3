@@ -4,7 +4,7 @@ import api from "../shared/Api";
 const logging = new URLSearchParams(window.location.search).has('loglevel');
 
 const userManagerConfig = {
-  url: "https://accounts.kab.info/auth",
+  url: "https://accounts.kab.vin/auth",
   realm: "main",
   clientId: "galaxy",
 };
