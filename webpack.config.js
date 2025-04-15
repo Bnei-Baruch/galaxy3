@@ -32,7 +32,8 @@ module.exports = {
     },
     extensions: [ '.ts', '.js' ],
     fallback: {
-      "buffer": require.resolve("buffer")
+      "buffer": require.resolve("buffer"),
+      "process": false
     }
   },
   module: {

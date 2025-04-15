@@ -1,5 +1,5 @@
 import * as Sentry from "@sentry/react";
-import {Integrations} from "@sentry/tracing";
+import {BrowserTracing} from "@sentry/tracing";
 import {SENTRY_DSN} from "./env";
 import version from "../apps/VirtualApp/Version";
 
@@ -10,7 +10,7 @@ export const updateSentryUser = (user) => {
 export const initSentry = () => {
   Sentry.init({
     dsn: `${SENTRY_DSN}`,
-    integrations: [new Integrations.BrowserTracing()],
+    integrations: [new BrowserTracing()],
     release: version,
     environment: process.env.NODE_ENV,
     attachStacktrace: true,
@@ -22,10 +22,8 @@ export const initSentry = () => {
     tracesSampleRate: 1.0,
   });
 
-  Sentry.configureScope((scope) => {
-    const isDeb = window.location.host.startsWith("bbdev6") || new URL(window.location.href).searchParams.has("deb");
-    scope.setTag("deb", isDeb);
-  });
+  const isDeb = window.location.host.startsWith("bbdev6") || new URL(window.location.href).searchParams.has("deb");
+  Sentry.setTag("deb", isDeb);
 };
 
 export const captureException = (exception, data = {}) => {
