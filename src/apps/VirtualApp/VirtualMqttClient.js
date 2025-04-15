@@ -39,7 +39,7 @@ import VirtualStreaming from "./VirtualStreaming";
 import JanusStream from "../../shared/streaming-utils";
 import {kc} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
-import {captureMessage, updateSentryUser} from "../../shared/sentry";
+import {captureMessage, sentryDebugAction, setSentryGeo, updateSentryUser} from "../../shared/sentry";
 import GxyJanus from "../../shared/janus-utils";
 import ConfigStore from "../../shared/ConfigStore";
 import {isFullScreen, toggleFullScreen} from "./FullScreenHelper";
@@ -214,6 +214,7 @@ class VirtualMqttClient extends Component {
     }
 
     geoInfo(`${GEO_IP_INFO}`, (data) => {
+      setSentryGeo(user, data)
       user.ip = data && data.ip ? data.ip : "127.0.0.1";
       user.country = data && data.country ? data.country : "XX";
 
@@ -240,6 +241,9 @@ class VirtualMqttClient extends Component {
                 user.group = room.description;
                 this.setState({delay: false, user});
                 updateSentryUser(user);
+                console.log(user)
+                captureMessage("TESt", data)
+                sentryDebugAction();
               } else {
                 this.setState({selected_room: "", delay: false});
               }

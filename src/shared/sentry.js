@@ -8,6 +8,14 @@ export const updateSentryUser = (user) => {
   Sentry.setUser(user);
 };
 
+export const setSentryGeo = (user, data) => {
+  user.geo = {};
+  user.geo.country_code = data.code;
+  user.geo.city = data.city;
+  user.geo.region = data.country;
+  Sentry.setUser(user);
+};
+
 export const initSentry = () => {
   const integrations = [
     new BrowserTracing({
@@ -45,6 +53,16 @@ export const initSentry = () => {
 export const captureException = (exception, data = {}) => {
   Sentry.withScope((scope) => {
     scope.setExtras(data);
+    scope.addEventProcessor((event) => {
+      if (event.exception?.values) {
+        event.exception.values[0] = {
+          ...event.exception.values[0],
+          type: exception,
+        };
+      }
+      return event;
+    });
+    scope.setTransactionName("captured error");
     Sentry.captureException(exception);
   });
 };
@@ -55,11 +73,24 @@ export const captureMessage = (title, data = {}, level = "info") => {
     scope.setFingerprint([title]);
     scope.setExtras(data);
     scope.setLevel(level);
+    scope.addEventProcessor((event) => {
+      if (event.exception?.values) {
+        event.exception.values[0] = {
+          ...event.exception.values[0],
+          type: title,
+        };
+      }
+      return event;
+    });
+    scope.setTransactionName(level);
     Sentry.captureMessage(title);
   });
 };
 
 export const sentryDebugAction = () => {
-  console.log("stack: " + new Error().stack);
-  captureMessage("Try capture message", {source: "sentry-test"}, "error");
+  const error = new Error("error message here");
+  error.name = "this is new";
+  Sentry.captureException(error);
+
+  captureMessage(error, {source: "sentry-test"}, "error");
 };
