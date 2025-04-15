@@ -39,7 +39,7 @@ import VirtualStreaming from "./VirtualStreaming";
 import JanusStream from "../../shared/streaming-utils";
 import {kc} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
-import {captureMessage, sentryDebugAction, setSentryGeo, updateSentryUser} from "../../shared/sentry";
+import {captureMessage, sentryDebugAction, setSentryGeo, setSentryTag, updateSentryUser} from "../../shared/sentry";
 import GxyJanus from "../../shared/janus-utils";
 import ConfigStore from "../../shared/ConfigStore";
 import {isFullScreen, toggleFullScreen} from "./FullScreenHelper";
@@ -241,9 +241,6 @@ class VirtualMqttClient extends Component {
                 user.group = room.description;
                 this.setState({delay: false, user});
                 updateSentryUser(user);
-                console.log(user)
-                captureMessage("TESt", data)
-                sentryDebugAction();
               } else {
                 this.setState({selected_room: "", delay: false});
               }
@@ -377,6 +374,7 @@ class VirtualMqttClient extends Component {
     };
 
   initJanus = (user, config, retry) => {
+    setSentryTag(config.name)
     let janus = new JanusMqtt(user, config.name);
     janus.onStatus = (srv, status) => {
       if (status === "offline") {

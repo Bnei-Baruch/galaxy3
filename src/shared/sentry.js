@@ -16,6 +16,10 @@ export const setSentryGeo = (user, data) => {
   Sentry.setUser(user);
 };
 
+export const setSentryTag = (tag) => {
+  Sentry.setTag("gxy", tag);
+};
+
 export const initSentry = () => {
   const integrations = [
     new BrowserTracing({
