@@ -29,11 +29,11 @@ module.exports = {
     modules: [path.join(__dirname, 'src'), 'node_modules'],
     alias: {
       react: path.join(__dirname, 'node_modules', 'react'),
+      'process/browser': require.resolve('process/browser'),
     },
     extensions: [ '.ts', '.js' ],
     fallback: {
-      "buffer": require.resolve("buffer"),
-      "process": false
+      "buffer": require.resolve("buffer")
     }
   },
   module: {

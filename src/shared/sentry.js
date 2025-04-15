@@ -1,6 +1,7 @@
 import * as Sentry from "@sentry/react";
-import {BrowserTracing} from "@sentry/tracing";
-import {SENTRY_DSN} from "./env";
+import { BrowserTracing } from "@sentry/tracing";
+import { Replay } from "@sentry/replay";
+import { SENTRY_DSN } from "./env";
 import version from "../apps/VirtualApp/Version";
 
 export const updateSentryUser = (user) => {
@@ -8,9 +9,19 @@ export const updateSentryUser = (user) => {
 };
 
 export const initSentry = () => {
+  const integrations = [
+    new BrowserTracing({
+      tracePropagationTargets: ["localhost", "bbdev6", /^\//],
+    }),
+    new Replay({
+      maskAllText: true,
+      blockAllMedia: true,
+    }),
+  ];
+
   Sentry.init({
     dsn: `${SENTRY_DSN}`,
-    integrations: [new BrowserTracing()],
+    integrations,
     release: version,
     environment: process.env.NODE_ENV,
     attachStacktrace: true,
@@ -20,6 +31,11 @@ export const initSentry = () => {
       "InvalidAccessError: There is no sender or receiver for the track",
     ],
     tracesSampleRate: 1.0,
+    // Enable debug mode in development
+    debug: process.env.NODE_ENV !== 'production',
+    // Set replays sample rate
+    replaysSessionSampleRate: 0.1,
+    replaysOnErrorSampleRate: 1.0,
   });
 
   const isDeb = window.location.host.startsWith("bbdev6") || new URL(window.location.href).searchParams.has("deb");
@@ -45,11 +61,5 @@ export const captureMessage = (title, data = {}, level = "info") => {
 
 export const sentryDebugAction = () => {
   console.log("stack: " + new Error().stack);
-  //this.tryThisOut();  // Should generate runtime exception and send to Sentry.
-  //try {
-  //  throw new Error('This is an error');
-  //} catch (e) {
-  //  captureException(e, {source: 'some-src'});
-  //}
   captureMessage("Try capture message", {source: "sentry-test"}, "error");
 };
