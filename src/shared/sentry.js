@@ -14,6 +14,8 @@ export const setSentryGeo = (user, data) => {
   user.geo.city = data.city;
   user.geo.region = data.country;
   Sentry.setUser(user);
+  Sentry.setTag("isp", data.isp);
+  Sentry.setTag("isp_code", data.isp_code);
 };
 
 export const setSentryTag = (tag) => {
