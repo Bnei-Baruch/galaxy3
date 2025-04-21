@@ -3,6 +3,7 @@ import { BrowserTracing } from "@sentry/tracing";
 import { Replay } from "@sentry/replay";
 import { SENTRY_DSN } from "./env";
 import version from "../apps/VirtualApp/Version";
+import log from "loglevel";
 
 export const updateSentryUser = (user) => {
   Sentry.setUser(user);
@@ -56,40 +57,26 @@ export const initSentry = () => {
   Sentry.setTag("deb", isDeb);
 };
 
-export const captureException = (exception, data = {}) => {
+export const captureException = (exception, data = {}, level = "error") => {
   Sentry.withScope((scope) => {
+    scope.setFingerprint([exception]);
     scope.setExtras(data);
-    scope.addEventProcessor((event) => {
-      if (event.exception?.values) {
-        event.exception.values[0] = {
-          ...event.exception.values[0],
-          type: exception,
-        };
-      }
-      return event;
-    });
-    scope.setTransactionName("captured error");
-    Sentry.captureException(exception);
   });
+  exception.name = exception.message
+  exception.message = level
+  Sentry.captureException(exception);
 };
 
 export const captureMessage = (title, data = {}, level = "info") => {
+  const error = new Error(title);
+  error.name = level;
   Sentry.withScope((scope) => {
-    // Always group by title when reporting manually to Sentry.
     scope.setFingerprint([title]);
     scope.setExtras(data);
     scope.setLevel(level);
-    scope.addEventProcessor((event) => {
-      if (event.exception?.values) {
-        event.exception.values[0] = {
-          ...event.exception.values[0],
-          type: title,
-        };
-      }
-      return event;
-    });
-    scope.setTransactionName(level);
-    Sentry.captureMessage(title);
+    error.name = error.message
+    error.message = level
+    Sentry.captureMessage(error);
   });
 };
 
