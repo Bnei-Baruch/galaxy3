@@ -16,7 +16,7 @@
     "@mui/material": "^5.11.8",
     "@mui/styles": "^5.11.7",
     "@sentry/browser": "7.120.3",
-    "@sentry/cli": "2.43.0",
+    "@sentry/cli": "^2.43.0",
     "@sentry/react": "7.120.3",
     "@sentry/replay": "7.120.3",
     "@sentry/tracing": "7.120.3",
