@@ -52,9 +52,6 @@ export const initSentry = () => {
     replaysSessionSampleRate: 0.1,
     replaysOnErrorSampleRate: 1.0,
   });
-
-  const isDeb = window.location.host.startsWith("bbdev6") || new URL(window.location.href).searchParams.has("deb");
-  Sentry.setTag("deb", isDeb);
 };
 
 export const captureException = (exception, data = {}, level = "error") => {
@@ -84,6 +81,5 @@ export const sentryDebugAction = () => {
   const error = new Error("error message here");
   error.name = "this is new";
   Sentry.captureException(error);
-
   captureMessage(error, {source: "sentry-test"}, "error");
 };

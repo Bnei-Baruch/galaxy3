@@ -241,7 +241,6 @@ class VirtualMqttClient extends Component {
                 user.group = room.description;
                 this.setState({delay: false, user});
                 updateSentryUser(user);
-                captureMessage("This test message", {});
               } else {
                 this.setState({selected_room: "", delay: false});
               }
