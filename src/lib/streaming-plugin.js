@@ -3,6 +3,7 @@ import {EventEmitter} from "events";
 import log from "loglevel";
 import mqtt from "../shared/mqtt";
 import {STUN_SRV_GXY} from "../shared/env";
+import { captureException } from "../shared/sentry";
 
 export class StreamingPlugin extends EventEmitter {
   constructor (list = [{urls: STUN_SRV_GXY}]) {
@@ -28,7 +29,9 @@ export class StreamingPlugin extends EventEmitter {
     const payload = Object.assign({}, additionalFields, { handle_id: this.janusHandleId })
 
     if (!this.janus) {
-      return Promise.reject(new Error('[streaming] JanusPlugin is not connected'))
+      const error = new Error('[streaming] JanusPlugin is not connected');
+      captureException(error, { message, additionalFields });
+      return Promise.reject(error)
     }
 
     return this.janus.transaction(message, payload, replyType)
@@ -70,20 +73,30 @@ export class StreamingPlugin extends EventEmitter {
 
         this.initPcEvents(resolve)
 
-      }).catch((err) => {
-        log.error('[streaming] StreamingJanusPlugin, cannot watch stream', err)
-        reject(err)
+      }).catch((error) => {
+        log.error('[streaming] StreamingJanusPlugin, cannot watch stream', error)
+        captureException(error, { context: 'StreamingPlugin.watch', id, restart });
+        reject(error)
       })
     })
   }
 
   sdpExchange(jsep) {
-    this.pc.setRemoteDescription(jsep)
+    this.pc.setRemoteDescription(jsep).catch(error => {
+      log.error('[streaming] SDP Exchange setRemoteDescription', error)
+      captureException(error, { context: 'StreamingPlugin.sdpExchange.setRemoteDescription', jsep });
+    });
     this.pc.createAnswer().then((desc) => {
       desc.sdp = desc.sdp.replace(/a=fmtp:111 minptime=10;useinbandfec=1\r\n/g, 'a=fmtp:111 minptime=10;useinbandfec=1;stereo=1;sprop-stereo=1\r\n');
-      this.pc.setLocalDescription(desc);
+      this.pc.setLocalDescription(desc).catch(error => {
+        log.error('[streaming] SDP Exchange setLocalDescription', error)
+        captureException(error, { context: 'StreamingPlugin.sdpExchange.setLocalDescription', desc });
+      });
       this.start(desc)
-    }, error => log.error('[streaming] SDP Exchange', error));
+    }, error => {
+      log.error('[streaming] SDP Exchange createAnswer', error)
+      captureException(error, { context: 'StreamingPlugin.sdpExchange.createAnswer', jsep });
+    });
   }
 
   start(jsep) {
@@ -95,55 +108,79 @@ export class StreamingPlugin extends EventEmitter {
 
     return this.transaction('message', message, 'event').then(({ data, json }) => {
       return { data, json }
-    }).catch((err) => {
-      log.error('[streaming] StreamingJanusPlugin, cannot start stream', err)
-      throw err
+    }).catch((error) => {
+      log.error('[streaming] StreamingJanusPlugin, cannot start stream', error)
+      captureException(error, { context: 'StreamingPlugin.start', jsep });
+      throw error
     })
   }
 
   switch (id) {
     const body = { request: 'switch', id }
 
-    return this.transaction('message', { body }, 'event').catch((err) => {
-      log.error('[streaming] StreamingJanusPlugin, cannot start stream', err)
-      throw err
+    return this.transaction('message', { body }, 'event').catch((error) => {
+      log.error('[streaming] StreamingJanusPlugin, cannot switch stream', error)
+      captureException(error, { context: 'StreamingPlugin.switch', id });
+      throw error
     })
   }
 
   getVolume(mid, result) {
-    let transceiver = this.pc.getTransceivers().find(t => t.receiver.track.kind === "audio");
-    transceiver.receiver.getStats().then(stats =>  {
-      stats.forEach(res => {
-        if(!res || res.kind !== "audio")
-          return;
-        result(res.audioLevel ? res.audioLevel : 0);
+    try {
+      let transceiver = this.pc.getTransceivers().find(t => t.receiver.track.kind === "audio");
+      transceiver.receiver.getStats().then(stats =>  {
+        stats.forEach(res => {
+          if(!res || res.kind !== "audio")
+            return;
+          result(res.audioLevel ? res.audioLevel : 0);
+        });
+      }).catch(error => {
+        captureException(error, { context: 'StreamingPlugin.getVolume.getStats', mid });
       });
-    });
+    } catch (error) {
+      captureException(error, { context: 'StreamingPlugin.getVolume', mid });
+      throw error;
+    }
   }
 
   initPcEvents(resolve) {
     this.pc.onicecandidate = (e) => {
-      return this.transaction('trickle', { candidate: e.candidate })
+      try {
+        return this.transaction('trickle', { candidate: e.candidate })
+      } catch (error) {
+        captureException(error, { context: 'StreamingPlugin.initPcEvents.onicecandidate' });
+        throw error;
+      }
     };
 
     this.pc.onconnectionstatechange = (e) => {
-      log.info("[streaming] ICE State: ", e.target.connectionState)
-      this.iceState = e.target.connectionState
-      if(this.iceState === "disconnected") {
-        this.iceRestart()
-      }
+      try {
+        log.info("[streaming] ICE State: ", e.target.connectionState)
+        this.iceState = e.target.connectionState
+        if(this.iceState === "disconnected") {
+          this.iceRestart()
+        }
 
-      // ICE restart does not help here, peer connection will be down
-      if(this.iceState === "failed") {
-        this.onStatus(this.iceState)
+        if(this.iceState === "failed") {
+          const error = new Error('ICE connection failed');
+          captureException(error, { context: 'StreamingPlugin.initPcEvents.onconnectionstatechange', iceState: this.iceState });
+          this.onStatus(this.iceState)
+        }
+      } catch (error) {
+        captureException(error, { context: 'StreamingPlugin.initPcEvents.onconnectionstatechange', iceState: this.iceState });
+        throw error;
       }
-
     };
 
     this.pc.ontrack = (e) => {
-      log.info("[streaming] Got track: ", e)
-      let stream = new MediaStream([e.track]);
-      resolve(stream);
+      try {
+        log.info("[streaming] Got track: ", e)
+        let stream = new MediaStream([e.track]);
+        resolve(stream);
+      } catch (error) {
+        captureException(error, { context: 'StreamingPlugin.initPcEvents.ontrack' });
+        throw error;
+      }
     };
   }
 
@@ -156,31 +193,41 @@ export class StreamingPlugin extends EventEmitter {
           clearInterval(chk);
         } else if (mqtt.mq.connected) {
           log.debug("[streaming] - Trigger ICE Restart - ");
-          this.watch(this.streamId, true)
+          try {
+            this.watch(this.streamId, true);
+          } catch (error) {
+            captureException(error, { context: 'StreamingPlugin.iceRestart', count });
+            throw error;
+          }
           clearInterval(chk);
         } else if (count >= 10) {
           clearInterval(chk);
-          log.error("[streaming] - ICE Restart failed - ");
+          const error = new Error("[streaming] - ICE Restart failed - ");
+          captureException(error, { context: 'StreamingPlugin.iceRestart', count });
         } else {
           log.debug("[streaming] ICE Restart try: " + count)
         }
       }, 1000);
-    },1000)
+    }, 1000)
   }
 
   success (janus, janusHandleId) {
     this.janus = janus
     this.janusHandleId = janusHandleId
-
-    return this
   }
 
   error (cause) {
-    // Couldn't attach to the plugin
+    const error = new Error('[streaming] Plugin error');
+    captureException(error, { cause });
   }
 
   onmessage (data) {
-    log.info('[streaming] onmessage: ', data)
+    try {
+      log.info('[streaming] onmessage: ', data)
+    } catch (error) {
+      captureException(error, { context: 'StreamingPlugin.onmessage', data });
+      throw error;
+    }
   }
 
   oncleanup () {
@@ -214,8 +261,13 @@ export class StreamingPlugin extends EventEmitter {
   }
 
   detach () {
-    this.pc.close()
-    this.removeAllListeners()
-    this.janus = null
+    try {
+      this.pc.close()
+      this.removeAllListeners()
+      this.janus = null
+    } catch (error) {
+      captureException(error, { context: 'StreamingPlugin.detach' });
+      throw error;
+    }
   }
 }
