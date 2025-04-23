@@ -3,6 +3,7 @@ import {EventEmitter} from "events";
 import log from "loglevel";
 import mqtt from "../shared/mqtt";
 import {STUN_SRV_GXY} from "../shared/env";
+import { captureException } from "../shared/sentry";
 
 export class SubscriberPlugin extends EventEmitter {
   constructor (list = [{urls: STUN_SRV_GXY}]) {
@@ -29,7 +30,9 @@ export class SubscriberPlugin extends EventEmitter {
     const payload = Object.assign({}, additionalFields, { handle_id: this.janusHandleId })
 
     if (!this.janus) {
-      return Promise.reject(new Error('JanusPlugin is not connected'))
+      const error = new Error('JanusPlugin is not connected');
+      captureException(error, { message, additionalFields });
+      return Promise.reject(error)
     }
     return this.janus.transaction(message, payload, replyType)
   }
@@ -54,9 +57,10 @@ export class SubscriberPlugin extends EventEmitter {
         if(data)
           resolve(data);
 
-      }).catch((err) => {
-        log.error('[subscriber] Subscribe to: ', err)
-        reject(err)
+      }).catch((error) => {
+        log.error('[subscriber] Subscribe to: ', error)
+        captureException(error, { context: 'SubscriberPlugin.sub', subscription });
+        reject(error)
       })
     })
   };
@@ -81,9 +85,10 @@ export class SubscriberPlugin extends EventEmitter {
         if(data)
           resolve(data);
 
-      }).catch((err) => {
-        log.error('[subscriber] Unsubscribe from: ', err)
-        reject(err)
+      }).catch((error) => {
+        log.error('[subscriber] Unsubscribe from: ', error)
+        captureException(error, { context: 'SubscriberPlugin.unsub', streams });
+        reject(error)
       })
     })
   };
@@ -106,9 +111,10 @@ export class SubscriberPlugin extends EventEmitter {
           this.handleJsep(json.jsep)
         }
 
-      }).catch((err) => {
-        log.error('[subscriber] join: ', err)
-        reject(err)
+      }).catch((error) => {
+        log.error('[subscriber] join: ', error)
+        captureException(error, { context: 'SubscriberPlugin.join', roomId, subscription });
+        reject(error)
       })
     })
   }
@@ -122,6 +128,9 @@ export class SubscriberPlugin extends EventEmitter {
         log.debug('[subscriber] Got jsep: ', json.jsep)
         this.handleJsep(json.jsep)
       }
+    }).catch(error => {
+      captureException(error, { context: 'SubscriberPlugin.configure' });
+      throw error;
     })
   }
 
@@ -132,8 +141,14 @@ export class SubscriberPlugin extends EventEmitter {
       log.debug('[subscriber] Answer created', answer)
       this.pc.setLocalDescription(answer).then(data => {
         log.debug('[subscriber] setLocalDescription', data)
-      }).catch(error => log.error(error, answer))
+      }).catch(error => {
+        log.error(error, answer)
+        captureException(error, { context: 'SubscriberPlugin.handleJsep.setLocalDescription', answer });
+      })
       this.start(answer)
+    }).catch(error => {
+      captureException(error, { context: 'SubscriberPlugin.handleJsep', jsep });
+      throw error;
     })
   }
 
@@ -145,9 +160,10 @@ export class SubscriberPlugin extends EventEmitter {
         const { data, json } = param || {}
         log.info("[subscriber] start: ", param)
         resolve()
-      }).catch((err) => {
-        log.error('[subscriber] start', err, jsep)
-        reject(err)
+      }).catch((error) => {
+        log.error('[subscriber] start', error, jsep)
+        captureException(error, { context: 'SubscriberPlugin.start', roomId: this.roomId, jsep });
+        reject(error)
       })
     })
   }
@@ -155,50 +171,66 @@ export class SubscriberPlugin extends EventEmitter {
   initPcEvents() {
     if(this.pc) {
       this.pc.onicecandidate = (e) => {
-        log.debug('[subscriber] onicecandidate set', e.candidate)
-        let candidate = {completed: true}
-        if (!e.candidate || e.candidate.candidate.indexOf('endOfCandidates') > 0) {
-          log.debug("[subscriber] End of candidates")
-        } else {
+        try {
+          log.debug('[subscriber] onicecandidate set', e.candidate)
+          let candidate = {completed: true}
+          if (!e.candidate || e.candidate.candidate.indexOf('endOfCandidates') > 0) {
+            log.debug("[subscriber] End of candidates")
+          } else {
           // JSON.stringify doesn't work on some WebRTC objects anymore
           // See https://code.google.com/p/chromium/issues/detail?id=467366
-          candidate = {
-            "candidate": e.candidate.candidate,
-            "sdpMid": e.candidate.sdpMid,
-            "sdpMLineIndex": e.candidate.sdpMLineIndex
-          };
-        }
-        if(candidate) {
-          return this.transaction('trickle', { candidate })
+            candidate = {
+              "candidate": e.candidate.candidate,
+              "sdpMid": e.candidate.sdpMid,
+              "sdpMLineIndex": e.candidate.sdpMLineIndex
+            };
+          }
+          if(candidate) {
+            return this.transaction('trickle', { candidate })
+          }
+        } catch (error) {
+          captureException(error, { context: 'SubscriberPlugin.initPcEvents.onicecandidate' });
+          throw error;
         }
       };
 
       this.pc.onconnectionstatechange = (e) => {
-        log.debug("[subscriber] ICE State: ", e.target.connectionState)
-        this.iceState = e.target.connectionState
-        if(this.iceState === "disconnected") {
-          this.iceRestart()
-        }
+        try {
+          log.debug("[subscriber] ICE State: ", e.target.connectionState)
+          this.iceState = e.target.connectionState
+          if(this.iceState === "disconnected") {
+            this.iceRestart()
+          }
         // ICE restart does not help here, peer connection will be down
-        if(this.iceState === "failed") {
-          //this.iceFailed("subscriber")
+          if(this.iceState === "failed") {
+            const error = new Error('ICE connection failed');
+            captureException(error, { context: 'SubscriberPlugin.initPcEvents.onconnectionstatechange', iceState: this.iceState });
+          }
+        } catch (error) {
+          captureException(error, { context: 'SubscriberPlugin.initPcEvents.onconnectionstatechange', iceState: this.iceState });
+          throw error;
         }
       };
 
       this.pc.ontrack = (e) => {
-        log.debug("[subscriber] Got track: ", e)
-        this.onTrack(e.track, e.streams[0], true)
+        try {
+          log.debug("[subscriber] Got track: ", e)
+          this.onTrack(e.track, e.streams[0], true)
 
-        e.track.onmute = (ev) => {
-          log.debug("[subscriber] onmute event: ", ev)
-        }
+          e.track.onmute = (ev) => {
+            log.debug("[subscriber] onmute event: ", ev)
+          }
 
-        e.track.onunmute = (ev) => {
-          log.debug("[subscriber] onunmute event: ", ev)
-        }
+          e.track.onunmute = (ev) => {
+            log.debug("[subscriber] onunmute event: ", ev)
+          }
 
-        e.track.onended = (ev) => {
-          log.debug("[subscriber] onended event: ", ev)
+          e.track.onended = (ev) => {
+            log.debug("[subscriber] onended event: ", ev)
+          }
+        } catch (error) {
+          captureException(error, { context: 'SubscriberPlugin.initPcEvents.ontrack' });
+          throw error;
         }
       };
     }
@@ -223,7 +255,7 @@ export class SubscriberPlugin extends EventEmitter {
           log.debug("[subscriber] ICE Restart try: " + count)
         }
       }, 1000);
-    },1000)
+    }, 1000)
   }
 
   success (janus, janusHandleId) {
@@ -234,19 +266,25 @@ export class SubscriberPlugin extends EventEmitter {
   }
 
   error (cause) {
-    // Couldn't attach to the plugin
+    const error = new Error('[subscriber] Plugin error');
+    captureException(error, { cause });
   }
 
   onmessage (data, json) {
-    log.info('[subscriber] onmessage: ', data, json)
-    if(data?.videoroom === "updated") {
-      log.info('[subscriber] Streams updated: ', data.streams)
-      this.onUpdate(data.streams)
-    }
+    try {
+      log.info('[subscriber] onmessage: ', data, json)
+      if(data?.videoroom === "updated") {
+        log.info('[subscriber] Streams updated: ', data.streams)
+        this.onUpdate(data.streams)
+      }
 
-    if(json?.jsep) {
-      log.debug('[subscriber] Handle jsep: ', json.jsep)
-      this.handleJsep(json.jsep)
+      if(json?.jsep) {
+        log.debug('[subscriber] Handle jsep: ', json.jsep)
+        this.handleJsep(json.jsep)
+      }
+    } catch (error) {
+      captureException(error, { context: 'SubscriberPlugin.onmessage', data, json });
+      throw error;
     }
   }
 

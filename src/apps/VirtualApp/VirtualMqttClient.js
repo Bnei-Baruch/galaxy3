@@ -39,7 +39,7 @@ import VirtualStreaming from "./VirtualStreaming";
 import JanusStream from "../../shared/streaming-utils";
 import {kc} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
-import {captureMessage, updateSentryUser} from "../../shared/sentry";
+import {captureMessage, sentryDebugAction, setSentryGeo, setSentryTag, updateSentryUser} from "../../shared/sentry";
 import GxyJanus from "../../shared/janus-utils";
 import ConfigStore from "../../shared/ConfigStore";
 import {isFullScreen, toggleFullScreen} from "./FullScreenHelper";
@@ -213,6 +213,7 @@ class VirtualMqttClient extends Component {
     }
 
     geoInfo(`${GEO_IP_INFO}`, (data) => {
+      setSentryGeo(user, data)
       user.ip = data && data.ip ? data.ip : "127.0.0.1";
       user.country = data && data.country ? data.country : "XX";
 
@@ -372,6 +373,7 @@ class VirtualMqttClient extends Component {
     };
 
   initJanus = (user, config, retry) => {
+    setSentryTag(config.name)
     let janus = new JanusMqtt(user, config.name);
     janus.onStatus = (srv, status) => {
       if (status === "offline") {
