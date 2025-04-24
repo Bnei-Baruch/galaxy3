@@ -336,7 +336,6 @@ class VirtualMqttClient extends Component {
     const config = GxyJanus.instanceConfig(user.janus);
     log.info("[client] Got config: ", config);
     this.initJanus(user, config, retry);
-    console.log("USER", user)
     if (!reconnect && shidur) {
       api.fetchStrServer(user).then((data) => {
         JanusStream.initStreaming(data.server);
