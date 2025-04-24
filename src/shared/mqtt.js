@@ -146,7 +146,7 @@ class MqttMsg {
       const [root, service, id, target] = t
       switch (root) {
         case "subtitles":
-          console.log("[mqtt] On subtitles msg from topic", topic);
+          log.debug("[mqtt] On subtitles msg from topic", topic);
           this.mq.emit("MqttSubtitlesEvent", {data, language: id, target});
           break;
         case "galaxy":
