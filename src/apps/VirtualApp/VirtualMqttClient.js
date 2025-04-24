@@ -175,7 +175,7 @@ class VirtualMqttClient extends Component {
         console.error('Error fetching VH info data: ', err?.message);
         user.vhinfo = {active: false, error: err?.message};
       }).finally(() => {
-        user.allowed = !!user.vhinfo.active && user.role === userRolesEnum.user;
+        user.allowed = user.role === userRolesEnum.user;
         this.initApp(user);
       });
     } else {
@@ -336,8 +336,11 @@ class VirtualMqttClient extends Component {
     const config = GxyJanus.instanceConfig(user.janus);
     log.info("[client] Got config: ", config);
     this.initJanus(user, config, retry);
+    console.log("USER", user)
     if (!reconnect && shidur) {
-      JanusStream.initStreaming();
+      api.fetchStrServer(user).then((data) => {
+        JanusStream.initStreaming(data.server);
+      })
     }
   };
 
