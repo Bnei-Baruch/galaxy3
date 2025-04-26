@@ -4,6 +4,7 @@ import {StreamingPlugin} from "../lib/streaming-plugin";
 import log from "loglevel";
 import GxyJanus from "./janus-utils";
 import {getVideosFromLocalstorage} from "./tools";
+import api from "./Api";
 
 class JanusStream {
   constructor() {
@@ -71,33 +72,26 @@ class JanusStream {
       return;
     }
 
-    let str = srv;
+    api.fetchStrServer(this.user).then((data) => {
+      let janus = new JanusMqtt(this.user, data.server);
 
-    if (!srv) {
-      const gw_list = GxyJanus.gatewayNames("streaming");
-      let inst = gw_list[Math.floor(Math.random() * gw_list.length)];
-      this.config = GxyJanus.instanceConfig(inst);
-      str = this.config.name;
-    }
+      janus.onStatus = (srv, status) => {
+        if (status !== "online") {
+          log.warn("[shidur] janus status: ", status);
+          if (this.janus) this.janus.destroy();
+          this.janus = null;
+          setTimeout(() => {
+            this.initJanus();
+          }, 7000);
+        }
+      };
 
-    let janus = new JanusMqtt(this.user, str);
-
-    janus.onStatus = (srv, status) => {
-      if (status !== "online") {
-        log.warn("[shidur] janus status: ", status);
-        if (this.janus) this.janus.destroy();
-        this.janus = null;
-        setTimeout(() => {
-          this.initJanus();
-        }, 7000);
-      }
-    };
-
-    janus.init().then((data) => {
-      log.debug("[shidur] init: ", data);
-      this.janus = janus;
-      if (typeof cb === "function") cb();
-    });
+      janus.init().then((data) => {
+        log.debug("[shidur] init: ", data);
+        this.janus = janus;
+        if (typeof cb === "function") cb();
+      });
+    })
   };
 
   initVideoStream = () => {
@@ -144,6 +138,12 @@ class JanusStream {
   };
 
   initQuadStream = (callback) => {
+    if (!this.janus) {
+      setTimeout(() => {
+        this.initQuadStream(callback);
+      }, 1000);
+      return;
+    }
     this.initJanus(null, () => {
       this.videoQuadStream = new StreamingPlugin(this.config?.iceServers);
       this.videoQuadStream.onStatus = () => {

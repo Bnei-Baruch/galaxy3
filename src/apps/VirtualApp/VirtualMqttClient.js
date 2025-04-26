@@ -336,11 +336,9 @@ class VirtualMqttClient extends Component {
     const config = GxyJanus.instanceConfig(user.janus);
     log.info("[client] Got config: ", config);
     this.initJanus(user, config, retry);
-    console.log("USER", user)
+    JanusStream.setUser(user);
     if (!reconnect && shidur) {
-      api.fetchStrServer(user).then((data) => {
-        JanusStream.initStreaming(data.server);
-      })
+      JanusStream.initStreaming();
     }
   };
 
@@ -1049,13 +1047,13 @@ class VirtualMqttClient extends Component {
   };
 
   toggleShidur = () => {
-    const {shidur, user} = this.state;
+    const {shidur} = this.state;
     const stateUpdate = {shidur: !shidur};
     if (shidur) {
       JanusStream.toggle('shidur');
       this.setState(stateUpdate);
     } else {
-      JanusStream.initStreaming(user);
+      JanusStream.initStreaming();
       //stateUpdate.sourceLoading = true;
       this.setState(stateUpdate);
     }
