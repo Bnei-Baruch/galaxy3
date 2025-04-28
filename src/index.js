@@ -4,7 +4,6 @@ import "./index.css";
 import App from "./App";
 import log from "loglevel";
 import {initSentry} from "./shared/sentry";
-
 initSentry();
 
 log.setLevel('warn')
