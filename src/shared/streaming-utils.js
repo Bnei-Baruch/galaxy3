@@ -52,7 +52,7 @@ class JanusStream {
 
   initStreaming = (srv) => {
     this.clean();
-    this.initJanus(srv, () => {
+    this.initStrServer(srv, () => {
       if (!this.videoJanusStream) {
         this.initVideoStream();
       }
@@ -66,33 +66,48 @@ class JanusStream {
     });
   };
 
-  initJanus = (srv, cb) => {
+  initStrServer = (srv, cb) => {
     if (this.janus) {
       if (typeof cb === "function") cb();
       return;
     }
 
+    if (srv) {
+      this.initJanus(srv, cb)
+      return;
+    }
+
     api.fetchStrServer(this.user).then((data) => {
-      let janus = new JanusMqtt(this.user, data.server);
-
-      janus.onStatus = (srv, status) => {
-        if (status !== "online") {
-          log.warn("[shidur] janus status: ", status);
-          if (this.janus) this.janus.destroy();
-          this.janus = null;
-          setTimeout(() => {
-            this.initJanus();
-          }, 7000);
-        }
-      };
-
-      janus.init().then((data) => {
-        log.debug("[shidur] init: ", data);
-        this.janus = janus;
-        if (typeof cb === "function") cb();
-      });
+      this.initJanus(data.server, cb)
+    }).catch((err) => {
+      log.error("[shidur] strdb server error: ", err);
+      const gw_list = GxyJanus.gatewayNames("streaming");
+      let inst = gw_list[Math.floor(Math.random() * gw_list.length)];
+      this.config = GxyJanus.instanceConfig(inst);
+      this.initJanus(this.config.name, cb)
     })
   };
+
+  initJanus = (str, cb) => {
+    let janus = new JanusMqtt(this.user, str);
+
+    janus.onStatus = (srv, status) => {
+      if (status !== "online") {
+        log.warn("[shidur] janus status: ", status);
+        if (this.janus) this.janus.destroy();
+        this.janus = null;
+        setTimeout(() => {
+          this.initStrServer();
+        }, 7000);
+      }
+    };
+
+    janus.init().then((data) => {
+      log.debug("[shidur] init: ", data);
+      this.janus = janus;
+      if (typeof cb === "function") cb();
+    });
+  }
 
   initVideoStream = () => {
     if (this.videos === NO_VIDEO_OPTION_VALUE) return;
@@ -144,7 +159,7 @@ class JanusStream {
       }, 1000);
       return;
     }
-    this.initJanus(null, () => {
+    this.initStrServer(null, () => {
       this.videoQuadStream = new StreamingPlugin(this.config?.iceServers);
       this.videoQuadStream.onStatus = () => {
         if (this.janus) this.initQuadStream(callback);
