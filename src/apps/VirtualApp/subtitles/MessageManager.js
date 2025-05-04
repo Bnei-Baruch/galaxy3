@@ -11,7 +11,7 @@ const MAIN_LANGS = ["en", "he", "ru"]
 
 const MSGS_ALL = [MSGS_SUBTITLE, MSGS_QUESTION, MSGS_NONE];
 
-const md = markdownit({html: true})
+const md = markdownit({ html: true, breaks: false }).disable(['lheading', 'list']);
 const TOPIC = "subtitles/morning_lesson/";
 
 export const initMqtt = () => {
