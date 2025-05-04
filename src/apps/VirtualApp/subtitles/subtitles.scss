@@ -42,18 +42,11 @@
 
           .lang-question,
           .in-process {
-            display: none;
-            animation: fade-out ease .3s;
             width: fit-content;
             text-align: justify;
             margin: 0 auto;
             min-height: 3em;
-
-            &.show-question {
-              display: block;
-              animation: fade-in ease .3s;
-            }
-
+            display: block;
           }
 
           .lang-question,
@@ -66,38 +59,6 @@
             }
           }
 
-          .in-process {
-            .in-process-text {
-              .ui.compact.button {
-                padding: 0;
-                margin: 0 4px;
-                opacity: .3;
-                transition: opacity .3s;
-
-                &:hover,
-                &.selected {
-                  opacity: 1;
-                }
-              }
-            }
-
-            .other-question {
-              background-color: #ebebeb;
-              margin: 8px 0;
-              padding: 8px;
-              border-radius: 4px;
-              animation: fadeIn ease .3s;
-
-              .layout--equal & {
-                padding: 4px;
-                margin: 4px 0;
-              }
-
-              &:last-child {
-                margin-bottom: 0;
-              }
-            }
-          }
         }
 
         &__toolbar {
@@ -211,7 +172,43 @@
           }
         }
       }
+
+      .in-process {
+        .in-process-text {
+          position: absolute;
+
+          .ui.compact.button {
+            padding: 0;
+            margin: 0 4px;
+            opacity: .3;
+            transition: opacity .3s;
+
+            &:hover,
+            &.selected {
+              opacity: 1;
+            }
+          }
+        }
+
+        .other-question {
+          background-color: #ebebeb;
+          margin: 8px 0;
+          padding: 8px;
+          border-radius: 4px;
+          animation: fadeIn ease .3s;
+
+          .layout--equal & {
+            padding: 4px;
+            margin: 4px 0;
+          }
+
+          &:last-child {
+            margin-bottom: 0;
+          }
+        }
+      }
     }
+
 
     .show-wq {
       position: absolute;
@@ -226,7 +223,7 @@
     }
   }
 
-  .subtitle_link{
+  .subtitle_link {
     width: fit-content;
     background: #FFFFFF;
     margin: 0 auto 48px;

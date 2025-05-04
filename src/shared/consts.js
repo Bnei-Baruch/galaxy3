@@ -60,6 +60,7 @@ export const subtitle_options = [
   {key: "en", value: "en", eng_text: "English", text: "English"},
   {key: "es", value: "es", eng_text: "Spanish", text: "Español"},
   {key: "tr", value: "tr", eng_text: "Turkish", text: "Türkçe"},
+  {key: "ua", value: "ua", eng_text: "Ukrainian", text: "Українська"},
 ];
 export const audiog_options2 = [
   {

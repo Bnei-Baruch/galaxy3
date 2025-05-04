@@ -338,7 +338,9 @@ class VirtualMqttClient extends Component {
     this.initJanus(user, config, retry);
     JanusStream.setUser(user);
     if (!reconnect && shidur) {
-      JanusStream.initStreaming();
+      api.fetchStrServer(user).then((data) => {
+        JanusStream.initStreaming(data.server);
+      })
     }
   };
 
