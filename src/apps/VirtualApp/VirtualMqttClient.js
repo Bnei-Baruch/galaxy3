@@ -172,7 +172,7 @@ class VirtualMqttClient extends Component {
       api.fetchVHInfo().then((data) => {
         user.vhinfo = data;
       }).catch(err => {
-        console.error('Error fetching VH info data: ', err?.message);
+        log.error('Error fetching VH info data: ', err?.message);
         user.vhinfo = {active: false, error: err?.message};
       }).finally(() => {
         user.allowed = !!user.vhinfo.active && user.role === userRolesEnum.user;
@@ -338,9 +338,7 @@ class VirtualMqttClient extends Component {
     this.initJanus(user, config, retry);
     JanusStream.setUser(user);
     if (!reconnect && shidur) {
-      api.fetchStrServer(user).then((data) => {
-        JanusStream.initStreaming(data.server);
-      })
+      JanusStream.initStreaming();
     }
   };
 
