@@ -21,7 +21,7 @@ const WQ_FONT_SIZE = "wq-font-size";
 const tagARegEx = /<a[^>]*>([^<]+)<\/a>/;
 
 export const SubtitlesView = ({msgState}) => {
-  const {msg: {message, isRtl, slide} = {}, wqLangs, display_status} = msgState;
+  const {msg: {message, isLtr, slide} = {}, wqLangs, display_status} = msgState;
 
   const {t, i18n: {language}} = useTranslation();
   const _initFontSize = Number.parseInt(localStorage.getItem(WQ_FONT_SIZE) || (FONT_SIZE_MAX + FONT_SIZE_MIN) / 2)
@@ -73,7 +73,7 @@ export const SubtitlesView = ({msgState}) => {
         {
           message ? (
               <div
-                className={classNames("lang-question message", {rtl: isRtl})}
+                className={classNames("lang-question message", {rtl: !isLtr})}
                 dangerouslySetInnerHTML={{__html: message}}
               />
             ) :

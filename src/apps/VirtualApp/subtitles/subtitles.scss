@@ -53,6 +53,7 @@
           .in-process .in-process-text,
           .in-process .other-question {
             direction: ltr;
+            padding: 0 1em;
 
             &.rtl {
               direction: rtl;
