@@ -68,6 +68,7 @@ export class MessageManager {
 
       if (
         msg.display_status === MSGS_NONE.display_status 
+        || msg.slide === ""
         || msg.display_status !== infoByType?.display_status
         || (!msg.visible && msg.type === MSGS_QUESTION.type)
       ) {
