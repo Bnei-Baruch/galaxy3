@@ -67,7 +67,7 @@ export class MessageManager {
         return;
 
       if (
-        msg.display_status === MSGS_NONE.display_status 
+        msg.display_status === MSGS_NONE.display_status
         || msg.slide === ""
         || msg.display_status !== infoByType?.display_status
         || (!msg.visible && msg.type === MSGS_QUESTION.type)
@@ -91,7 +91,7 @@ export class MessageManager {
     const _msg = {...msg, message: md.render(msg.slide)}
     switch (msg.type) {
       case MSGS_SUBTITLE.type:
-        this.subMsg = _msg;
+        this.subMsg = {msg: _msg, language: language};
         break;
       case MSGS_QUESTION.type:
         this.wqLangs = [...this.wqLangs.filter(l => l !== language), language]
@@ -107,45 +107,45 @@ export class MessageManager {
         break;
       case MSGS_QUESTION.topic:
         this.wqLangs = this.wqLangs.filter(l => l !== language);
-        this.wqMsgByLang[language] = null
+        this.wqMsgByLang[language] = null;
         break;
     }
   }
 
   getCurrentState() {
-    const msg = this.getCurrentMsg()
+    const {msg, language} = this.getCurrentMsg();
 
-    const resp = {msg, display_status: MSGS_NONE.display_status, wqLangs: this.wqLangs}
+    const resp = {msg, language, display_status: MSGS_NONE.display_status, wqLangs: this.wqLangs};
     if (!msg) {
       if (this.wqLangs.some(l => MAIN_LANGS.includes(l))) {
-        resp.display_status = MSGS_QUESTION.display_status
-        return resp
+        resp.display_status = MSGS_QUESTION.display_status;
+        return resp;
       }
 
-      resp.display_status = MSGS_NONE.display_status
-      return resp
+      resp.display_status = MSGS_NONE.display_status;
+      return resp;
     }
 
     if (msg.type === MSGS_SUBTITLE.type) {
-      resp.display_status = MSGS_SUBTITLE.display_status
+      resp.display_status = MSGS_SUBTITLE.display_status;
     } else {
       resp.display_status = MSGS_QUESTION.display_status;
     }
-    return resp
-
-
+    return resp;
   }
 
   getCurrentMsg() {
-    const wqMsg = this.wqMsgByLang[this.wqLangSel] || this.wqMsgByLang[this.wqLang] || {};
-    return [wqMsg, this.subMsg]
-      .filter(x => x.type && (x.type !== 'none'))
-      .sort((a, b) => Date.parse(b.date) - Date.parse(a.date))[0]
+    return [
+      {msg: this.wqMsgByLang[this.wqLangSel], language: this.wqLangSel},
+      {msg: this.wqMsgByLang[this.wqLang], language: this.wqLang},
+      this.subMsg,
+    ].filter(x => x.msg && x.msg.type && (x.msg.type !== 'none'))
+     .sort((a, b) => Date.parse(b.msg.date) - Date.parse(a.msg.date))[0] || {msg: undefined, language: undefined};
   }
 
   switchWqLang(l) {
-    this.wqLangSel = l
-    this.onMessage(this.getCurrentState())
+    this.wqLangSel = l;
+    this.onMessage(this.getCurrentState());
   }
 }
 
