@@ -129,7 +129,7 @@ class VirtualStreaming extends Component {
     const playerLang = audio_option.langKey || audio_option.key;
     const inLine = (
       <div
-        className={classNames("video video--broadcast", {"is-double-size": isDoubleSize})}
+        className={classNames("video video--broadcast", {"is-double-size": isDoubleSize, "not-attached": !attached})}
         key="v1"
         ref={(ref) => this.setVideoWrapperRef(ref)}
         id="video1"
