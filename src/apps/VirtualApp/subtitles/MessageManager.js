@@ -50,7 +50,6 @@ export class MessageManager {
 
     this.wqLangs = [];
     this.wqMsgByLang = {};
-    this.wqLang = wqLang;
     this.wqLangSel = wqLang;
 
     this.subMsg = {};
@@ -137,7 +136,6 @@ export class MessageManager {
   getCurrentMsg() {
     return [
       {msg: this.wqMsgByLang[this.wqLangSel], language: this.wqLangSel},
-      {msg: this.wqMsgByLang[this.wqLang], language: this.wqLang},
       this.subMsg,
     ].filter(x => x.msg && x.msg.type && (x.msg.type !== 'none'))
      .sort((a, b) => Date.parse(b.msg.date) - Date.parse(a.msg.date))[0] || {msg: undefined, language: undefined};
