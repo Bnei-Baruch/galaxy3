@@ -82,7 +82,7 @@ export const Slide = ({ content, isLtr, isQuestion, controls, slideSize, alterna
         className={classNames("slide-content", {"ltr": isLtr, "rtl" : !isLtr})}
       >
         {!content &&
-          <p className={classNames({"ui-rtl": uiLang === "he", "ui-ltr": uiLang !== "he"})}>
+          <p className={classNames("alternatives", {"ui-rtl": uiLang === "he", "ui-ltr": uiLang !== "he"})}>
             {t("workshop.inProcess")}
             {alternatives && alternatives.map((l) => <a id={l} onClick={() => switchLang(l)}>{' '}{l}</a>)}
           </p>
