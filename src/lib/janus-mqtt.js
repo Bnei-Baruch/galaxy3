@@ -73,6 +73,7 @@ export class JanusMqtt {
 
       this.connect = function () {
         mqtt.send(JSON.stringify(msg), false, this.txTopic, this.rxTopic + "/" + this.user.id, this.user)
+        this.connect = null;
       }
 
       this.disconnect = function (json) {
