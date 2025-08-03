@@ -8,12 +8,15 @@ import Tab from '@mui/material/Tab';
 import TabContext from '@mui/lab/TabContext';
 import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
+import { useTheme } from '@mui/material/styles';
 import {LANG_MAP} from "../../../shared/consts";
 
 export const getLanguage = () => LANG_MAP[localStorage.getItem("vrt_langtext")] || "en";
 const lang = getLanguage()
 export const BroadcastNotification = ({show, msg, setClose}) => {
     const [value, setValue] = React.useState(lang);
+    const theme = useTheme();
+    const textColor = theme.palette.text.primary;
 
     const handleChange = (event, newValue) => {
         setValue(newValue);
@@ -37,10 +40,10 @@ export const BroadcastNotification = ({show, msg, setClose}) => {
                                 <Tab label="Hebrew" value="he" />
                                 <Tab label="Spanish" value="es" />
                             </TabList>
-                            <TabPanel className="notification" value="en"><div dangerouslySetInnerHTML={{__html: msg[value]}}></div></TabPanel>
-                            <TabPanel className="notification" value="ru"><div dangerouslySetInnerHTML={{__html: msg[value]}}></div></TabPanel>
-                            <TabPanel className="notification" value="he"><div dangerouslySetInnerHTML={{__html: msg[value]}}></div></TabPanel>
-                            <TabPanel className="notification" value="es"><div dangerouslySetInnerHTML={{__html: msg[value]}}></div></TabPanel>
+                            <TabPanel className="notification" value="en" style={{color: textColor}}><div dangerouslySetInnerHTML={{__html: msg[value]}}></div></TabPanel>
+                            <TabPanel className="notification" value="ru" style={{color: textColor}}><div dangerouslySetInnerHTML={{__html: msg[value]}}></div></TabPanel>
+                            <TabPanel className="notification" value="he" style={{color: textColor}}><div dangerouslySetInnerHTML={{__html: msg[value]}}></div></TabPanel>
+                            <TabPanel className="notification" value="es" style={{color: textColor}}><div dangerouslySetInnerHTML={{__html: msg[value]}}></div></TabPanel>
                         </TabContext>
                     </DialogContentText>
                 </DialogContent>
