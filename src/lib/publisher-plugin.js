@@ -3,6 +3,7 @@ import {EventEmitter} from "events";
 import log from "loglevel";
 import mqtt from "../shared/mqtt";
 import {STUN_SRV_GXY} from "../shared/env";
+import { captureException } from "../shared/sentry";
 
 export class PublisherPlugin extends EventEmitter {
   constructor (list = [{urls: STUN_SRV_GXY}]) {
@@ -30,14 +31,16 @@ export class PublisherPlugin extends EventEmitter {
     const payload = Object.assign({}, additionalFields, { handle_id: this.janusHandleId })
 
     if (!this.janus) {
-      return Promise.reject(new Error('[publisher] JanusPlugin is not connected'))
+      const error = new Error('[publisher] JanusPlugin is not connected');
+      captureException(error, { message, additionalFields });
+      return Promise.reject(error)
     }
     return this.janus.transaction(message, payload, replyType)
   }
 
-  join(roomId, user) {
+  join(roomId, user, metadata) {
     this.roomId = roomId
-    const body = {request: "join", room: roomId, ptype: "publisher", display: JSON.stringify(user)};
+    const body = {request: "join", room: roomId, ptype: "publisher", display: JSON.stringify(user), metadata};
     return new Promise((resolve, reject) => {
       this.transaction('message', { body }, 'event').then((param) => {
         log.info("[publisher] join: ", param)
@@ -46,9 +49,10 @@ export class PublisherPlugin extends EventEmitter {
         if(data)
           resolve(data);
 
-      }).catch((err) => {
-        log.error('[publisher] error join room', err)
-        reject(err)
+      }).catch((error) => {
+        log.error('[publisher] error join room', error)
+        captureException(error, { context: 'PublisherPlugin.join', roomId, user });
+        reject(error)
       })
     })
   }
@@ -64,9 +68,10 @@ export class PublisherPlugin extends EventEmitter {
           if(data)
             resolve(data);
 
-        }).catch((err) => {
-          log.debug('[publisher] error leave room', err)
-          reject(err)
+        }).catch((error) => {
+          log.debug('[publisher] error leave room', error)
+          captureException(error, { context: 'PublisherPlugin.leave', roomId: this.roomId });
+          reject(error)
         })
       })
     }
@@ -74,77 +79,91 @@ export class PublisherPlugin extends EventEmitter {
 
   publish(video, audio) {
     return new Promise((resolve, reject) => {
-      if (video) this.pc.addTrack(video.getVideoTracks()[0], video);
-      if (audio) this.pc.addTrack(audio.getAudioTracks()[0], audio);
+      try {
+        if (video) this.pc.addTrack(video.getVideoTracks()[0], video);
+        if (audio) this.pc.addTrack(audio.getAudioTracks()[0], audio);
 
-      let videoTransceiver = null;
-      let audioTransceiver = null;
+        let videoTransceiver = null;
+        let audioTransceiver = null;
 
-      let tr = this.pc.getTransceivers();
-      if (tr && tr.length > 0) {
-        for (let t of tr) {
-          if (t.sender && t.sender.track && t.sender.track.kind === "video") {
-            videoTransceiver = t;
-            if (videoTransceiver.setDirection) {
-              videoTransceiver.setDirection("sendonly");
-            } else {
-              videoTransceiver.direction = "sendonly";
+        let tr = this.pc.getTransceivers();
+        if (tr && tr.length > 0) {
+          for (let t of tr) {
+            if (t.sender && t.sender.track && t.sender.track.kind === "video") {
+              videoTransceiver = t;
+              if (videoTransceiver.setDirection) {
+                videoTransceiver.setDirection("sendonly");
+              } else {
+                videoTransceiver.direction = "sendonly";
+              }
+              break;
             }
-            break;
-          }
-          if (t.sender && t.sender.track && t.sender.track.kind === "audio") {
-            audioTransceiver = t;
-            if (audioTransceiver.setDirection) {
-              audioTransceiver.setDirection("sendonly");
-            } else {
-              audioTransceiver.direction = "sendonly";
+            if (t.sender && t.sender.track && t.sender.track.kind === "audio") {
+              audioTransceiver = t;
+              if (audioTransceiver.setDirection) {
+                audioTransceiver.setDirection("sendonly");
+              } else {
+                audioTransceiver.direction = "sendonly";
+              }
+              break;
             }
-            break;
           }
         }
+
+        this.initPcEvents()
+
+        this.pc.createOffer().then((offer) => {
+          this.pc.setLocalDescription(offer)
+          const jsep = {type: offer.type, sdp: offer.sdp}
+          const body = {request: 'configure', video: !!video, audio: !!audio}
+          return this.transaction('message', {body, jsep}, 'event').then((param) => {
+            const {data, json} = param || {}
+            const jsep = json.jsep
+            log.info('[publisher] Configure respond: ', param)
+            resolve(data)
+            this.pc.setRemoteDescription(jsep)
+          }).catch(error => {
+            captureException(error, { context: 'PublisherPlugin.publish.configure', video: !!video, audio: !!audio });
+            reject(error)
+          })
+        }).catch(error => {
+          captureException(error, { context: 'PublisherPlugin.publish.createOffer' });
+          reject(error)
+        })
+      } catch (error) {
+        captureException(error, { context: 'PublisherPlugin.publish', video: !!video, audio: !!audio });
+        reject(error)
       }
-
-      this.initPcEvents()
-
-      this.pc.createOffer().then((offer) => {
-        this.pc.setLocalDescription(offer)
-        const jsep = {type: offer.type, sdp: offer.sdp}
-        const body = {request: 'configure', video: !!video, audio: !!audio}
-        return this.transaction('message', {body, jsep}, 'event').then((param) => {
-          const {data, json} = param || {}
-          const jsep = json.jsep
-          log.info('[publisher] Configure respond: ', param)
-          resolve(data)
-          this.pc.setRemoteDescription(jsep)
-        }).catch(error => reject(error))
-      })
     })
   };
 
   mute(video, stream) {
-
-    let videoTransceiver = null;
-    let tr = this.pc.getTransceivers();
-    if(tr && tr.length > 0) {
-      for(let t of tr) {
-        if(t?.sender?.track?.kind === "video") {
-          videoTransceiver = t;
-          break;
+    try {
+      let videoTransceiver = null;
+      let tr = this.pc.getTransceivers();
+      if(tr && tr.length > 0) {
+        for(let t of tr) {
+          if(t?.sender?.track?.kind === "video") {
+            videoTransceiver = t;
+            break;
+          }
         }
       }
+
+      let d = video ? "inactive" : "sendonly"
+
+      if (videoTransceiver?.setDirection) {
+        videoTransceiver.setDirection(d);
+      } else {
+        videoTransceiver.direction = d;
+      }
+
+      if(!video) videoTransceiver.sender.replaceTrack(stream.getVideoTracks()[0])
+      if(stream) this.configure()
+    } catch (error) {
+      captureException(error, { context: 'PublisherPlugin.mute', video: !!video, hasStream: !!stream });
+      throw error;
     }
-
-    let d = video ? "inactive" : "sendonly"
-
-    if (videoTransceiver?.setDirection) {
-      videoTransceiver.setDirection(d);
-    } else {
-      videoTransceiver.direction = d;
-    }
-
-    if(!video) videoTransceiver.sender.replaceTrack(stream.getVideoTracks()[0])
-    if(stream) this.configure()
-
   }
 
   setBitrate(bitrate) {
@@ -157,65 +176,86 @@ export class PublisherPlugin extends EventEmitter {
         if(data)
           resolve(data);
 
-      }).catch((err) => {
-        log.debug('[publisher] error set bitrate', err)
-        reject(err)
+      }).catch((error) => {
+        log.debug('[publisher] error set bitrate', error)
+        captureException(error, { context: 'PublisherPlugin.setBitrate', bitrate });
+        reject(error)
       })
     })
   }
 
   audio(stream) {
-    let audioTransceiver = null;
-    let tr = this.pc.getTransceivers();
-    if(tr && tr.length > 0) {
-      for(let t of tr) {
-        if(t?.sender?.track?.kind === "audio") {
-          audioTransceiver = t;
-          break;
+    try {
+      let audioTransceiver = null;
+      let tr = this.pc.getTransceivers();
+      if(tr && tr.length > 0) {
+        for(let t of tr) {
+          if(t?.sender?.track?.kind === "audio") {
+            audioTransceiver = t;
+            break;
+          }
         }
       }
-    }
 
-    if (audioTransceiver?.setDirection) {
-      audioTransceiver.setDirection("sendonly");
-    } else {
-      audioTransceiver.direction = "sendonly";
-    }
+      if (audioTransceiver?.setDirection) {
+        audioTransceiver.setDirection("sendonly");
+      } else {
+        audioTransceiver.direction = "sendonly";
+      }
 
-    audioTransceiver.sender.replaceTrack(stream.getAudioTracks()[0])
-    this.configure()
+      audioTransceiver.sender.replaceTrack(stream.getAudioTracks()[0])
+      this.configure()
+    } catch (error) {
+      captureException(error, { context: 'PublisherPlugin.audio', hasStream: !!stream });
+      throw error;
+    }
   }
 
   configure(restart) {
     this.pc.createOffer().then((offer) => {
-      this.pc.setLocalDescription(offer).catch(error => log.error("[publisher] setLocalDescription: ", error))
+      this.pc.setLocalDescription(offer).catch(error => {
+        log.error("[publisher] setLocalDescription: ", error)
+        captureException(error, { context: 'PublisherPlugin.configure.setLocalDescription', restart });
+      })
       const body = {request: 'configure', restart}
       return this.transaction('message', {body, jsep: offer}, 'event').then((param) => {
         const {data, json} = param || {}
         const jsep = json.jsep
         log.info('[publisher] Configure respond: ', param)
-        this.pc.setRemoteDescription(jsep).then(e => log.info(e)).catch(e => log.error(e))
+        this.pc.setRemoteDescription(jsep).then(e => log.info(e)).catch(error => {
+          log.error(error)
+          captureException(error, { context: 'PublisherPlugin.configure.setRemoteDescription', restart });
+        })
+      }).catch(error => {
+        captureException(error, { context: 'PublisherPlugin.configure', restart });
+        throw error;
       })
+    }).catch(error => {
+      captureException(error, { context: 'PublisherPlugin.configure.createOffer', restart });
+      throw error;
     })
   }
 
   initPcEvents() {
     this.pc.onicecandidate = (e) => {
-      let candidate = {completed: true}
-      if (!e.candidate || e.candidate.candidate.indexOf('endOfCandidates') > 0) {
-        log.debug("[publisher] End of candidates")
-      } else {
-        // JSON.stringify doesn't work on some WebRTC objects anymore
-        // See https://code.google.com/p/chromium/issues/detail?id=467366
-        candidate = {
-          "candidate": e.candidate.candidate,
-          "sdpMid": e.candidate.sdpMid,
-          "sdpMLineIndex": e.candidate.sdpMLineIndex
-        };
-      }
+      try {
+        let candidate = {completed: true}
+        if (!e.candidate || e.candidate.candidate.indexOf('endOfCandidates') > 0) {
+          log.debug("[publisher] End of candidates")
+        } else {
+          candidate = {
+            "candidate": e.candidate.candidate,
+            "sdpMid": e.candidate.sdpMid,
+            "sdpMLineIndex": e.candidate.sdpMLineIndex
+          };
+        }
 
-      if(candidate) {
-        return this.transaction('trickle', { candidate })
+        if(candidate) {
+          return this.transaction('trickle', { candidate })
+        }
+      } catch (error) {
+        captureException(error, { context: 'PublisherPlugin.initPcEvents.onicecandidate' });
+        throw error;
       }
     };
 
@@ -224,18 +264,23 @@ export class PublisherPlugin extends EventEmitter {
     };
 
     this.pc.onconnectionstatechange = (e) => {
-      log.info("[publisher] ICE State: ", e.target.connectionState)
-      this.iceState = e.target.connectionState
+      try {
+        log.info("[publisher] ICE State: ", e.target.connectionState)
+        this.iceState = e.target.connectionState
 
-      if(this.iceState === "disconnected") {
-        this.iceRestart()
-      }
+        if(this.iceState === "disconnected") {
+          this.iceRestart()
+        }
 
       // ICE restart does not help here, peer connection will be down
-      if(this.iceState === "failed") {
-        //this.iceFailed("publisher")
+        if(this.iceState === "failed") {
+          const error = new Error('ICE connection failed');
+          captureException(error, { context: 'PublisherPlugin.initPcEvents.onconnectionstatechange', iceState: this.iceState });
+        }
+      } catch (error) {
+        captureException(error, { context: 'PublisherPlugin.initPcEvents.onconnectionstatechange', iceState: this.iceState });
+        throw error;
       }
-
     };
   }
 
@@ -270,7 +315,8 @@ export class PublisherPlugin extends EventEmitter {
   }
 
   error (cause) {
-    // Couldn't attach to the plugin
+    const error = new Error('[publisher] Plugin error');
+    captureException(error, { cause });
   }
 
   onmessage(data) {
@@ -278,7 +324,7 @@ export class PublisherPlugin extends EventEmitter {
     if(data?.publishers) {
       log.info('[publisher] New feed enter: ', data.publishers[0])
       this.subTo(data.publishers)
-    }
+      }
 
     if(data?.unpublished) {
       log.info('[publisher] Feed leave: ', data.unpublished)
@@ -288,17 +334,17 @@ export class PublisherPlugin extends EventEmitter {
         return;
       }
       this.unsubFrom([data.unpublished], false)
-    }
+        }
 
     if(data?.leaving) {
       log.info('[publisher] Feed leave: ', data.leaving)
       this.unsubFrom([data.leaving], false)
-    }
+        }
 
     if(data?.videoroom === "talking") {
       log.debug('[publisher] talking: ', data.id)
       this.talkEvent(data.id, true)
-    }
+        }
 
     if(data?.videoroom === "stopped-talking") {
       log.debug('[publisher] stopped talking: ', data.id)

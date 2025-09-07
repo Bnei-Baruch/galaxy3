@@ -69,26 +69,26 @@ class MqttMsg {
       if (data && !this.isConnected) {
         log.info('[mqtt] Connected to server: ', data);
         this.isConnected = true;
-        if(typeof callback === "function") callback(false, false);
+        if (typeof callback === "function") callback(false, false);
       } else {
         log.info("[mqtt] Connected: ", data);
         this.isConnected = true;
-        if(this.reconnect_count > RC) {
-          if(typeof callback === "function") callback(true, false);
+        if (this.reconnect_count > RC) {
+          if (typeof callback === "function") callback(true, false);
         }
         this.reconnect_count = 0;
       }
     });
 
     this.mq.on("close", () => {
-      if(this.reconnect_count < RC + 2) {
+      if (this.reconnect_count < RC + 2) {
         this.reconnect_count++;
         log.debug("[mqtt] reconnecting counter: " + this.reconnect_count)
       }
-      if(this.reconnect_count === RC) {
+      if (this.reconnect_count === RC) {
         this.reconnect_count++;
         log.warn("[mqtt] - disconnected - after: " + this.reconnect_count + " seconds")
-        if(typeof callback === "function") callback(false, true);
+        if (typeof callback === "function") callback(false, true);
       }
     });
 
@@ -126,7 +126,11 @@ class MqttMsg {
     let correlationData = JSON.parse(message)?.transaction
     let cd = correlationData ? " | transaction: " + correlationData : ""
     log.debug("%c[mqtt] --> send message" + cd + " | topic: " + topic + " | data: " + message, "color: darkgrey");
-    let properties = !!rxTopic ? {userProperties: user || this.user, responseTopic: rxTopic, correlationData} : {userProperties: user || this.user};
+    let properties = !!rxTopic ? {
+      userProperties: user || this.user,
+      responseTopic: rxTopic,
+      correlationData
+    } : {userProperties: user || this.user};
     let options = {qos: 1, retain, properties};
     this.mq.publish(topic, message, {...options}, (err) => {
       err && log.error("[mqtt] Error: ", err);
@@ -139,15 +143,16 @@ class MqttMsg {
       let cd = packet?.properties?.correlationData ? " | transaction: " + packet?.properties?.correlationData?.toString() : ""
       log.debug("%c[mqtt] <-- receive message" + cd + " | topic : " + topic, "color: darkgrey");
       const t = topic.split("/")
-      if(t[0] === "msg") t.shift()
+      if (t[0] === "msg") t.shift()
       const [root, service, id, target] = t
-      switch(root) {
+      switch (root) {
         case "subtitles":
-          this.mq.emit("MqttSubtitlesEvent", data);
+          log.debug("[mqtt] On subtitles msg from topic", topic);
+          this.mq.emit("MqttSubtitlesEvent", {data, language: id, target});
           break;
         case "galaxy":
           // FIXME: we need send cmd messages to separate topic
-          if(service === "room" && target === "chat")
+          if (service === "room" && target === "chat")
             this.mq.emit("MqttChatEvent", data);
           else if (service === "room" && target !== "chat" || service === "service" && id !== "user") {
             try {
@@ -164,8 +169,7 @@ class MqttMsg {
                 return;
               }
             }
-          }
-          else if (service === "users" && id === "broadcast")
+          } else if (service === "users" && id === "broadcast")
             this.mq.emit("MqttBroadcastMessage", data);
           else if (service === "users" && id === "notification")
             this.mq.emit("MqttNotificationMessage", data);
@@ -180,7 +184,7 @@ class MqttMsg {
           this.mq.emit(mit, data, id);
           break;
         default:
-          if(typeof callback === "function")
+          if (typeof callback === "function")
             callback(JSON.parse(data.toString()), topic);
       }
     });

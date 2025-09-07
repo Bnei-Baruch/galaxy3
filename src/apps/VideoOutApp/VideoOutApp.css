@@ -1,14 +1,30 @@
 body {
   background: #1b1c1d;
+  display: unset;
+  overflow: hidden;
 }
 
+.ui.grid {
+  margin-top: 0rem;
+  /*margin-bottom: -1rem;*/
+  /*margin-left: -1rem;*/
+  /*margin-right: -1rem;*/
+}
+
+.ui.grid>.row {
+  padding-top: 0px;
+  padding-bottom: 0rem;
+}
+
+
 .sdi_container {
-  width: 3500px;
+  width: 3840px;
+  height: 2160px;
 }
 
 .preview_sdi {
-  width: 1600px!important;
-  height: 900px!important;
+  width: 1920px!important;
+  height: 1080px!important;
   background-color: black!important;
   border: 1px solid black!important;
 }

@@ -1,4 +1,4 @@
-import {ADMIN_SECRET, API_BACKEND, AUTH_API_BACKEND, JANUS_ADMIN_GXY} from "./env";
+import {ADMIN_SECRET, API_BACKEND, AUTH_API_BACKEND, JANUS_ADMIN_GXY, STRDB_BACKEND} from "./env";
 import {randomString} from "./tools";
 import mqtt from "../shared/mqtt";
 
@@ -63,6 +63,13 @@ class Api {
   updateRoom = (id, data) => {
     const options = this.makeOptions("PUT", data);
     return this.logAndParse(`update room ${id}`, fetch(this.urlFor(`/rooms/${id}`), options));
+  };
+
+  fetchVHInfo = () => this.logAndParse(`fetch vh info`, fetch(this.urlFor("/v2/vhinfo"), this.defaultOptions()));
+
+  fetchStrServer = (data) => {
+    const options = this.makeOptions("POST", data);
+    return this.logAndParse(`fetch str server for: ${data}`, fetch(this.strUrl(`/server`), options));
   };
 
   // Admin API
@@ -147,9 +154,13 @@ class Api {
   fetchUserInfo = () =>
     this.logAndParse(`refresh user info`, fetch(this.authUrlFor("/my_info"), this.defaultOptions()));
 
+
+  // helpers
+
   urlFor = (path) => API_BACKEND + path;
   authUrlFor = (path) => AUTH_API_BACKEND + path;
   adminUrlFor = (name) => "https://" + name + JANUS_ADMIN_GXY;
+  strUrl = (path) => STRDB_BACKEND + path;
 
   defaultOptions = () => {
     const auth = this.accessToken ? `Bearer ${this.accessToken}` : `Basic ${btoa(`${this.username}:${this.password}`)}`;

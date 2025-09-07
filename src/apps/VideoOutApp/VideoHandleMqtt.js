@@ -287,7 +287,7 @@ class VideoHandleMqtt extends Component {
 
   render() {
     const {feeds, num_videos} = this.state;
-    const {g} = this.props;
+    const {g, qst_group} = this.props;
     const width = "400";
     const height = "300";
     const autoPlay = true;
@@ -299,7 +299,7 @@ class VideoHandleMqtt extends Component {
       let camera = g && g.users && !!g.users.find((u) => feed.id === u.rfid && u.camera);
       if (feed) {
         let id = feed.id;
-        let talk = feed.talking && this.props.qst;
+        let talk = feed.talking && qst_group;
         return (
           <div className={camera ? "video" : "hidden"} key={"prov" + id} ref={"provideo" + id} id={"provideo" + id}>
             <div className={classNames("video__overlay", {talk: talk})}>

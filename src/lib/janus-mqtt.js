@@ -1,6 +1,7 @@
 import {randomString} from "../shared/tools";
 import mqtt from "../shared/mqtt";
 import log from "loglevel";
+import { captureException } from "../shared/sentry";
 
 export class JanusMqtt {
   constructor(user, srv, mit) {
@@ -44,6 +45,8 @@ export class JanusMqtt {
         resolve: (json) => {
           if (json.janus !== 'success') {
             log.error('[janus] Cannot connect to Janus', json)
+            const error = new Error('Cannot connect to Janus');
+            captureException(error, { json });
             reject(json)
             return
           }
@@ -61,15 +64,21 @@ export class JanusMqtt {
 
           resolve(this)
         },
-        reject,
+        reject: (error) => {
+          captureException(error, { context: 'JanusMqtt.init' });
+          reject(error);
+        },
         replyType: 'success'
       }
 
       this.connect = function () {
         mqtt.send(JSON.stringify(msg), false, this.txTopic, this.rxTopic + "/" + this.user.id, this.user)
+        this.connect = null;
       }
 
       this.disconnect = function (json) {
+        const error = new Error('Janus disconnected');
+        captureException(error, { json });
         reject(json)
         this._cleanupTransactions()
       }
@@ -82,16 +91,22 @@ export class JanusMqtt {
     const name = plugin.getPluginName()
     return this.transaction('attach', {plugin: name, opaque_id: this.user.id}, 'success')
       .then((json) => {
-      if (json.janus !== 'success') {
-        log.error('[janus] Cannot add plugin', json)
-        plugin.error(json)
-        throw new Error(json)
-      }
+        if (json.janus !== 'success') {
+          log.error('[janus] Cannot add plugin', json)
+          const error = new Error('Cannot add plugin');
+          captureException(error, { json });
+          plugin.error(json)
+          throw new Error(json)
+        }
 
-      this.pluginHandles[json.data.id] = plugin
+        this.pluginHandles[json.data.id] = plugin
 
-      return plugin.success(this, json.data.id)
-    })
+        return plugin.success(this, json.data.id)
+      })
+      .catch(error => {
+        captureException(error, { context: 'JanusMqtt.attach', plugin: name });
+        throw error;
+      });
   }
 
   destroy () {
@@ -105,11 +120,15 @@ export class JanusMqtt {
           log.debug('[janus] Janus destroyed: ', data)
           this._cleanupTransactions()
           resolve()
-        }).catch(() => {
+        }).catch(error => {
+          captureException(error, { context: 'JanusMqtt.destroy' });
           this._cleanupTransactions()
           resolve()
         })
-      })
+      }).catch(error => {
+        captureException(error, { context: 'JanusMqtt.destroy.cleanup' });
+        reject(error);
+      });
     })
 
   }
@@ -117,20 +136,21 @@ export class JanusMqtt {
   detach(plugin) {
     return new Promise((resolve, reject) => {
       if (!this.pluginHandles[plugin.janusHandleId]) {
-        reject(new Error('[janus] unknown plugin'))
+        const error = new Error('[janus] unknown plugin');
+        captureException(error, { pluginHandleId: plugin.janusHandleId });
+        reject(error)
         return
       }
 
       this.transaction('hangup', { plugin: plugin.pluginName, handle_id: plugin.janusHandleId }, 'success', 5000).then(() => {
         delete this.pluginHandles[plugin.janusHandleId]
         plugin.detach()
-
         resolve()
-      }).catch((err) => {
+      }).catch(error => {
+        captureException(error, { context: 'JanusMqtt.detach', plugin: plugin.pluginName });
         delete this.pluginHandles[plugin.janusHandleId]
         plugin.detach()
-
-        reject(err)
+        reject(error)
       })
     })
   }
@@ -144,12 +164,16 @@ export class JanusMqtt {
     return new Promise((resolve, reject) => {
       if (timeoutMs) {
         setTimeout(() => {
-          reject('[janus] Transaction timed out after ' + timeoutMs + ' ms')
+          const error = new Error('[janus] Transaction timed out after ' + timeoutMs + ' ms');
+          captureException(error, { type, payload, timeoutMs });
+          reject(error)
         }, timeoutMs)
       }
 
       if (!this.isConnected) {
-        reject('[janus] Janus is not connected')
+        const error = new Error('[janus] Janus is not connected');
+        captureException(error, { type, payload });
+        reject(error)
         return
       }
 
@@ -181,9 +205,11 @@ export class JanusMqtt {
       this.transaction('keepalive', null, null, 20 * 1000).then(() => {
         this.keeptry = 0
         setTimeout(() => this.keepAlive(), 20 * 1000)
-      }).catch(err => {
-        log.debug(err, this.keeptry)
+      }).catch(error => {
+        log.debug(error, this.keeptry)
         if(this.keeptry === 3) {
+          const error = new Error('[janus] keepalive is not reached ('+ this.srv +') after: ' + this.keeptry + " tries");
+          captureException(error, { srv: this.srv, keeptry: this.keeptry });
           log.error('[janus] keepalive is not reached ('+ this.srv +') after: ' + this.keeptry + " tries")
           this.isConnected = false
           this.onStatus(this.srv, "error")
@@ -212,6 +238,8 @@ export class JanusMqtt {
     }
 
     this.isConnected = false
+    const error = new Error('Lost connection to the gateway (is it down?)');
+    captureException(error, { srv: this.srv });
     log.error('Lost connection to the gateway (is it down?)')
   }
 
@@ -219,23 +247,23 @@ export class JanusMqtt {
     const arr = []
     Object.keys(this.pluginHandles).forEach((pluginId) => {
       const plugin = this.pluginHandles[pluginId]
-      //delete this.pluginHandles[pluginId]
       arr.push(new Promise((resolve, reject) => {
         if (!this.pluginHandles[plugin.janusHandleId]) {
-          reject(new Error('[janus] unknown plugin'))
+          const error = new Error('[janus] unknown plugin');
+          captureException(error, { pluginHandleId: plugin.janusHandleId });
+          reject(error)
           return
         }
 
         this.transaction('hangup', { plugin: plugin.pluginName, handle_id: plugin.janusHandleId }, 'success', 1000).then(() => {
           delete this.pluginHandles[plugin.janusHandleId]
           plugin.detach()
-
           resolve()
-        }).catch((err) => {
+        }).catch(error => {
+          captureException(error, { context: 'JanusMqtt._cleanupPlugins', plugin: plugin.pluginName });
           delete this.pluginHandles[plugin.janusHandleId]
           plugin.detach()
-
-          reject(err)
+          reject(error)
         })
       }))
     })
