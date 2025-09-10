@@ -7,11 +7,11 @@ import "./i18n/i18n";
 // import GalaxyApp from "./apps/GalaxyApp";
 // import VirtualMqttClient from "./apps/VirtualApp/VirtualMqttClient";
 // import AdminApp from "./apps/AdminApp/AdminApp";
-// import ShidurAppMqtt from "./apps/ShidurApp/ShidurAppMqtt";
+import ShidurAppMqtt from "./apps/ShidurApp/ShidurAppMqtt";
 // import AudioOutMqtt from "./apps/AudioOutApp/AudioOutMqtt";
 // import VideoOutMqtt from "./apps/VideoOutApp/VideoOutMqtt";
 // import QstOutMqtt from "./apps/VideoOutApp/QstOutMqtt";
-import WebOutMqtt from "./apps/WebOutApp/WebOutMqtt";
+// import WebOutMqtt from "./apps/WebOutApp/WebOutMqtt";
 
 class App extends Component {
   render() {
@@ -20,11 +20,11 @@ class App extends Component {
         {/*{<GalaxyApp />}*/}
         {/*<VirtualMqttClient />*/}
         {/*<AdminApp />*/}
-        {/*<ShidurAppMqtt />*/}
+        <ShidurAppMqtt />
         {/*<AudioOutMqtt />*/}
         {/*<VideoOutMqtt />*/}
         {/*<QstOutMqtt />*/}
-        <WebOutMqtt />
+        {/*<WebOutMqtt />*/}
       </I18nextProvider>
     );
   }

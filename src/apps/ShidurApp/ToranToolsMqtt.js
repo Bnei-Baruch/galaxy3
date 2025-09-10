@@ -51,6 +51,7 @@ class ToranToolsMqtt extends Component {
     this.setState({pg: group, open: true});
     group.queue = i;
     this.props.setProps({group});
+    this.initJanus(group.janus)
   };
 
   closePopup = (disable = false, group) => {
@@ -748,7 +749,7 @@ class ToranToolsMqtt extends Component {
                 <div className="shidur_overlay">
                   <span>{group ? group.description : ""}</span>
                 </div>
-                <PreviewPanelMqtt pg={pg} p={1} gateways={gateways} closePopup={this.closePopup} initJanus={this.initJanus} />
+                <PreviewPanelMqtt pg={pg} p={1} gateways={this.props.gateways} closePopup={this.closePopup} initJanus={this.initJanus} />
               </Segment>
             ) : (
               ""

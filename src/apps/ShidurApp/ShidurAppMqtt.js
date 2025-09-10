@@ -148,10 +148,12 @@ class ShidurAppMqtt extends Component {
   initJanus = (gxy) => {
     log.info("["+gxy+"] Janus init")
     const {user, gateways} = this.state;
+    if(gateways[gxy]) return
     const token = ConfigStore.globalConfig.gateways.rooms[gxy].token
     gateways[gxy] = new JanusMqtt(user, gxy, gxy);
     gateways[gxy].init(token).then(data => {
-      log.info("["+gxy+"] Janus init success", data)
+      log.info("["+gxy+"] Janus init success", data);
+      this.setState({gateways});
       gateways[gxy].onStatus = (srv, status) => {
         if (status !== "online") {
           log.error("["+srv+"] Janus: ", status);
@@ -291,6 +293,7 @@ class ShidurAppMqtt extends Component {
           ...this.col4.state.vquad,
         ];
         let quads_list = quads.filter(k => k)
+        log.info(quads_list)
         if(quads_list.length > 0) this.initServers(quads_list);
         let list = groups.filter((r) => !quads.find((q) => q && r.room === q.room));
         let questions = list.filter((room) => room.questions);

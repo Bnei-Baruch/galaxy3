@@ -38,11 +38,21 @@ class JanusHandleMqtt extends Component {
 
   initVideoRoom = (room, inst) => {
     const {gateways, user, q, col} = this.props;
+    log.info(gateways)
     let janus = gateways[inst];
+    if(!janus) return
     const mit = "col" + col + "_q" + (q+1) + "_" + inst
 
     log.info("["+mit+"] Init room: ", room, inst, ConfigStore.globalConfig)
     log.info("["+mit+"] mit", mit)
+
+    if(janus?.isConnected !== true) {
+      setTimeout(() => {
+        log.info("["+mit+"] Not connected, waiting... ", janus)
+        this.initVideoRoom(room, inst)
+      }, 1000)
+      return
+    }
 
     this.setState({mit, janus});
 
