@@ -187,7 +187,7 @@ class ShidurAppMqtt extends Component {
         } else if (shidur_mode === "gvarim") {
           rooms = rooms.filter((r) => !r.description.match(/^W /));
         } else if (shidur_mode === "kvutzot") {
-          rooms = rooms.filter((r) => r.extra?.group);
+          rooms = rooms.filter((r) => r.users.find(g => g.extra?.isGroup));
         } else if (shidur_mode === "beyahad") {
           this.setState({shidur_mode: ""});
         }
@@ -197,7 +197,7 @@ class ShidurAppMqtt extends Component {
 
           if (preusers_count !== "Off") {
             pre_groups = rooms.filter((r) => !r.extra?.disabled && r.users.filter((r) => r.camera).length < preusers_count);
-            let new_groups = rooms.filter((r) => r.users.filter((r) => r.camera).length >= preusers_count && !r.extra?.disabled || r.extra?.group);
+            let new_groups = rooms.filter((r) => r.users.filter((r) => r.camera).length >= preusers_count && !r.extra?.disabled || r.users.find(g => g.extra?.isGroup));
 
             // Put groups with dynamic users count at the end of main list
             // FIXME: It's cause many time to switch main list filter
@@ -247,7 +247,7 @@ class ShidurAppMqtt extends Component {
         vip3_rooms = rooms.filter((r) => r.extra?.vip3);
         vip4_rooms = rooms.filter((r) => r.extra?.vip4);
         vip5_rooms = rooms.filter((r) => r.extra?.vip5);
-        group_user = rooms.filter((r) => r.extra?.group);
+        group_user = rooms.filter((r) => r.users.find(g => g.extra?.isGroup));
 
         let quads = [
           ...this.col1.state.vquad,
