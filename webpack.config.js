@@ -16,6 +16,7 @@ module.exports = {
   devServer: {
     port: '3000',
     compress: true,
+    historyApiFallback: true,
   },
   devtool: "source-map",
   entry: path.resolve(__dirname, './src/index.js'),
