@@ -112,10 +112,10 @@ class PreviewPanelMqtt extends Component {
     let {subscriber, room} = this.state
 
     if(!janus) {
-      setTimeout(() => {
-        log.info("["+inst+"] Not connected, waiting... ", janus)
-        this.subscribeTo(subscription, inst)
-      }, 1000)
+      // setTimeout(() => {
+      //   log.info("["+inst+"] Not connected, waiting... ", janus)
+      //   this.subscribeTo(subscription, inst)
+      // }, 1000)
       return
     }
 

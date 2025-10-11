@@ -294,7 +294,7 @@ class ShidurAppMqtt extends Component {
         ];
         let quads_list = quads.filter(k => k)
         log.info(quads_list)
-        if(quads_list.length > 0) this.initServers(quads_list);
+        //if(quads_list.length > 0) this.initServers(quads_list);
         let list = groups.filter((r) => !quads.find((q) => q && r.room === q.room));
         let questions = list.filter((room) => room.questions);
         this.setState({group_user, quads, questions, users_count, rooms, groups, vip1_rooms, vip2_rooms, vip3_rooms, vip4_rooms, vip5_rooms, disabled_rooms, pre_groups, region_groups});
@@ -411,6 +411,7 @@ class ShidurAppMqtt extends Component {
                   {...this.state}
                   ref={(col1) => {this.col1 = col1;}}
                   setProps={this.setProps}
+                  initJanus={this.initJanus}
                 />
               </Grid.Column>
               <Grid.Column>
@@ -419,6 +420,7 @@ class ShidurAppMqtt extends Component {
                   {...this.state}
                   ref={(col2) => {this.col2 = col2;}}
                   setProps={this.setProps}
+                  initJanus={this.initJanus}
                 />
               </Grid.Column>
               <Grid.Column>
@@ -427,6 +429,7 @@ class ShidurAppMqtt extends Component {
                   {...this.state}
                   ref={(col3) => {this.col3 = col3;}}
                   setProps={this.setProps}
+                  initJanus={this.initJanus}
                 />
               </Grid.Column>
               <Grid.Column>
@@ -435,6 +438,7 @@ class ShidurAppMqtt extends Component {
                   {...this.state}
                   ref={(col4) => {this.col4 = col4;}}
                   setProps={this.setProps}
+                  initJanus={this.initJanus}
                 />
               </Grid.Column>
             </Grid.Row>

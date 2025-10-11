@@ -36,11 +36,18 @@ class JanusHandleMqtt extends Component {
     this.exitVideoRoom(this.state.room, () => {});
   }
 
+  initJanus = (gxy, p) => {
+    log.info("["+gxy+"] Janus init")
+    this.props.initJanus(gxy)
+  };
+
   initVideoRoom = (room, inst) => {
     const {gateways, user, q, col} = this.props;
     log.info(gateways)
     let janus = gateways[inst];
-    if(!janus) return
+    if(!janus) {
+      this.initJanus(inst)
+    }
     const mit = "col" + col + "_q" + (q+1) + "_" + inst
 
     log.info("["+mit+"] Init room: ", room, inst, ConfigStore.globalConfig)
