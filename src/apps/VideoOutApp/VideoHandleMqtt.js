@@ -295,8 +295,8 @@ class VideoHandleMqtt extends Component {
     if (g && g.users) {
       hasRealGroup = g.users.some((u) => u.camera && u.role === "user" && u.extra?.isGroup);
       
-      // If no real group and this is the first room (q=0), use fake group for dev
-      if (!hasRealGroup && q === 0) {
+      // If no real group and this is the first room (q=0) or fourth room (q=3), use fake group for dev
+      if (!hasRealGroup && (q === 0 || q === 3)) {
         const visibleUsers = g.users
           .filter((u) => u.camera && u.role === "user")
           .sort((a, b) => String(a.rfid).localeCompare(String(b.rfid)));
@@ -324,6 +324,10 @@ class VideoHandleMqtt extends Component {
       return g && g.users && !!g.users.find((u) => feed.id === u.rfid && u.camera);
     }).length;
 
+    // When there's a group, limit regular users to 4 (plus the group itself)
+    let regularUserCount = 0;
+    const maxRegularUsers = 4;
+
     let program_feeds = sortedFeeds.map((feed) => {
       let camera = g && g.users && !!g.users.find((u) => feed.id === u.rfid && u.camera);
       if (feed) {
@@ -332,6 +336,15 @@ class VideoHandleMqtt extends Component {
         // Check if this user has the real group flag or is the fake group
         const user = g?.users?.find((u) => u.rfid === id);
         let isGroup = user?.extra?.isGroup || id === fakeGroupUserId;
+        
+        // If there's a group in the room, limit regular users to 4
+        if (hasAnyGroup && !isGroup && camera) {
+          regularUserCount++;
+          if (regularUserCount > maxRegularUsers) {
+            camera = false; // Hide users beyond the 4th
+          }
+        }
+        
         // If this is the group and it's the only visible video, add video--alone class
         let isAlone = isGroup && visibleVideoCount === 1;
         
@@ -368,22 +381,12 @@ class VideoHandleMqtt extends Component {
       return true;
     });
 
-    // Insert a spacer after the group video to prevent small videos from going under the title
-    let feedsWithSpacer = program_feeds;
-    if (hasAnyGroup && program_feeds.length > 1) {
-      feedsWithSpacer = [
-        program_feeds[0], // Group video (first)
-        <div key="title-spacer" className="title-spacer" />, // Invisible spacer
-        ...program_feeds.slice(1) // Rest of the videos
-      ];
-    }
-
     return (
       <div className={`vclient__main-wrapper no-of-videos-${num_videos} layout--equal broadcast--off`}>
         <div className="videos-panel">
           <div className="videos">
             <div className={classNames("videos__wrapper", {"has-group": hasAnyGroup})}>
-              {feedsWithSpacer}
+              {program_feeds}
             </div>
           </div>
         </div>

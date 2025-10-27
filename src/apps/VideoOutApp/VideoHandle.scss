@@ -185,6 +185,7 @@ $vh: 9;
     flex-wrap: wrap;
     gap: 2px !important;  // Override the normal reset above
     align-content: flex-start;
+    justify-content: center;  // Center all videos horizontally
     
     // Disable .no-of-videos- sizing for group rooms
     .video {
@@ -216,14 +217,6 @@ $vh: 9;
       width: 200px;
       height: calc(200px * 9 / 16) !important; // 112.5px
       flex: 0 0 200px !important;
-    }
-    
-    // Spacer to reserve space for title area (inserted after group in JS)
-    .title-spacer {
-      width: 200px;
-      height: 110px;
-      flex: 0 0 200px;
-      visibility: hidden;
     }
   }
 }
