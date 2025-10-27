@@ -265,6 +265,12 @@ export const trllang = {
   Persian: 327,
   Arabic: 328,
   Indonesian: 329,
+  Armenian: 330,
+  Danish: 331,
+  Estonian: 332,
+  Greek: 333,
+  Tagalog: 334,
+  Azerbaijani: 335,
   "Heb-Eng": 303,
   "Heb-Rus": 302,
 };
