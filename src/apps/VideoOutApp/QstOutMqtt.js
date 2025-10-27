@@ -58,13 +58,24 @@ class QstOutMqtt extends Component {
         //   ...qids.q4.vquad,
         // ];
         this.setState({qids});
-        if (this.state.qg) {
-          const {col, i} = this.state;
-          this.setState({qg: this.state.qids["q" + col].vquad[i]});
+        
+        // Auto-select first room with users for testing
+        if (!this.state.qg) {
+          for (let quadKey in qids) {
+            const quad = qids[quadKey];
+            if (quad && quad.vquad) {
+              const roomWithUsers = quad.vquad.find(room => room && room.users && room.users.length > 0);
+              if (roomWithUsers) {
+                this.setState({qg: roomWithUsers});
+                log.info("[QstOut] Auto-selected room:", roomWithUsers.room, roomWithUsers.description);
+                break;
+              }
+            }
+          }
         }
       })
         .catch((err) => {
-          log.error("[SDIOut] error fetching quad state", err);
+          log.error("[QstOut] error fetching quad state", err);
         });
 
       api.fetchRoomsStatistics().then((roomsStatistics) => {
@@ -129,19 +140,11 @@ class QstOutMqtt extends Component {
   onMqttData = (data) => {
     const {room, col, feed, group, i, status, qst} = data;
 
-    if (data.type === "sdi-fullscr_group" && status) {
-      if (qst) {
-        this.setState({col, i, group, room, qg: this.state.qids["q" + col].vquad[i]});
-      } else {
-        this["col" + col].toFullGroup(i, feed);
-      }
-    } else if (data.type === "sdi-fullscr_group" && !status) {
-      let {col, feed, i} = data;
-      if (qst) {
-        this.setState({group: null, room: null, qg: null});
-      } else {
-        this["col" + col].toFourGroup(i, feed);
-      }
+    // QstOut only handles qst-specific messages
+    if (data.type === "sdi-fullscr_group" && status && qst) {
+      this.setState({col, i, group, room, qg: this.state.qids["q" + col].vquad[i]});
+    } else if (data.type === "sdi-fullscr_group" && !status && qst) {
+      this.setState({group: null, room: null, qg: null});
     } else if (data.type === "sdi-vote") {
       if (this.state.group) return;
       this.setState({vote: status, qg: null});

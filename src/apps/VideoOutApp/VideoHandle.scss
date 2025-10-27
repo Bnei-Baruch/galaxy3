@@ -178,6 +178,22 @@ $vh: 9;
   
   .video_full &{
     justify-content: center;
+    
+    // In fullscreen mode with a group, scale everything up proportionally
+    &.has-group {
+      .video--group {
+        width: 1458px !important;  // Double the normal size (729px * 2)
+        height: 820px !important;  // Double the normal size (410px * 2)
+        flex: 0 0 100% !important;
+      }
+      
+      // Smaller regular users to fit below title and group
+      .video:not(.video--group) {
+        width: 177px !important;  // Width for 100px height at 16:9 ratio
+        height: 100px !important;
+        flex: 0 0 177px !important;
+      }
+    }
   }
   
   // When there's a group, use different layout

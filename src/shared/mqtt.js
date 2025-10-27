@@ -25,19 +25,10 @@ class MqttMsg {
     const service = isServiceID(user.id);
     const svc_token = GxyJanus?.globalConfig?.dynamic_config?.mqtt_auth;
     const token = service ? svc_token : this.token;
-    // dev-only suffix for sdiout service client id (no effect in production)
-    const sdioutDevSuffix =
-      process.env.NODE_ENV !== "production" && (user.id === "sdiout" || user.role === "sdiout")
-        ? "-local"
-        : "";
-    const id = service ? (user.id + sdioutDevSuffix) : user.id + "-" + randomString(3);
+    const id = service ? user.id : user.id + "-" + randomString(3);
 
     const transformUrl = (url, options, client) => {
-      const devSuffix =
-        process.env.NODE_ENV !== "production" && (user.id === "sdiout" || user.role === "sdiout")
-          ? "-local"
-          : "";
-      client.options.clientId = service ? (user.id + devSuffix) : user.id + "-" + randomString(3);
+      client.options.clientId = service ? user.id : user.id + "-" + randomString(3);
       client.options.password = service ? svc_token : this.token;
       return url;
     };

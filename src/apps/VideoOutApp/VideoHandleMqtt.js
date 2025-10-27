@@ -289,31 +289,14 @@ class VideoHandleMqtt extends Component {
     //const q = (<b style={{color: "red", fontSize: "20px", fontFamily: "Verdana", fontWeight: "bold"}}>?</b>);
 
     // Check if there are any real groups in this room
-    let hasRealGroup = false;
-    let fakeGroupUserId = null;
-    
-    if (g && g.users) {
-      hasRealGroup = g.users.some((u) => u.camera && u.role === "user" && u.extra?.isGroup);
-      
-      // If no real group and this is the first room (q=0) or fourth room (q=3), use fake group for dev
-      if (!hasRealGroup && (q === 0 || q === 3)) {
-        const visibleUsers = g.users
-          .filter((u) => u.camera && u.role === "user")
-          .sort((a, b) => String(a.rfid).localeCompare(String(b.rfid)));
-        if (visibleUsers.length > 0) {
-          fakeGroupUserId = visibleUsers[0].rfid;
-        }
-      }
-    }
-    
-    const hasAnyGroup = hasRealGroup || fakeGroupUserId !== null;
+    const hasAnyGroup = g && g.users && g.users.some((u) => u.camera && u.role === "user" && u.extra?.isGroup);
 
     // Sort feeds: group first, then others
     const sortedFeeds = [...feeds].sort((a, b) => {
       const aUser = g?.users?.find((u) => u.rfid === a.id);
       const bUser = g?.users?.find((u) => u.rfid === b.id);
-      const aIsGroup = aUser?.extra?.isGroup || a.id === fakeGroupUserId;
-      const bIsGroup = bUser?.extra?.isGroup || b.id === fakeGroupUserId;
+      const aIsGroup = aUser?.extra?.isGroup;
+      const bIsGroup = bUser?.extra?.isGroup;
       if (aIsGroup && !bIsGroup) return -1; // a (group) comes first
       if (!aIsGroup && bIsGroup) return 1;  // b (group) comes first
       return 0; // maintain original order for non-groups
@@ -333,9 +316,9 @@ class VideoHandleMqtt extends Component {
       if (feed) {
         let id = feed.id;
         let talk = feed.talking && qst_group;
-        // Check if this user has the real group flag or is the fake group
+        // Check if this user has the real group flag
         const user = g?.users?.find((u) => u.rfid === id);
-        let isGroup = user?.extra?.isGroup || id === fakeGroupUserId;
+        let isGroup = user?.extra?.isGroup;
         
         // If there's a group in the room, limit regular users to 4
         if (hasAnyGroup && !isGroup && camera) {
