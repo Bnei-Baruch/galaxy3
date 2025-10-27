@@ -58,24 +58,13 @@ class QstOutMqtt extends Component {
         //   ...qids.q4.vquad,
         // ];
         this.setState({qids});
-        
-        // Auto-select first room with users for testing
-        if (!this.state.qg) {
-          for (let quadKey in qids) {
-            const quad = qids[quadKey];
-            if (quad && quad.vquad) {
-              const roomWithUsers = quad.vquad.find(room => room && room.users && room.users.length > 0);
-              if (roomWithUsers) {
-                this.setState({qg: roomWithUsers});
-                log.info("[QstOut] Auto-selected room:", roomWithUsers.room, roomWithUsers.description);
-                break;
-              }
-            }
-          }
+        if (this.state.qg) {
+          const {col, i} = this.state;
+          this.setState({qg: this.state.qids["q" + col].vquad[i]});
         }
       })
         .catch((err) => {
-          log.error("[QstOut] error fetching quad state", err);
+          log.error("[SDIOut] error fetching quad state", err);
         });
 
       api.fetchRoomsStatistics().then((roomsStatistics) => {
