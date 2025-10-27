@@ -10,21 +10,22 @@ import VirtualMqttClient from "./apps/VirtualApp/VirtualMqttClient";
 // import ShidurAppMqtt from "./apps/ShidurApp/ShidurAppMqtt";
 // import ShidurAppHttp from "./apps/ShidurApp/ShidurAppHttp";
 // import AudioOutMqtt from "./apps/AudioOutApp/AudioOutMqtt";
-// import VideoOutMqtt from "./apps/VideoOutApp/VideoOutMqtt";
+import VideoOutMqtt from "./apps/VideoOutApp/VideoOutMqtt";
 // import QstOutMqtt from "./apps/VideoOutApp/QstOutMqtt";
 // import WebOutMqtt from "./apps/WebOutApp/WebOutMqtt";
 
 class App extends Component {
   render() {
+    const path = window.location.pathname;
+    const isSdiout = path.startsWith('/sdiout');
     return (
       <I18nextProvider i18n={i18n}>
         {/*{<GalaxyApp />}*/}
-        <VirtualMqttClient />
+        {isSdiout ? <VideoOutMqtt /> : <VirtualMqttClient />}
         {/*<AdminApp />*/}
         {/*<ShidurAppMqtt />*/}
         {/*<ShidurAppHttp />*/}
         {/*<AudioOutMqtt />*/}
-        {/*<VideoOutMqtt />*/}
         {/*<QstOutMqtt />*/}
         {/*<WebOutMqtt />*/}
       </I18nextProvider>
