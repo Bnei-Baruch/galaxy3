@@ -129,11 +129,19 @@ class QstOutMqtt extends Component {
   onMqttData = (data) => {
     const {room, col, feed, group, i, status, qst} = data;
 
-    // QstOut only handles qst-specific messages
-    if (data.type === "sdi-fullscr_group" && status && qst) {
-      this.setState({col, i, group, room, qg: this.state.qids["q" + col].vquad[i]});
-    } else if (data.type === "sdi-fullscr_group" && !status && qst) {
-      this.setState({group: null, room: null, qg: null});
+    if (data.type === "sdi-fullscr_group" && status) {
+      if (qst) {
+        this.setState({col, i, group, room, qg: this.state.qids["q" + col].vquad[i]});
+      } else {
+        this["col" + col].toFullGroup(i, feed);
+      }
+    } else if (data.type === "sdi-fullscr_group" && !status) {
+      let {col, feed, i} = data;
+      if (qst) {
+        this.setState({group: null, room: null, qg: null});
+      } else {
+        this["col" + col].toFourGroup(i, feed);
+      }
     } else if (data.type === "sdi-vote") {
       if (this.state.group) return;
       this.setState({vote: status, qg: null});
