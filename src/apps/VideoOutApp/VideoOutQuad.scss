@@ -69,25 +69,29 @@
 .fullscrvideo_title {
   // font-family: "Liberation Serif";
   // line-height: 1.2285em;
-  position: relative;
-  // right: 0;
-  // left:0;
-  margin: 0 2px;
+  position: absolute;
+  top: 0;
+  left: 2px;
+  right: 2px;
+  margin: 0;
   color: #FFF;
   text-align: center;
 
   font-size: 112.5px;
   line-height: 150px;
+  height: 150px;
   background-color: #2185d0;
   // width: auto;
   padding: 0px 30px;
   // float: right !important;
   z-index: 2;
-  + .vclient__main-wrapper {
-    // background:red;
-    height: calc(100% - 150px);
-    //margin-top:60px;
-  }
+}
+
+.video_full .vclient__main-wrapper {
+  // background:red;
+  height: calc(100% - 150px) !important;
+  top: 150px !important;
+  position: absolute !important;
 }
 
 .next_button {
