@@ -290,15 +290,18 @@ class VideoHandleMqtt extends Component {
 
     // Check if there are any real groups in this room and count them
     const groupUsers = g && g.users ? g.users.filter((u) => u.camera && u.role === "user" && u.extra?.isGroup) : [];
-    const groupCount = groupUsers.length;
+    const groupCount = Math.min(groupUsers.length, 2); // Limit to max 2 groups
     const hasAnyGroup = groupCount > 0;
+    
+    // Get the IDs of the first 2 groups (if more than 2, ignore the rest)
+    const allowedGroupIds = groupUsers.slice(0, 2).map(u => u.rfid);
 
-    // Sort feeds: groups first, then others
+    // Sort feeds: groups first (max 2), then others
     const sortedFeeds = [...feeds].sort((a, b) => {
       const aUser = g?.users?.find((u) => u.rfid === a.id);
       const bUser = g?.users?.find((u) => u.rfid === b.id);
-      const aIsGroup = aUser?.extra?.isGroup;
-      const bIsGroup = bUser?.extra?.isGroup;
+      const aIsGroup = aUser?.extra?.isGroup && allowedGroupIds.includes(a.id);
+      const bIsGroup = bUser?.extra?.isGroup && allowedGroupIds.includes(b.id);
       if (aIsGroup && !bIsGroup) return -1; // a (group) comes first
       if (!aIsGroup && bIsGroup) return 1;  // b (group) comes first
       return 0; // maintain original order for non-groups
@@ -309,10 +312,10 @@ class VideoHandleMqtt extends Component {
       return g && g.users && !!g.users.find((u) => feed.id === u.rfid && u.camera);
     }).length;
     
-    // Count only visible groups to determine if group is alone
+    // Count only visible groups (max 2) to determine if group is alone
     const visibleGroupCount = sortedFeeds.filter((feed) => {
       const user = g?.users?.find((u) => u.rfid === feed.id);
-      return user?.camera && user?.extra?.isGroup;
+      return user?.camera && user?.extra?.isGroup && allowedGroupIds.includes(feed.id);
     }).length;
 
     // When there's a group, limit regular users to 4 (plus the groups themselves)
@@ -324,9 +327,9 @@ class VideoHandleMqtt extends Component {
       if (feed) {
         let id = feed.id;
         let talk = feed.talking && qst_group;
-        // Check if this user has the real group flag
+        // Check if this user has the real group flag AND is in the first 2 groups
         const user = g?.users?.find((u) => u.rfid === id);
-        let isGroup = user?.extra?.isGroup;
+        let isGroup = user?.extra?.isGroup && allowedGroupIds.includes(id);
         
         // If there's a group in the room, limit regular users to 4
         if (hasAnyGroup && !isGroup && camera) {
