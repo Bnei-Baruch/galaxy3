@@ -293,8 +293,11 @@ class VideoHandleMqtt extends Component {
     const groupCount = Math.min(groupUsers.length, 2); // Limit to max 2 groups
     const hasAnyGroup = groupCount > 0;
     
-    // Get the IDs of the first 2 groups (if more than 2, ignore the rest)
-    const allowedGroupIds = groupUsers.slice(0, 2).map(u => u.rfid);
+    // Get the IDs of the first 2 groups (sorted by rfid for stability)
+    const allowedGroupIds = groupUsers
+      .sort((a, b) => String(a.rfid).localeCompare(String(b.rfid)))
+      .slice(0, 2)
+      .map(u => u.rfid);
 
     // Sort feeds: groups first (max 2), then others
     const sortedFeeds = [...feeds].sort((a, b) => {
