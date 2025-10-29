@@ -192,9 +192,9 @@ $vh: 9;
         
         // When there are multiple groups in fullscreen, use full quad width split in 2
         &.video--group--multiple {
-          width: 959px !important;  // (1920px - 2px gap) / 2
-          height: 539px !important; // 959px * 9 / 16
-          flex: 0 0 959px !important;
+          width: 948px !important;  // Reduced to ensure they fit side by side
+          height: 533px !important; // 948px * 9 / 16
+          flex: 0 0 948px !important;
           margin: 0 !important;
         }
       }
