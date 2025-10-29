@@ -184,13 +184,18 @@ $vh: 9;
       .video--group {
         width: 1458px !important;  // Double the normal size (729px * 2)
         height: 820px !important;  // Double the normal size (410px * 2)
-        flex: 0 0 100% !important;
         
-        // When there are multiple groups in fullscreen, make them fit side by side
+        // Single group takes full width
+        &:not(.video--group--multiple) {
+          flex: 0 0 100% !important;
+        }
+        
+        // When there are multiple groups in fullscreen, use full quad width split in 2
         &.video--group--multiple {
-          width: 726px !important;  // (1458px - 2px gap) / 2
-          height: 408px !important; // 726px * 9 / 16
-          flex: 0 0 726px !important;
+          width: 959px !important;  // (1920px - 2px gap) / 2
+          height: 539px !important; // 959px * 9 / 16
+          flex: 0 0 959px !important;
+          margin: 0 !important;
         }
       }
       
@@ -205,9 +210,10 @@ $vh: 9;
   
   // When there's a group, use different layout
   &.has-group {
-    flex-wrap: wrap;
+    flex-wrap: wrap !important;  // Override wrap-reverse
     gap: 2px !important;  // Override the normal reset above
-    align-content: flex-start;
+    align-content: center;  // Center vertically
+    align-items: center;  // Center items vertically within their row
     justify-content: center;  // Center all videos horizontally
     
     // Disable .no-of-videos- sizing for group rooms
@@ -221,15 +227,20 @@ $vh: 9;
     .video--group {
       width: 729px;
       height: 410px !important; // Added 50px to use available space
-      flex: 0 0 100% !important;  // Take full width to force line break
       margin-left: auto;
       margin-right: auto;
       
-      // When there are multiple groups, make them smaller to fit side by side
+      // Single group takes full width
+      &:not(.video--group--multiple) {
+        flex: 0 0 100% !important;  // Take full width to force line break
+      }
+      
+      // When there are multiple groups, use full room width split in 2
       &.video--group--multiple {
-        width: 363px !important;  // (729px - 2px gap) / 2
-        height: 204px !important; // 363px * 9 / 16
-        flex: 0 0 363px !important; // Allow side by side
+        width: 473px !important;  // (948px - 2px gap) / 2 (accounting for wrapper borders)
+        height: 266px !important; // 473px * 9 / 16
+        flex: 0 0 473px !important; // Allow side by side, not full width
+        margin: 0; // Remove auto margins for side-by-side layout
       }
     }
     

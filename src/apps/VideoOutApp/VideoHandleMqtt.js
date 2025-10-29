@@ -304,9 +304,15 @@ class VideoHandleMqtt extends Component {
       return 0; // maintain original order for non-groups
     });
 
-    // Count visible videos (not hidden)
+    // Count visible videos (groups + regular users with camera)
     const visibleVideoCount = sortedFeeds.filter((feed) => {
       return g && g.users && !!g.users.find((u) => feed.id === u.rfid && u.camera);
+    }).length;
+    
+    // Count only visible groups to determine if group is alone
+    const visibleGroupCount = sortedFeeds.filter((feed) => {
+      const user = g?.users?.find((u) => u.rfid === feed.id);
+      return user?.camera && user?.extra?.isGroup;
     }).length;
 
     // When there's a group, limit regular users to 4 (plus the groups themselves)
