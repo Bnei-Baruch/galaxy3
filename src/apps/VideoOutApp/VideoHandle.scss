@@ -185,6 +185,13 @@ $vh: 9;
         width: 1458px !important;  // Double the normal size (729px * 2)
         height: 820px !important;  // Double the normal size (410px * 2)
         flex: 0 0 100% !important;
+        
+        // When there are multiple groups in fullscreen, make them fit side by side
+        &.video--group--multiple {
+          width: 726px !important;  // (1458px - 2px gap) / 2
+          height: 408px !important; // 726px * 9 / 16
+          flex: 0 0 726px !important;
+        }
       }
       
       // Smaller regular users to fit below title and group
@@ -217,6 +224,13 @@ $vh: 9;
       flex: 0 0 100% !important;  // Take full width to force line break
       margin-left: auto;
       margin-right: auto;
+      
+      // When there are multiple groups, make them smaller to fit side by side
+      &.video--group--multiple {
+        width: 363px !important;  // (729px - 2px gap) / 2
+        height: 204px !important; // 363px * 9 / 16
+        flex: 0 0 363px !important; // Allow side by side
+      }
     }
     
     // If there's only the group video (no other visible users), make it fill the space

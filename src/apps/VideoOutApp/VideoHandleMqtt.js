@@ -288,10 +288,12 @@ class VideoHandleMqtt extends Component {
     const muted = true;
     //const q = (<b style={{color: "red", fontSize: "20px", fontFamily: "Verdana", fontWeight: "bold"}}>?</b>);
 
-    // Check if there are any real groups in this room
-    const hasAnyGroup = g && g.users && g.users.some((u) => u.camera && u.role === "user" && u.extra?.isGroup);
+    // Check if there are any real groups in this room and count them
+    const groupUsers = g && g.users ? g.users.filter((u) => u.camera && u.role === "user" && u.extra?.isGroup) : [];
+    const groupCount = groupUsers.length;
+    const hasAnyGroup = groupCount > 0;
 
-    // Sort feeds: group first, then others
+    // Sort feeds: groups first, then others
     const sortedFeeds = [...feeds].sort((a, b) => {
       const aUser = g?.users?.find((u) => u.rfid === a.id);
       const bUser = g?.users?.find((u) => u.rfid === b.id);
@@ -307,7 +309,7 @@ class VideoHandleMqtt extends Component {
       return g && g.users && !!g.users.find((u) => feed.id === u.rfid && u.camera);
     }).length;
 
-    // When there's a group, limit regular users to 4 (plus the group itself)
+    // When there's a group, limit regular users to 4 (plus the groups themselves)
     let regularUserCount = 0;
     const maxRegularUsers = 4;
 
@@ -335,6 +337,7 @@ class VideoHandleMqtt extends Component {
           <div 
             className={classNames(camera ? "video" : "hidden", {
               "video--group": isGroup,
+              "video--group--multiple": isGroup && groupCount > 1,
               "video--alone": isAlone
             })} 
             key={"prov" + id} 
