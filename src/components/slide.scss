@@ -55,6 +55,10 @@
   margin-top: 40px;
 }
 
+.renderer-default .slide-content {
+  font-weight: bold;
+}
+
 .slide-content {
   position: absolute;
   top: 0;
@@ -62,7 +66,6 @@
   overflow: hidden;
   font-family: Arial, sans-serif;
   font-size: 62px;
-  font-weight: bold;
   line-height: 1em;
   width: 1920px;
   height: 315px;
