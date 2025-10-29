@@ -23,7 +23,7 @@ const WQ_SLIDE_SIZE = "wq-slide-size";
 const tagARegEx = /<a[^>]*>([^<]+)<\/a>/;
 
 export const SubtitlesView = ({msgState}) => {
-  let {msg: {message, isLtr, slide} = {}, language, wqLangs, display_status} = msgState;
+  let {msg: {message, isLtr, slide, renderer} = {}, language, wqLangs, display_status} = msgState;
 
   const {t} = useTranslation();
   const _initSlideSize = Number.parseInt(localStorage.getItem(WQ_SLIDE_SIZE) || DEFAULT_SLIDE_SIZE);
@@ -173,6 +173,7 @@ export const SubtitlesView = ({msgState}) => {
                 alternatives={wqLangs}
                 switchLang={(l) => messageManager.switchWqLang(l)}
                 overlayVisible={showQuestion}
+                renderer={renderer}
             />
             <div className={classNames("show-wq", "ltr", {"overlay-visible": !showQuestion})}>
               <Button compact icon="eye" title={t("workshop.showQuestion")} onClick={() => setShowQuestion(true)}/>
