@@ -8,7 +8,7 @@ export const createMarkdownit = () => {
   return markdownit({ html: true, breaks: false }).disable(['lheading', 'list']);
 }
 
-export const Slide = ({ content, isLtr, isQuestion, controls, slideSize, alternatives, switchLang, overlayVisible }) => {
+export const Slide = ({ content, isLtr, isQuestion, controls, slideSize, alternatives, switchLang, overlayVisible, renderer }) => {
   const outerRef = useRef();  // slide-container
   const slideRef = useRef();  // slide-content
   const blueStripeRef = useRef();
@@ -70,7 +70,7 @@ export const Slide = ({ content, isLtr, isQuestion, controls, slideSize, alterna
   return (
     <div
       ref={outerRef}
-      className={classNames("slide-container", {"slide-question" : isQuestion, "overlay-visible": overlayVisible})}
+      className={classNames("slide-container", "renderer-" + renderer, {"slide-question" : isQuestion, "overlay-visible": overlayVisible})}
     >
       {controls}
       <div className="stripes">
