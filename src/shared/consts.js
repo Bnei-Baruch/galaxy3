@@ -152,6 +152,7 @@ export const audiog_options2 = [
   },
   {key: "heru", value: 10, icon: "group", eng_text: "Heb-Rus", text: "Русский-עברית", langKey: "ru"},
   {key: "heen", value: 17, icon: "group", eng_text: "Heb-Eng", text: "English-עברית", langKey: "en"},
+  {key: "hede", value: 18, icon: "group", eng_text: "Heb-Ger", text: "Deutsch-עברית", langKey: "de"},
 ];
 export const audiog_options = [
   {key: 101, value: 101, text: "Workshop", disabled: true, icon: "tags", selected: true},
@@ -230,6 +231,7 @@ export const audiog_options = [
   {key: 99, value: 99, text: "Special", disabled: true, icon: "tags", selected: true},
   {key: "heru", value: 10, text: "Heb-Rus"},
   {key: "heen", value: 17, text: "Heb-Eng"},
+  {key: "hede", value: 18, text: "Heb-Ger"},
 ];
 
 export const gxycol = [0, 201, 203, 202, 204];
@@ -271,8 +273,9 @@ export const trllang = {
   Greek: 333,
   Tagalog: 334,
   Azerbaijani: 335,
-  "Heb-Eng": 303,
-  "Heb-Rus": 302,
+  "Heb-Eng": 403,
+  "Heb-Rus": 402,
+  "Heb-Ger": 407,
 };
 export const LANGUAGES = [
   {code: "ab", name: "Abkhaz", nativeName: "аҧсуа"},
