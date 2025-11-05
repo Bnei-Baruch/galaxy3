@@ -21,10 +21,18 @@ class VideoHandleMqtt extends Component {
 
   };
 
+  getShownCount = (feeds) => {
+    const {g} = this.props;
+    if (!g || !g.users) return feeds.length;
+    const shown = feeds.filter((f) => g.users.find((u) => u.rfid === f.id && u.camera));
+    return shown.length;
+  }
+
   componentDidMount() {
     let {g} = this.props;
-    let num_videos = g?.users?.filter((u) => u.camera).length;
-    if (num_videos > 25) num_videos = 25;
+    let num_videos = g?.users?.filter((u) => u.camera && u.role === "user").length || 0;
+    if (num_videos > 25) num_videos = 25; // Cap at 25 like the original
+    
     this.setState({num_videos});
   }
 
@@ -49,7 +57,8 @@ class VideoHandleMqtt extends Component {
     }
     if (g && g.users && JSON.stringify(g) !== JSON.stringify(prevProps.g)) {
       let num_videos = g.users.filter((u) => u.camera && u.role === "user").length;
-      if (num_videos > 25) num_videos = 25;
+      if (num_videos > 25) num_videos = 25; // Cap at 25 like the original
+      
       this.setState({num_videos});
     }
   }
@@ -126,7 +135,9 @@ class VideoHandleMqtt extends Component {
         }
       }
     }
-    this.setState({feeds});
+    const shown = this.getShownCount(feeds);
+    const layoutCount = shown >= 10 ? 10 : shown;
+    this.setState({feeds, num_videos: layoutCount});
     if (subscription.length > 0) {
       this.subscribeTo(room, subscription);
     }
@@ -159,7 +170,9 @@ class VideoHandleMqtt extends Component {
     const isExistFeed = feeds.find((f) => f.id === feed[0].id);
     if (!isExistFeed) {
       feeds.push(feed[0]);
-      this.setState({feeds});
+      const shown = this.getShownCount(feeds);
+      const layoutCount = shown >= 10 ? 10 : shown;
+      this.setState({feeds, num_videos: layoutCount});
     }
     if (subscription.length > 0) {
       this.subscribeTo(room, subscription);
@@ -287,7 +300,7 @@ class VideoHandleMqtt extends Component {
 
   render() {
     const {feeds, num_videos} = this.state;
-    const {g, qst_group} = this.props;
+    const {g, qst_group, q} = this.props;
     const width = "400";
     const height = "300";
     const autoPlay = true;
@@ -295,13 +308,74 @@ class VideoHandleMqtt extends Component {
     const muted = true;
     //const q = (<b style={{color: "red", fontSize: "20px", fontFamily: "Verdana", fontWeight: "bold"}}>?</b>);
 
-    let program_feeds = feeds.map((feed) => {
+    // Check if there are any real groups in this room and count them
+    const groupUsers = g && g.users ? g.users.filter((u) => u.camera && u.role === "user" && u.extra?.isGroup) : [];
+    const groupCount = Math.min(groupUsers.length, 2); // Limit to max 2 groups
+    const hasAnyGroup = groupCount > 0;
+    
+    // Get the IDs of the first 2 groups (sorted by rfid for stability)
+    const allowedGroupIds = groupUsers
+      .sort((a, b) => String(a.rfid).localeCompare(String(b.rfid)))
+      .slice(0, 2)
+      .map(u => u.rfid);
+
+    // Sort feeds: groups first (max 2), then others
+    const sortedFeeds = [...feeds].sort((a, b) => {
+      const aUser = g?.users?.find((u) => u.rfid === a.id);
+      const bUser = g?.users?.find((u) => u.rfid === b.id);
+      const aIsGroup = aUser?.extra?.isGroup && allowedGroupIds.includes(a.id);
+      const bIsGroup = bUser?.extra?.isGroup && allowedGroupIds.includes(b.id);
+      if (aIsGroup && !bIsGroup) return -1; // a (group) comes first
+      if (!aIsGroup && bIsGroup) return 1;  // b (group) comes first
+      return 0; // maintain original order for non-groups
+    });
+
+    // Count visible videos (groups + regular users with camera)
+    const visibleVideoCount = sortedFeeds.filter((feed) => {
+      return g && g.users && !!g.users.find((u) => feed.id === u.rfid && u.camera);
+    }).length;
+    
+    // Count only visible groups (max 2) to determine if group is alone
+    const visibleGroupCount = sortedFeeds.filter((feed) => {
+      const user = g?.users?.find((u) => u.rfid === feed.id);
+      return user?.camera && user?.extra?.isGroup && allowedGroupIds.includes(feed.id);
+    }).length;
+
+    // When there's a group, limit regular users to 4 (plus the groups themselves)
+    let regularUserCount = 0;
+    const maxRegularUsers = 4;
+
+    let program_feeds = sortedFeeds.map((feed) => {
       let camera = g && g.users && !!g.users.find((u) => feed.id === u.rfid && u.camera);
       if (feed) {
         let id = feed.id;
         let talk = feed.talking && qst_group;
+        // Check if this user has the real group flag AND is in the first 2 groups
+        const user = g?.users?.find((u) => u.rfid === id);
+        let isGroup = user?.extra?.isGroup && allowedGroupIds.includes(id);
+        
+        // If there's a group in the room, limit regular users to 4
+        if (hasAnyGroup && !isGroup && camera) {
+          regularUserCount++;
+          if (regularUserCount > maxRegularUsers) {
+            camera = false; // Hide users beyond the 4th
+          }
+        }
+        
+        // If this is the group and it's the only visible video, add video--alone class
+        let isAlone = isGroup && visibleVideoCount === 1;
+        
         return (
-          <div className={camera ? "video" : "hidden"} key={"prov" + id} ref={"provideo" + id} id={"provideo" + id}>
+          <div 
+            className={classNames(camera ? "video" : "hidden", {
+              "video--group": isGroup,
+              "video--group--multiple": isGroup && groupCount > 1,
+              "video--alone": isAlone
+            })} 
+            key={"prov" + id} 
+            ref={"provideo" + id} 
+            id={"provideo" + id}
+          >
             <div className={classNames("video__overlay", {talk: talk})}>
               {/*{question ? <div className="question">*/}
               {/*    <svg viewBox="0 0 50 50">*/}
@@ -314,8 +388,6 @@ class VideoHandleMqtt extends Component {
               key={id}
               ref={"pv" + id}
               id={"pv" + id}
-              width={width}
-              height={height}
               autoPlay={autoPlay}
               controls={controls}
               muted={muted}
@@ -331,7 +403,9 @@ class VideoHandleMqtt extends Component {
       <div className={`vclient__main-wrapper no-of-videos-${num_videos} layout--equal broadcast--off`}>
         <div className="videos-panel">
           <div className="videos">
-            <div className="videos__wrapper">{program_feeds}</div>
+            <div className={classNames("videos__wrapper", {"has-group": hasAnyGroup})}>
+              {program_feeds}
+            </div>
           </div>
         </div>
       </div>
