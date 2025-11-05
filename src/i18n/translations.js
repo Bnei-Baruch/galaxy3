@@ -159,8 +159,8 @@ export const resources = {
         login: "Login",
         guest: "Continue as a Guest",
         welcomeUser: "Welcome, [UserFirstName]",
-        logoOurConnection: "OUR CONNECTION",
-        logoNetwork: "NETWORK",
+        logoOurConnection: "BNEI BARUCH",
+        logoNetwork: "Arvut System",
         intro:
           "Our Virtual Home, developed by the Bnei Baruch Kabbalah La’am Association, is a worldwide headquarters and virtual space for spiritual advancement, providing an interactive environment that feels like physical learning—watch live lessons, ask questions and receive real-time answers, conduct workshop discussions, and listen to a wide selection of translations.",
         userFee: "Pay User Fee",
@@ -440,8 +440,8 @@ export const resources = {
         login: "Ingresar",
         guest: "Continuar como invitado",
         welcomeUser: "Hola, [UserFirstName]",
-        logoOurConnection: "NUESTRA RED",
-        logoNetwork: "DE CONEXIÓN",
+        logoOurConnection: "BNEI BARUCH",
+        logoNetwork: "SISTEMA ARVUT",
         intro:
           "Nuestro Hogar Virtual, nuestra sede mundial, el lugar para nuestro avance espiritual, es nuestro lugar común construido y desarrollado por la Asociación Bnei Baruj Kabbalah Laam como un centro educativo global que nos permite experimentar un entorno de aprendizaje interactivo lo más cercano posible al aprendizaje físico: ver lecciones en vivo, hacer preguntas y recibir respuestas en tiempo real, realizar talleres y escuchar una amplia selección de traducciones.",
         userFee: "Pagar tarifa de usuario",
@@ -720,8 +720,8 @@ export const resources = {
         login: "כניסה",
         guest: "המשך כאורח",
         welcomeUser: "שלום, [UserFirstName]",
-        logoOurConnection: "מערכת",
-        logoNetwork: "הקשר בינינו",
+        logoOurConnection: "בני ברוך",
+        logoNetwork: "מערכת הערבות",
         intro:
           "הבית הווירטואלי שלנו, המטה העולמי שלנו, המקום להתקדמות הרוחנית שלנו, הוא המקום המשותף שלנו שנבנה ופותח על ידי עמותת בני ברוך קבלה לעם כמרכז חינוכי עולמי, המאפשר לנו לחוות סביבת למידה אינטראקטיבית קרובה ככל האפשר ללימוד פיזי: לצפות בשיעורים חיים, לשאול שאלות ולקבל תשובות בזמן אמת, לערוך דיונים בסדנאות ולהאזין למבחר רחב של תרגומים.",
         userFee: "לתשלום עבור השימוש",
@@ -991,8 +991,8 @@ export const resources = {
         login: "Войти",
         guest: "Продолжить как гость",
         welcomeUser: "Здравствуйте, [UserFirstName]",
-        logoOurConnection: "СЕТЬ СВЯЗИ",
-        logoNetwork: "МЕЖДУ НАМИ",
+        logoOurConnection: "BNEI BARUCH",
+        logoNetwork: "СИСТЕМА АРВУТ",
         intro:
           "Виртуальный дом, наша всемирная штаб-квартира - это место, построенное ассоциацией “Бней Барух - Каббала лаАм”, как всемирный образовательный центр, позволяющий учащимся находиться в интерактивной среде обучения, максимально приближенной к физическому обучению. Уроки в живом эфире, вопросы и ответы в режиме реального времени, обсуждения на семинарах - и все это в переводе на десятки языков стран мира с целью нашего общего духовного продвижения.",
         userFee: "Внести абонентскую плату",
