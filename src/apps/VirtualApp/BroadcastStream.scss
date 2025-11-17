@@ -123,13 +123,23 @@
     }
   }
 
+  &.hide-cursor {
+    cursor: none;
+  }
+
   .controls {
     color: #ffffff;
     overflow: hidden;
     z-index: 1;
+    transition: opacity 0.3s ease-in-out;
 
     * {
       color: inherit;
+    }
+
+    &--hidden {
+      opacity: 0;
+      pointer-events: none;
     }
 
     &__top,
