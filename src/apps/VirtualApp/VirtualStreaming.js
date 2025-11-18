@@ -31,7 +31,10 @@ class VirtualStreaming extends Component {
   }
 
   videoRef(ref) {
-    JanusStream.attachVideoStream(ref);
+    if (ref && ref !== this.videoElement) {
+      this.videoElement = ref;
+      JanusStream.attachVideoStream(ref);
+    }
   }
 
   setVideoWrapperRef(ref) {
@@ -64,33 +67,21 @@ class VirtualStreaming extends Component {
     const isNowFullScreen = isFullScreen(this.videoWrapper);
     this.setState({fullScreen: isNowFullScreen});
     
-    // Show controls when entering fullscreen, start hide timer
-    if (isNowFullScreen) {
-      this.showControlsTemporarily();
-    } else {
-      // Always show controls when exiting fullscreen
-      this.setState({showControls: true});
-      this.clearHideTimer();
-    }
+    // Show controls and start hide timer whenever fullscreen changes
+    this.showControlsTemporarily();
   }
 
   handleUserActivity() {
-    // Auto-hide in fullscreen mode or when opened in separate tab (detached)
-    const shouldAutoHide = isFullScreen(this.videoWrapper) || !this.props.attached;
-    if (shouldAutoHide) {
-      this.showControlsTemporarily();
-    }
+    // Always auto-hide controls in all modes (inline, detached, fullscreen)
+    this.showControlsTemporarily();
   }
 
   showControlsTemporarily() {
     this.setState({showControls: true});
     this.clearHideTimer();
-    // Hide controls after 5 seconds of inactivity
+    // Hide controls after 5 seconds of inactivity in all modes
     this.hideControlsTimer = setTimeout(() => {
-      const shouldAutoHide = isFullScreen(this.videoWrapper) || !this.props.attached;
-      if (shouldAutoHide) {
-        this.setState({showControls: false});
-      }
+      this.setState({showControls: false});
     }, 5000);
   }
 
@@ -108,21 +99,14 @@ class VirtualStreaming extends Component {
     // Event listeners will be added in setVideoWrapperRef when the ref is set
     // This ensures they're added to the correct document (parent or new window)
     
-    // Start hide timer if opening in separate tab (detached mode)
-    if (!this.props.attached) {
-      this.showControlsTemporarily();
-    }
+    // Start hide timer on mount (works for all modes)
+    this.showControlsTemporarily();
   }
 
   componentDidUpdate(prevProps) {
-    // Start hide timer when opening in separate tab
-    if (prevProps.attached && !this.props.attached) {
+    // Start hide timer when switching between attached/detached modes
+    if (prevProps.attached !== this.props.attached) {
       this.showControlsTemporarily();
-    }
-    // Always show controls when closing separate tab (back to inline)
-    if (!prevProps.attached && this.props.attached) {
-      this.setState({showControls: true});
-      this.clearHideTimer();
     }
   }
 
@@ -218,13 +202,12 @@ class VirtualStreaming extends Component {
     const video_option = video_options.find((option) => option.value === videos);
     const audio_option = audiog_options2.find((option) => option.value === audios);
     const playerLang = audio_option.langKey || audio_option.key;
-    const shouldAutoHide = isOnFullScreen || !attached;
     const inLine = (
       <div
         className={classNames("video video--broadcast", {
           "is-double-size": isDoubleSize, 
           "not-attached": !attached,
-          "hide-cursor": shouldAutoHide && !showControls
+          "hide-cursor": !showControls
         })}
         key="v1"
         ref={(ref) => this.setVideoWrapperRef(ref)}
@@ -233,7 +216,7 @@ class VirtualStreaming extends Component {
       >
         <div className="video__overlay">
           <div className={`activities ${isOnFullScreen || !attached ? "on_full_browser" : ""}`}>
-            <div className={classNames("controls", {"controls--hidden": shouldAutoHide && !showControls})}>
+            <div className={classNames("controls", {"controls--hidden": !showControls})}>
               <div className="controls__top">
                 <button>
                   <Icon name="close" onClick={closeShidur}/>
