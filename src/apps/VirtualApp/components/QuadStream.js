@@ -3,7 +3,7 @@ import classNames from "classnames";
 import NewWindow from "@hinaser/react-new-window";
 import {isFullScreen, toggleFullScreen} from "../FullScreenHelper";
 import {Icon} from "semantic-ui-react";
-import {Close, OpenInNew} from "@mui/icons-material";
+import {Close} from "@mui/icons-material";
 import IconButton from "@mui/material/IconButton";
 import JanusStream from "../../../shared/streaming-utils";
 
@@ -185,9 +185,9 @@ class QuadStream extends Component {
                   <Icon name={isFullScreen(this.videoWrapper) ? "compress" : "expand"}/>
                 </button>
                 {!attached ? null : (
-                  <IconButton onClick={() => toggleAttach()} size="large">
-                    <OpenInNew style={{color: "white", fontWeight: "bold"}} />
-                  </IconButton>
+                  <button onClick={() => toggleAttach()}>
+                    <Icon name="external square"/>
+                  </button>
                 )}
               </div>
             </div>

@@ -208,7 +208,7 @@ class VirtualMqttClient extends Component {
       // Start hide timer when entering fullscreen
       this.showBarsTemporarily();
     } else {
-      // Always show bars when exiting fullscreen
+      // Clear timer when exiting fullscreen - keep bars visible
       this.clearHideBarsTimer();
     }
   }
@@ -225,14 +225,16 @@ class VirtualMqttClient extends Component {
     this.clearHideBarsTimer();
     // Hide bars after 5 seconds of inactivity
     this.hideBarsTimer = setTimeout(() => {
-      if (this.state.appFullScreen) {
-        // Start fade-out animation
-        this.setState({barsAnimatingOut: true});
-        // Remove from DOM after animation completes (300ms)
-        setTimeout(() => {
-          this.setState({showBars: false, barsAnimatingOut: false});
-        }, 300);
+      // Don't hide bars if mic is unmuted
+      if (!this.state.muted) {
+        return;
       }
+      // Start fade-out animation
+      this.setState({barsAnimatingOut: true});
+      // Remove bars after animation completes (300ms)
+      setTimeout(() => {
+        this.setState({showBars: false, barsAnimatingOut: false});
+      }, 300);
     }, 5000);
   }
 
@@ -1573,7 +1575,7 @@ class VirtualMqttClient extends Component {
     return (
       <div className={classNames("vclient", {
         "vclient--chat-open": chatVisible,
-        "hide-cursor": this.state.appFullScreen && !this.state.showBars,
+        "hide-cursor": !this.state.showBars,
         "bars-animating-out": this.state.barsAnimatingOut
       })}>
         {this.state.showBars && this.renderTopBar(isDeb)}
@@ -1626,7 +1628,7 @@ class VirtualMqttClient extends Component {
 
     return (
       <div className={classNames("vclient", {
-        "hide-cursor": this.state.appFullScreen && !this.state.showBars,
+        "hide-cursor": !this.state.showBars,
         "bars-animating-out": this.state.barsAnimatingOut
       })}>
         {this.state.showBars && this.renderTopBar(isDeb)}
