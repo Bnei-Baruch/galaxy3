@@ -28,6 +28,62 @@
 
 
 .vclient {
+  &.hide-cursor {
+    cursor: none;
+  }
+
+  // Smooth animations for top and bottom bars
+  .MuiAppBar-positionStatic {
+    transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+  }
+
+  // Top bar appears sliding from top
+  > .MuiAppBar-positionStatic:nth-child(1) {
+    animation: slideInFromTop 0.3s ease-out;
+  }
+
+  // Bottom bar appears sliding from bottom
+  .vclient__main .MuiAppBar-positionStatic {
+    animation: slideInFromBottom 0.3s ease-out;
+  }
+
+  @keyframes slideInFromTop {
+    from {
+      opacity: 0;
+      transform: translateY(-30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slideInFromBottom {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  // Smooth fade-out animation when hiding bars
+  &.bars-animating-out {
+    // Top bar fades out upward (MIRROR of bottom)
+    > .MuiAppBar-positionStatic:nth-child(1) {
+      opacity: 0;
+      transform: translateY(-30px);
+    }
+    
+    // Bottom bar fades out downward
+    .vclient__main .MuiAppBar-positionStatic {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+  }
+
   width: 100vw;
   height: 100vh;
   display: flex;

@@ -150,9 +150,45 @@ class VirtualMqttClient extends Component {
       mqttOn: false,
       isGroup: false,
       hideUserDisplays: localStorage.getItem("hideUserDisplays")?.toLowerCase() === "true" || false,
+      appFullScreen: false,
+      showBars: true,
+      barsAnimatingOut: false,
     };
+    
+    this.hideBarsTimer = null;
+    this.handleAppFullScreenChange = this.handleAppFullScreenChange.bind(this);
+    this.handleUserActivityForBars = this.handleUserActivityForBars.bind(this);
   }
 
+  componentDidMount() {
+    // Add fullscreen change listeners for app fullscreen
+    document.addEventListener('fullscreenchange', this.handleAppFullScreenChange);
+    document.addEventListener('webkitfullscreenchange', this.handleAppFullScreenChange);
+    document.addEventListener('mozfullscreenchange', this.handleAppFullScreenChange);
+    document.addEventListener('MSFullscreenChange', this.handleAppFullScreenChange);
+    
+    // Add user activity listeners for showing bars
+    document.addEventListener('mousemove', this.handleUserActivityForBars);
+    document.addEventListener('mousedown', this.handleUserActivityForBars);
+    document.addEventListener('keydown', this.handleUserActivityForBars);
+    document.addEventListener('touchstart', this.handleUserActivityForBars);
+  }
+
+  componentWillUnmount() {
+    this.clearHideBarsTimer();
+    
+    // Remove fullscreen listeners
+    document.removeEventListener('fullscreenchange', this.handleAppFullScreenChange);
+    document.removeEventListener('webkitfullscreenchange', this.handleAppFullScreenChange);
+    document.removeEventListener('mozfullscreenchange', this.handleAppFullScreenChange);
+    document.removeEventListener('MSFullscreenChange', this.handleAppFullScreenChange);
+    
+    // Remove user activity listeners
+    document.removeEventListener('mousemove', this.handleUserActivityForBars);
+    document.removeEventListener('mousedown', this.handleUserActivityForBars);
+    document.removeEventListener('keydown', this.handleUserActivityForBars);
+    document.removeEventListener('touchstart', this.handleUserActivityForBars);
+  }
 
   componentDidUpdate(prevProps, prevState) {
     const {videoroom, localVideoTrack, localAudioTrack, user} = this.state;
@@ -161,6 +197,49 @@ class VirtualMqttClient extends Component {
       monitoringData.setOnStatus((connectionStatus) => {
         this.setState({connectionStatus});
       });
+    }
+  }
+
+  handleAppFullScreenChange() {
+    const appFullScreen = isFullScreen();
+    this.setState({appFullScreen, showBars: true});
+    
+    if (appFullScreen) {
+      // Start hide timer when entering fullscreen
+      this.showBarsTemporarily();
+    } else {
+      // Always show bars when exiting fullscreen
+      this.clearHideBarsTimer();
+    }
+  }
+
+  handleUserActivityForBars() {
+    // Only auto-hide when in app fullscreen mode
+    if (this.state.appFullScreen) {
+      this.showBarsTemporarily();
+    }
+  }
+
+  showBarsTemporarily() {
+    this.setState({showBars: true, barsAnimatingOut: false});
+    this.clearHideBarsTimer();
+    // Hide bars after 5 seconds of inactivity
+    this.hideBarsTimer = setTimeout(() => {
+      if (this.state.appFullScreen) {
+        // Start fade-out animation
+        this.setState({barsAnimatingOut: true});
+        // Remove from DOM after animation completes (300ms)
+        setTimeout(() => {
+          this.setState({showBars: false, barsAnimatingOut: false});
+        }, 300);
+      }
+    }, 5000);
+  }
+
+  clearHideBarsTimer() {
+    if (this.hideBarsTimer) {
+      clearTimeout(this.hideBarsTimer);
+      this.hideBarsTimer = null;
     }
   }
 
@@ -1492,8 +1571,12 @@ class VirtualMqttClient extends Component {
       (((room === "" || !shidur) || !attachedSource) && (!isKliOlamiShown || !kliOlamiAttached));
 
     return (
-      <div className={classNames("vclient", {"vclient--chat-open": chatVisible})}>
-        {this.renderTopBar(isDeb)}
+      <div className={classNames("vclient", {
+        "vclient--chat-open": chatVisible,
+        "hide-cursor": this.state.appFullScreen && !this.state.showBars,
+        "bars-animating-out": this.state.barsAnimatingOut
+      })}>
+        {this.state.showBars && this.renderTopBar(isDeb)}
 
         <Grid container className="vclient__main">
           {this.renderLeftAside()}
@@ -1529,7 +1612,7 @@ class VirtualMqttClient extends Component {
                 </div>
               </div>
             </div>
-            {!notApproved && this.renderBottomBar(layout, otherFeedHasQuestion)}
+            {this.state.showBars && !notApproved && this.renderBottomBar(layout, otherFeedHasQuestion)}
           </Grid>
 
           {this.renderRightAside()}
@@ -1542,8 +1625,11 @@ class VirtualMqttClient extends Component {
     const {user} = this.state;
 
     return (
-      <div className={classNames("vclient")}>
-        {this.renderTopBar(isDeb)}
+      <div className={classNames("vclient", {
+        "hide-cursor": this.state.appFullScreen && !this.state.showBars,
+        "bars-animating-out": this.state.barsAnimatingOut
+      })}>
+        {this.state.showBars && this.renderTopBar(isDeb)}
         <OnboardingDoor user={user} />
       </div>
     );
