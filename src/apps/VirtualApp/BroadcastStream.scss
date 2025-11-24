@@ -121,7 +121,11 @@
   }
 
   &.hide-cursor {
-    cursor: none;
+    cursor: none !important;
+    
+    *, *::before, *::after {
+      cursor: none !important;
+    }
   }
 
   .controls {

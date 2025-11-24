@@ -197,6 +197,7 @@ class VirtualStreaming extends Component {
       return <b> :: THIS PAGE CAN NOT BE OPENED DIRECTLY ::</b>;
     }
     const isOnFullScreen = isFullScreen(this.videoWrapper);
+    const shouldHideCursor = !showControls && (isOnFullScreen || !attached);
 
     const video_options = getVideoOptionsByIsAv1(isAv1).current;
     const video_option = video_options.find((option) => option.value === videos);
@@ -206,8 +207,7 @@ class VirtualStreaming extends Component {
       <div
         className={classNames("video video--broadcast", {
           "is-double-size": isDoubleSize, 
-          "not-attached": !attached,
-          "hide-cursor": !showControls
+          "not-attached": !attached
         })}
         key="v1"
         ref={(ref) => this.setVideoWrapperRef(ref)}
@@ -215,7 +215,10 @@ class VirtualStreaming extends Component {
         style={{height: !attached ? "100%" : null, width: !attached ? "100%" : null}}
       >
         <div className="video__overlay">
-          <div className={`activities ${isOnFullScreen || !attached ? "on_full_browser" : ""}`}>
+          <div className={classNames("activities", {
+            "on_full_browser": isOnFullScreen || !attached,
+            "hide-cursor": shouldHideCursor
+          })}>
             <div className={classNames("controls", {"controls--hidden": !showControls})}>
               <div className="controls__top">
                 <button>

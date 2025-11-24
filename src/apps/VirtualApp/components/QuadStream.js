@@ -159,12 +159,12 @@ class QuadStream extends Component {
   render() {
     const {attached, close, toggleAttach, isDoubleSize} = this.props;
     const {stream, fullScreen, showControls} = this.state;
+    const shouldHideCursor = !showControls && (fullScreen || !attached);
 
     const inLine = stream && (
       <div
         className={classNames("video video--broadcast", {
-          "is-double-size": isDoubleSize,
-          "hide-cursor": !showControls
+          "is-double-size": isDoubleSize
         })}
         key="v0"
         ref={(ref) => this.setVideoWrapperRef(ref)}
@@ -172,7 +172,7 @@ class QuadStream extends Component {
         style={{height: !attached ? "100%" : null, width: !attached ? "100%" : null}}
       >
         <div className="video__overlay">
-          <div className={"activities"}>
+          <div className={classNames("activities", {"hide-cursor": shouldHideCursor})}>
             <div className={classNames("controls", {"controls--hidden": !showControls})}>
               <div className="controls__top">
                 <IconButton onClick={close} size="large">
