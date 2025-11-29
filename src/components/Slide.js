@@ -4,8 +4,74 @@ import "./slide.scss";
 import {useTranslation} from "react-i18next";
 import classNames from "classnames";
 
+const smallPlugin = (md) => {
+  // This is the core function that parses the syntax
+  function smallRule(state, silent) {
+    const start = state.pos;
+    const marker = state.src.charCodeAt(start);
+
+    // 1. Check if it's the '@' character (0x40)
+    if (marker !== 0x40) {
+      return false;
+    }
+
+    // 2. Check for valid open/close:
+    //    - No empty content: @@
+    //    - No space after opening marker: @ word
+    if (state.src.charCodeAt(start + 1) === 0x40 ||
+        state.src.charCodeAt(start + 1) === 0x20) {
+      return false;
+    }
+
+    // 3. Scan for the closing '@'
+    let end = -1;
+    for (let i = start + 1; i < state.posMax; i++) {
+      if (state.src.charCodeAt(i) === 0x40) {
+        end = i;
+        break;
+      }
+    }
+
+    // 4. If no end marker, fail
+    if (end === -1) {
+      return false;
+    }
+
+    // 5. Check for valid close:
+    //    - No space before closing marker: word @
+    if (state.src.charCodeAt(end - 1) === 0x20) {
+      return false;
+    }
+
+    // 6. If we're in "silent" mode, we just report success
+    //    This is for the parser to check if a rule can be applied
+    if (silent) {
+      return true;
+    }
+
+    // 7. Get the content between the markers
+    const content = state.src.slice(start + 1, end);
+
+    // 8. Add the tokens to the state
+    state.push('small_open', 'small', 1); // <small>
+    state.push('text', '', 0).content = content;
+    state.push('small_close', 'small', -1); // </small>
+
+    // 9. Update the parser position to be *after* the closing marker
+    state.pos = end + 1;
+    return true;
+  }
+
+  // Add the new rule to the inline parser
+  // We add it 'after' the 'emphasis' rule (for * and _)
+  md.inline.ruler.after('emphasis', 'small', smallRule);
+};
+
 export const createMarkdownit = () => {
-  return markdownit({ html: true, breaks: false }).disable(['lheading', 'list']);
+  const md = markdownit({ html: true, breaks: false });
+  md.disable(['lheading', 'list']);
+  md.use(smallPlugin);
+  return md;
 }
 
 export const Slide = ({ content, isLtr, isQuestion, controls, slideSize, alternatives, switchLang, overlayVisible, renderer }) => {
