@@ -77,7 +77,7 @@ export const audiog_options2 = [
   {key: 6, value: 6, icon: "group", eng_text: "Spanish", text: "Español", langKey: "es"},
   {key: 5, value: 5, icon: "group", eng_text: "French", text: "Français"},
   {key: 8, value: 8, icon: "group", eng_text: "Italian", text: "Italiano"},
-  {key: 7, value: 7, icon: "group", eng_text: "German", text: "Deutsch"},
+  {key: 7, value: 7, icon: "group", eng_text: "German", text: "Deutsch", langKey: "de"},
   {key: 9, value: 700, icon: "group", eng_text: "Turkish", text: "Türkçe", langKey: "tr"},
   {key: 10, value: 701, icon: "group", eng_text: "Portuguese", text: "Português"},
   {key: 11, value: 702, icon: "group", eng_text: "Bulgarian", text: "Български"},
