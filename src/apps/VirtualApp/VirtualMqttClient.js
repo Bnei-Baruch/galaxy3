@@ -1523,7 +1523,7 @@ class VirtualMqttClient extends Component {
     let content;
     if (leftAsideName === "material") {
       // Add key to force remount when toggled
-      content = <StudyMaterialsWidget key="study-materials" language={language} apiUrl="http://localhost:8080" />;
+      content = <StudyMaterialsWidget key="study-materials" language={language} apiUrl="http://10.66.1.76:8080" />;
     } else if (leftAsideName === "drawing") {
       content = (
         <iframe

@@ -2,6 +2,7 @@ import React from "react";
 
 const StudyMaterialsWidget = ({language = 'he', apiUrl = 'http://localhost:8080'}) => {
   const containerRef = React.useRef(null);
+  const widgetInstanceRef = React.useRef(null); // NEW: Track widget instance
 
   React.useEffect(() => {
     // Load the widget script if not already loaded
@@ -31,32 +32,30 @@ const StudyMaterialsWidget = ({language = 'he', apiUrl = 'http://localhost:8080'
           // Clear existing content
           containerRef.current.innerHTML = '';
           
-          // Use the widget's load() method to create and initialize
-          const widgetContainer = window.StudyMaterialsWidget.load(
-            null, // eventId
+          // NEW: load() now returns widget instance with destroy() method
+          const widgetInstance = window.StudyMaterialsWidget.load(
+            null, // eventId (null = events list)
             language,
             { 
-              apiBaseUrl: apiUrl,
+              apiUrl: apiUrl,
               limit: 10,
-              container: containerRef.current // Pass our container
+              target: containerRef.current // Mount in our container
             }
           );
           
-          // If load() returns a container, make sure it's in our ref
-          if (widgetContainer && widgetContainer !== containerRef.current) {
-            containerRef.current.innerHTML = '';
-            containerRef.current.appendChild(widgetContainer);
-          }
+          // NEW: Store instance for cleanup
+          widgetInstanceRef.current = widgetInstance;
         }
       }, 100);
     };
 
     initWidget();
 
-    // Cleanup
+    // NEW: Proper cleanup using destroy()
     return () => {
-      if (containerRef.current) {
-        containerRef.current.innerHTML = '';
+      if (widgetInstanceRef.current && widgetInstanceRef.current.destroy) {
+        widgetInstanceRef.current.destroy();
+        widgetInstanceRef.current = null;
       }
     };
   }, [language, apiUrl]);
