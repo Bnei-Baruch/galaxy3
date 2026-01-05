@@ -22,7 +22,7 @@ class QstOutMqtt extends Component {
       handle: 0,
       role: "qstout",
       display: "qstout",
-      id: QSTOUT_ID,
+      id: "QSTOUT_ID",
       name: "qstout",
       email: "qstout@galaxy.kli.one",
     },
@@ -38,9 +38,9 @@ class QstOutMqtt extends Component {
 
   componentDidMount() {
     this.initApp();
-    setTimeout(() => {
-      this.getVideoOut()
-    },1000)
+      // setTimeout(() => {
+      //   this.getVideoOut()
+      // },1000)
   }
 
   componentWillUnmount() {
@@ -48,32 +48,23 @@ class QstOutMqtt extends Component {
   }
 
   getVideoOut = () => {
-    setInterval(() => {
-      api.fetchProgram().then((qids) => {
-        //TODO: make dynamic gateways - attach currently in use and detach not used
-        // let qlist = [
-        //   ...qids.q1.vquad,
-        //   ...qids.q2.vquad,
-        //   ...qids.q3.vquad,
-        //   ...qids.q4.vquad,
-        // ];
-        this.setState({qids});
-        if (this.state.qg) {
-          const {col, i} = this.state;
-          this.setState({qg: this.state.qids["q" + col].vquad[i]});
-        }
-      })
-        .catch((err) => {
-          log.error("[SDIOut] error fetching quad state", err);
-        });
-
-      api.fetchRoomsStatistics().then((roomsStatistics) => {
-        this.setState({roomsStatistics});
-      })
-        .catch((err) => {
-          log.error("[SDIOut] error fetching rooms statistics", err);
-        });
-    }, 1000);
+    api.fetchProgram().then((qids) => {
+      //TODO: make dynamic gateways - attach currently in use and detach not used
+      // let qlist = [
+      //   ...qids.q1.vquad,
+      //   ...qids.q2.vquad,
+      //   ...qids.q3.vquad,
+      //   ...qids.q4.vquad,
+      // ];
+      this.setState({qids});
+      if (this.state.qg) {
+        const {col, i} = this.state;
+        this.setState({qg: this.state.qids["q" + col].vquad[i]});
+      }
+    })
+      .catch((err) => {
+        log.error("[SDIOut] error fetching quad state", err);
+      });
   }
 
   initApp = () => {
@@ -96,13 +87,13 @@ class QstOutMqtt extends Component {
       log.info("[SDIOut] mqtt init: ", data);
       mqtt.join("galaxy/service/shidur");
       mqtt.join("galaxy/users/broadcast");
-      mqtt.send(JSON.stringify({type: "event", [user.role]: true}), true, "galaxy/service/" + user.role);
+      //mqtt.send(JSON.stringify({type: "event", [user.role]: true}), true, "galaxy/service/" + user.role);
       mqtt.watch((data) => {
         this.onMqttData(data);
       });
-      Object.keys(ConfigStore.globalConfig.gateways.rooms).forEach(gxy => {
-        this.initJanus(user, gxy)
-      })
+      // Object.keys(ConfigStore.globalConfig.gateways.rooms).forEach(gxy => {
+      //   this.initJanus(user, gxy)
+      // })
     });
   };
 
@@ -127,17 +118,27 @@ class QstOutMqtt extends Component {
   }
 
   onMqttData = (data) => {
-    const {room, col, feed, group, i, status, qst} = data;
+    const {col, feed, group, i, status, qst} = data;
+    const room = group?.room
 
     if (data.type === "sdi-fullscr_group" && status) {
       if (qst) {
-        this.setState({col, i, group, room, qg: this.state.qids["q" + col].vquad[i]});
+        this.getVideoOut()
+        this.initJanus(this.state.user, group.janus);
+        setTimeout(() => {
+          this.setState({col, i, group, room, qg: this.state.qids["q" + col].vquad[i]});
+          log.info("[QSTOut] onMqttData: ", data)
+        },3000)
       } else {
         this["col" + col].toFullGroup(i, feed);
       }
     } else if (data.type === "sdi-fullscr_group" && !status) {
       let {col, feed, i} = data;
       if (qst) {
+        const {gateways} = this.state;
+        const session = gateways[group.janus];
+        session.destroy();
+        delete gateways[group.janus]
         this.setState({group: null, room: null, qg: null});
       } else {
         this["col" + col].toFourGroup(i, feed);
@@ -185,7 +186,7 @@ class QstOutMqtt extends Component {
                     <Fragment>
                       {/*{group && group.questions ? <div className="qst_fullscreentitle">?</div> : ""}*/}
                       <div className="fullscrvideo_title">{name}</div>
-                      <VideoHandleMqtt key={"q5"} g={qg} group={group} index={13} col={5} q={5} qst_group={true} user={user} gateways={gateways} />
+                      <VideoHandleMqtt key={"q5"} g={qg} index={13} col={5} q={5} qst_group={true} user={user} gateways={gateways} {...this.state} />
                     </Fragment>
                   ) : (
                     ""

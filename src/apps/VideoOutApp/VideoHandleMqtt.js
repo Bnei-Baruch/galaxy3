@@ -32,7 +32,7 @@ class VideoHandleMqtt extends Component {
     let {g} = this.props;
     let num_videos = g?.users?.filter((u) => u.camera && u.role === "user").length || 0;
     if (num_videos > 25) num_videos = 25; // Cap at 25 like the original
-    
+
     this.setState({num_videos});
   }
 
@@ -58,7 +58,7 @@ class VideoHandleMqtt extends Component {
     if (g && g.users && JSON.stringify(g) !== JSON.stringify(prevProps.g)) {
       let num_videos = g.users.filter((u) => u.camera && u.role === "user").length;
       if (num_videos > 25) num_videos = 25; // Cap at 25 like the original
-      
+
       this.setState({num_videos});
     }
   }
@@ -85,6 +85,7 @@ class VideoHandleMqtt extends Component {
     if(janus?.isConnected !== true) {
       setTimeout(() => {
         this.initVideoHandles(room, user, inst)
+        log.info("[no connected")
       }, 1000)
       return
     }
@@ -312,7 +313,7 @@ class VideoHandleMqtt extends Component {
     const groupUsers = g && g.users ? g.users.filter((u) => u.camera && u.role === "user" && u.extra?.isGroup) : [];
     const groupCount = Math.min(groupUsers.length, 2); // Limit to max 2 groups
     const hasAnyGroup = groupCount > 0;
-    
+
     // Get the IDs of the first 2 groups (sorted by rfid for stability)
     const allowedGroupIds = groupUsers
       .sort((a, b) => String(a.rfid).localeCompare(String(b.rfid)))
@@ -334,7 +335,7 @@ class VideoHandleMqtt extends Component {
     const visibleVideoCount = sortedFeeds.filter((feed) => {
       return g && g.users && !!g.users.find((u) => feed.id === u.rfid && u.camera);
     }).length;
-    
+
     // Count only visible groups (max 2) to determine if group is alone
     const visibleGroupCount = sortedFeeds.filter((feed) => {
       const user = g?.users?.find((u) => u.rfid === feed.id);
@@ -353,7 +354,7 @@ class VideoHandleMqtt extends Component {
         // Check if this user has the real group flag AND is in the first 2 groups
         const user = g?.users?.find((u) => u.rfid === id);
         let isGroup = user?.extra?.isGroup && allowedGroupIds.includes(id);
-        
+
         // If there's a group in the room, limit regular users to 4
         if (hasAnyGroup && !isGroup && camera) {
           regularUserCount++;
@@ -361,19 +362,19 @@ class VideoHandleMqtt extends Component {
             camera = false; // Hide users beyond the 4th
           }
         }
-        
+
         // If this is the group and it's the only visible video, add video--alone class
         let isAlone = isGroup && visibleVideoCount === 1;
-        
+
         return (
-          <div 
+          <div
             className={classNames(camera ? "video" : "hidden", {
               "video--group": isGroup,
               "video--group--multiple": isGroup && groupCount > 1,
               "video--alone": isAlone
-            })} 
-            key={"prov" + id} 
-            ref={"provideo" + id} 
+            })}
+            key={"prov" + id}
+            ref={"provideo" + id}
             id={"provideo" + id}
           >
             <div className={classNames("video__overlay", {talk: talk})}>
