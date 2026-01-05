@@ -1,0 +1,18 @@
+# Study Materials Widget Environment Configuration
+# 
+# Copy this file to .env and update the values as needed
+#
+# The REACT_APP_ prefix is required for Create React App to expose variables
+# to the frontend via process.env
+
+# Widget script URL (the external widget that handles study materials)
+REACT_APP_STUDY_MATERIALS_WIDGET_URL=http://localhost:3000/widget/widget.js
+
+# Study Materials API endpoint
+# Default for local development:
+REACT_APP_STUDY_MATERIALS_API_URL=http://localhost:8080
+
+# For staging/production, use the appropriate API server:
+# REACT_APP_STUDY_MATERIALS_API_URL=http://10.66.1.76:8080
+
+

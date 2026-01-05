@@ -1,6 +1,6 @@
 import React from "react";
 
-const StudyMaterialsWidget = ({language = 'he', apiUrl = 'http://localhost:8080'}) => {
+const StudyMaterialsWidget = ({language = 'he', apiUrl = process.env.REACT_APP_STUDY_MATERIALS_API_URL || 'http://localhost:8080'}) => {
   const containerRef = React.useRef(null);
   const widgetInstanceRef = React.useRef(null); // NEW: Track widget instance
 
@@ -15,7 +15,7 @@ const StudyMaterialsWidget = ({language = 'he', apiUrl = 'http://localhost:8080'
         }
 
         const script = document.createElement('script');
-        script.src = 'http://localhost:3000/widget/widget.js';
+        script.src = process.env.REACT_APP_STUDY_MATERIALS_WIDGET_URL || 'http://localhost:3000/widget/widget.js';
         script.onload = () => resolve();
         script.onerror = () => resolve();
         document.head.appendChild(script);
