@@ -22,7 +22,7 @@ class QstOutMqtt extends Component {
       handle: 0,
       role: "qstout",
       display: "qstout",
-      id: "QSTOUT_ID",
+      id: QSTOUT_ID,
       name: "qstout",
       email: "qstout@galaxy.kli.one",
     },
@@ -74,7 +74,7 @@ class QstOutMqtt extends Component {
       log.info("[SDIOut] mqtt init: ", data);
       mqtt.join("galaxy/service/shidur");
       mqtt.join("galaxy/users/broadcast");
-      //mqtt.send(JSON.stringify({type: "event", [user.role]: true}), true, "galaxy/service/" + user.role);
+      mqtt.send(JSON.stringify({type: "event", [user.role]: true}), true, "galaxy/service/" + user.role);
       mqtt.watch((data) => {
         this.onMqttData(data);
       });
