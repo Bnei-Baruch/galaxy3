@@ -307,10 +307,10 @@ export const RegistrationForm = ({
         {t("registration.tellAboutYou")}
       </Typography>
       <Grid container spacing={6}>
-        <Grid item xs={6} sm={12}>
+        <Grid item xs={6} sm={12} size={{xs: 6, sm: 12}}>
           {renderCountries()}
         </Grid>
-        <Grid item xs={6} sm={12}>
+        <Grid item xs={6} sm={12} size={{xs: 6, sm: 12}}>
           <TextField
             label={t("registration.groupCity")}
             variant="outlined"
@@ -327,13 +327,13 @@ export const RegistrationForm = ({
             }}
           />
         </Grid>
-        <Grid item xs={6} sm={12}>
+        <Grid item xs={6} sm={12} size={{xs: 6, sm: 12}}>
           {renderGender()}
         </Grid>
-        <Grid item xs={6} sm={12}>
+        <Grid item xs={6} sm={12} size={{xs: 6, sm: 12}}>
           {renderLanguages()}
         </Grid>
-        <Grid item xs={6} sm={12}>
+        <Grid item xs={6} sm={12} size={{xs: 6, sm: 12}}>
           <TextField
             label={t("registration.telephone")}
             variant="outlined"
@@ -350,7 +350,7 @@ export const RegistrationForm = ({
             }}
           />
         </Grid>
-        <Grid item xs={6} sm={12}>
+        <Grid item xs={6} sm={12} size={{xs: 6, sm: 12}}>
           <TextField
             label={t("registration.selectGroup")}
             variant="outlined"
@@ -365,7 +365,7 @@ export const RegistrationForm = ({
             }}
           />
         </Grid>
-        <Grid item xs={12}>
+        <Grid item xs={12} size={12}>
           <TextField
             label={t("registration.aboutYou")}
             variant="outlined"
@@ -398,13 +398,13 @@ export const RegistrationForm = ({
           <Modal open={isOpen} onClose={onClose}>
             <Box className={classes.container} maxWidth="md" dir={isRtl ? "rtl" : "ltr"}>
               <Grid container spacing={5}>
-                <Grid item xs={12}>
+                <Grid item xs={12} size={12}>
                   {renderForm()}
                 </Grid>
-                <Grid item xs={12}>
+                <Grid item xs={12} size={12}>
                   <Divider variant="middle" />
                 </Grid>
-                <Grid item xs={12}>
+                <Grid item xs={12} size={12}>
                   <Box style={{marginTop: "2em"}}>
                     <Typography paragraph style={{fontSize: "1.2em"}}>
                       {t("registration.asGuestYouCan")}

@@ -43,7 +43,7 @@ import {captureMessage, sentryDebugAction, setSentryGeo, setSentryTag, updateSen
 import GxyJanus from "../../shared/janus-utils";
 import ConfigStore from "../../shared/ConfigStore";
 import {isFullScreen, toggleFullScreen} from "./FullScreenHelper";
-import {AppBar, Badge, Box, Button as ButtonMD, ButtonGroup, Grid, IconButton} from "@mui/material";
+import {AppBar, Badge, Box, Button as ButtonMD, ButtonGroup, Grid, IconButton, useTheme} from "@mui/material";
 import {ChevronLeft, ChevronRight, PlayCircleOutline} from "@mui/icons-material";
 import {grey} from "@mui/material/colors";
 import {AskQuestion, AudioMode, CloseBroadcast, Fullscreen, Layout, Mute, MuteVideo, Vote} from "./buttons";
@@ -57,7 +57,6 @@ import QuadStream from "./components/QuadStream";
 import KliOlamiToggle from "./buttons/KliOlamiToggle";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
-import withTheme from "@mui/styles/withTheme";
 import ThemeSwitcher from "./components/ThemeSwitcher/ThemeSwitcher";
 import mqtt from "../../shared/mqtt";
 import devices from "../../lib/devices";
@@ -1320,8 +1319,12 @@ class VirtualMqttClient extends Component {
       content = <SendQuestionContainer user={user} />;
     }
 
+    if (!rightAsideName) {
+      return null;
+    }
+
     return (
-      <Grid item xs={rightAsideName ? 3 : false} style={{backgroundColor: theme.palette.background.paper}}>
+      <Grid item xs={3} size={3} style={{backgroundColor: this.props.theme.palette.background.paper}}>
         {content}
         {chat}
       </Grid>
@@ -1435,6 +1438,10 @@ class VirtualMqttClient extends Component {
     const {leftAsideName, leftAsideSize} = this.state;
     const {i18n: {language}, theme,} = this.props;
 
+    if (!leftAsideName || leftAsideSize < 3) {
+      return null;
+    }
+
     let content;
     if (leftAsideName === "material") {
       content = <HomerLimud />;
@@ -1452,8 +1459,9 @@ class VirtualMqttClient extends Component {
     return (
       <Grid
         item
-        xs={leftAsideSize >= 3 && leftAsideName ? leftAsideSize : false}
-        style={{backgroundColor: theme.palette.background.paper}}
+        xs={leftAsideSize}
+        size={leftAsideSize}
+        style={{backgroundColor: this.props.theme.palette.background.paper}}
       >
         {
           //buttons for resize tab (if want open study materials on browser tab)
@@ -1500,6 +1508,7 @@ class VirtualMqttClient extends Component {
           <Grid
             item
             xs={12 - (!leftAsideName ? 0 : leftAsideSize) - (!rightAsideName ? 0 : 3)}
+            size={12 - (!leftAsideName ? 0 : leftAsideSize) - (!rightAsideName ? 0 : 3)}
             style={{display: "flex", flexDirection: "column", overflow: "hidden"}}
           >
             <div
@@ -1754,14 +1763,19 @@ class VirtualMqttClient extends Component {
 }
 
 VirtualMqttClient.contextType = GlobalOptionsContext
-const WrappedClass = withTranslation()(withTheme(VirtualMqttClient));
+const WrappedClass = withTranslation()(VirtualMqttClient);
+
+function WrapperWithTheme() {
+  const theme = useTheme();
+  return <WrappedClass theme={theme} />;
+}
 
 export default class WrapperForThemes extends React.Component {
   render() {
     return (
       <ThemeSwitcher>
         <GlobalOptions>
-          <WrappedClass/>
+          <WrapperWithTheme/>
         </GlobalOptions>
       </ThemeSwitcher>
     );
