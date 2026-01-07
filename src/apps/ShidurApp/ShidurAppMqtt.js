@@ -233,26 +233,31 @@ class ShidurAppMqtt extends Component {
         if (preview_mode) {
 
           if (preusers_count !== "Off") {
+            // Groups with insufficient cameras count (not ready for broadcast)
             pre_groups = rooms.filter((r) => !r.extra?.disabled && r.users.filter((r) => r.camera).length < preusers_count);
+            
+            // Groups ready for broadcast (enough cameras or marked as group)
             let new_groups = rooms.filter((r) => r.users.filter((r) => r.camera).length >= preusers_count || r.users.find(g => g.extra?.isGroup) && !r.extra?.disabled);
 
-            // Put groups with dynamic users count at the end of main list
-            // FIXME: It's cause many time to switch main list filter
-            for (let i=0; i<groups.length; i++) {
-              let exist_group = new_groups.find(g => g.room === groups[i].room);
-              if(exist_group) {
-                groups[i] = exist_group;
-              } else {
-                groups.splice(i, 1);
+            // Update groups list while preserving order (new connections added to the end)
+            let updated_groups = [];
+            
+            // Keep existing groups in their current positions
+            for (let existing of groups) {
+              let updated_data = new_groups.find(g => g.room === existing.room);
+              if (updated_data) {
+                updated_groups.push(updated_data);
               }
             }
-
-            for (let i=0; i<new_groups.length; i++) {
-              let exist_group = groups.find(g => g.room === new_groups[i].room);
-              if(!exist_group) {
-                groups.push(new_groups[i]);
+            
+            // Add new groups to the end of the queue
+            for (let new_group of new_groups) {
+              if (!updated_groups.find(g => g.room === new_group.room)) {
+                updated_groups.push(new_group);
               }
             }
+            
+            groups = updated_groups;
 
           } else {
             pre_groups = rooms;
@@ -297,7 +302,39 @@ class ShidurAppMqtt extends Component {
         //if(quads_list.length > 0) this.initServers(quads_list);
         let list = groups.filter((r) => !quads.find((q) => q && r.room === q.room));
         let questions = list.filter((room) => room.questions);
-        this.setState({group_user, quads, questions, users_count, rooms, groups, vip1_rooms, vip2_rooms, vip3_rooms, vip4_rooms, vip5_rooms, disabled_rooms, pre_groups, region_groups});
+        
+        // Adjust groups_queue index when groups list changes
+        let groups_queue = this.state.groups_queue;
+        if (groups.length > 0) {
+          // If index is out of bounds, reset to 0
+          if (groups_queue >= groups.length) {
+            groups_queue = 0;
+            log.info("[Shidur] groups_queue out of bounds, reset to 0");
+          } 
+          // If we have old groups and queue points to a group, try to keep the same group
+          else if (groups_queue > 0 && this.state.groups.length > 0 && this.state.groups[groups_queue]) {
+            let old_room = this.state.groups[groups_queue].room;
+            let new_index = groups.findIndex(g => g.room === old_room);
+            
+            if (new_index !== -1 && new_index !== groups_queue) {
+              // The group moved to a different position
+              groups_queue = new_index;
+              log.info("[Shidur] groups_queue adjusted: group moved from", groups_queue, "to", new_index);
+            } else if (new_index === -1) {
+              // The group is no longer in the list
+              log.info("[Shidur] groups_queue group left, keeping index", groups_queue);
+              // Keep the current index (will point to next group in line)
+              if (groups_queue >= groups.length) {
+                groups_queue = 0;
+              }
+            }
+          }
+        } else {
+          // No groups available, reset queue
+          groups_queue = 0;
+        }
+        
+        this.setState({group_user, quads, questions, users_count, rooms, groups, groups_queue, vip1_rooms, vip2_rooms, vip3_rooms, vip4_rooms, vip5_rooms, disabled_rooms, pre_groups, region_groups});
       })
       .catch((err) => {
         log.error("[Shidur] error fetching active rooms", err);
