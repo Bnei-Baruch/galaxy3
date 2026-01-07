@@ -28,10 +28,107 @@
 
 
 .vclient {
+  &.hide-cursor {
+    cursor: none;
+  }
+
+  // Smooth animations for top and bottom bars
+  .MuiAppBar-positionStatic {
+    transition: opacity 0.3s ease-out, transform 0.3s ease-out, height 0.3s ease-out, min-height 0.3s ease-out, padding 0.3s ease-out, margin 0.3s ease-out;
+    overflow: hidden;
+    
+    .MuiToolbar-root {
+      transition: height 0.3s ease-out, min-height 0.3s ease-out, padding 0.3s ease-out, margin 0.3s ease-out, opacity 0.3s ease-out;
+    }
+  }
+
+  // Top bar appears sliding from top
+  > .MuiAppBar-positionStatic:nth-child(1) {
+    animation: slideInFromTop 0.3s ease-out;
+  }
+
+  // Bottom bar appears sliding from bottom
+  .vclient__main .MuiAppBar-positionStatic {
+    animation: slideInFromBottom 0.3s ease-out;
+  }
+
+  @keyframes slideInFromTop {
+    from {
+      opacity: 0;
+      transform: translateY(-30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slideInFromBottom {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  // Smooth fade-out animation when hiding bars
+  &.bars-animating-out {
+    // Top bar fades out upward (MIRROR of bottom)
+    > .MuiAppBar-positionStatic:nth-child(1) {
+      opacity: 0;
+      transform: translateY(-30px);
+      
+      .MuiToolbar-root {
+        opacity: 0;
+      }
+    }
+    
+    // Bottom bar fades out downward
+    .vclient__main .MuiAppBar-positionStatic {
+      opacity: 0;
+      transform: translateY(30px);
+      
+      .MuiToolbar-root {
+        opacity: 0;
+      }
+    }
+  }
+
+  // Completely hide bars when animation is done
+  &.bars-hidden {
+    > .MuiAppBar-positionStatic:nth-child(1),
+    .vclient__main .MuiAppBar-positionStatic {
+      visibility: hidden;
+      height: 0 !important;
+      min-height: 0 !important;
+      max-height: 0 !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      overflow: hidden !important;
+      pointer-events: none;
+      
+      // Also collapse the Toolbar inside
+      .MuiToolbar-root {
+        height: 0 !important;
+        min-height: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+    }
+  }
+
   width: 100vw;
   height: 100vh;
   display: flex;
   flex-direction: column;
+
+  &__main {
+    transition: height 0.3s ease-out, flex 0.3s ease-out;
+    flex: 1;
+  }
 
   .room-selection {
     border-radius: .28571429rem 0 0 .28571429rem !important;
