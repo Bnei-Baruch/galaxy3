@@ -12,7 +12,7 @@ import {getDateString} from "../../shared/tools";
 import mqtt from "../../shared/mqtt";
 import ConfigStore from "../../shared/ConfigStore";
 import {JanusMqtt} from "../../lib/janus-mqtt";
-import {short_regions, region_filter} from "../../shared/consts";
+import {short_regions, region_filter, SHIDUR_ID} from "../../shared/consts";
 import {isServiceID} from "../../shared/enums";
 import version from './Version.js';
 
@@ -86,10 +86,10 @@ class ShidurAppMqtt extends Component {
     const allowed = kc.hasRealmRole("gxy_shidur");
     if (allowed) {
       delete user.roles;
-      user.id = "testwebout"
+      user.id = SHIDUR_ID
       user.role = "shidur";
       user.session = 0;
-      user.email = "testtoran@galaxy.kli.one";
+      user.email = "toran@galaxy.kli.one";
       this.initApp(user);
     } else {
       alert("Access denied!");
@@ -120,8 +120,8 @@ class ShidurAppMqtt extends Component {
       });
       mqtt.join("galaxy/service/#");
       mqtt.join("galaxy/users/broadcast");
-      // if(isServiceID(user.id))
-      //   mqtt.send(JSON.stringify({type: "event", [user.role]: true}), true, "galaxy/service/" + user.role);
+      if(isServiceID(user.id))
+        mqtt.send(JSON.stringify({type: "event", [user.role]: true}), true, "galaxy/service/" + user.role);
     });
 
     this.setState({gatewaysInitialized: true});
