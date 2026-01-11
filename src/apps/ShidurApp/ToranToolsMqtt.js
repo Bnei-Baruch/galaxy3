@@ -654,7 +654,7 @@ class ToranToolsMqtt extends Component {
                 <div className="shidur_overlay">
                   <span>{ng.description}</span>
                 </div>
-                <PreviewPanelMqtt pg={ng} p={0} gateways={this.props.gateways} next closePopup={this.closePopup} initJanus={this.initJanus} />
+                <PreviewPanelMqtt pg={ng} p={0} gateways={this.props.gateways} next nextInQueue={this.props.nextInQueue} closePopup={this.closePopup} initJanus={this.initJanus} />
               </Segment>
             ) : (
               ""
