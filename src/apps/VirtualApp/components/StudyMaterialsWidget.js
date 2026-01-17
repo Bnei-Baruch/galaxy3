@@ -64,9 +64,9 @@ const StudyMaterialsWidget = ({language = 'he', apiUrl = process.env.REACT_APP_S
     <div
       ref={containerRef}
       style={{
-        height: 'calc(100vh - 140px)',
+        height: '100%',
         width: '100%',
-        overflow: 'hidden',
+        overflow: 'auto',
         backgroundColor: '#fff'
       }}
     />

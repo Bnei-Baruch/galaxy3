@@ -1542,7 +1542,9 @@ class VirtualMqttClient extends Component {
         style={{
           backgroundColor: theme.palette.background.paper,
           height: '100%',
-          overflow: 'hidden'
+          overflow: 'auto',
+          display: 'flex',
+          flexDirection: 'column'
         }}
       >
         {
