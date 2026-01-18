@@ -237,7 +237,7 @@ class ShidurAppMqtt extends Component {
             pre_groups = rooms.filter((r) => !r.extra?.disabled && r.users.filter((r) => r.camera).length < preusers_count);
             
             // Groups ready for broadcast (enough cameras or marked as group)
-            let new_groups = rooms.filter((r) => r.users.filter((r) => r.camera).length >= preusers_count || r.users.find(g => g.extra?.isGroup) && !r.extra?.disabled);
+            let new_groups = rooms.filter((r) => !r.extra?.disabled && (r.users.filter((u) => u.camera).length >= preusers_count || r.users.find(g => g.extra?.isGroup)));
 
             // Update groups list while preserving order (new connections added to the end)
             let updated_groups = [];
