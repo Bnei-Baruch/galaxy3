@@ -38,7 +38,7 @@ const StudyMaterialsWidget = ({language = 'he', apiUrl = process.env.REACT_APP_S
             language,
             { 
               apiUrl: apiUrl,
-              limit: 10,
+              limit: 5,
               target: containerRef.current // Mount in our container
             }
           );
