@@ -1598,8 +1598,8 @@ class VirtualMqttClient extends Component {
           {this.renderLeftAside()}
           <Grid
             item
-            xs={12 - (!leftAsideName ? 0 : leftAsideSize) - (!rightAsideName ? 0 : 3)}
-            size={12 - (!leftAsideName ? 0 : leftAsideSize) - (!rightAsideName ? 0 : 3)}
+            xs={12 - (!leftAsideName ? 0 : Math.min(leftAsideSize >= 3 ? leftAsideSize : 3, 4)) - (!rightAsideName ? 0 : 3)}
+            size={12 - (!leftAsideName ? 0 : Math.min(leftAsideSize >= 3 ? leftAsideSize : 3, 4)) - (!rightAsideName ? 0 : 3)}
             style={{display: "flex", flexDirection: "column", overflow: "hidden"}}
           >
             <div
