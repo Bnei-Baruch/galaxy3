@@ -29,7 +29,7 @@ jobs:
         run: yarn install --frozen-lockfile
 
       - name: Create .env file
-         run: |
+        run: |
           cat > .env << 'EOF'
           ${{ secrets.ENV_FILE }}
           EOF
