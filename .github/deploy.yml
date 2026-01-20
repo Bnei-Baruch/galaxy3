@@ -1,0 +1,59 @@
+name: Deploy to Production/Dev
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - prod
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'yarn'
+      
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+      
+      - name: Build
+        run: yarn build
+        env:
+          REACT_APP_STUDY_MATERIALS_API_URL: ${{ secrets.REACT_APP_STUDY_MATERIALS_API_URL }}
+          REACT_APP_STUDY_MATERIALS_WIDGET_URL: ${{ secrets.REACT_APP_STUDY_MATERIALS_WIDGET_URL }}
+      
+      - name: Deploy to ${{ github.event.inputs.environment }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets[format('DEPLOY_HOST_{0}', github.event.inputs.environment)] }} >> ~/.ssh/known_hosts
+          
+          TARGET_PATH="/usr/share/angie/html/galaxy/${{ github.event.inputs.environment }}/user"
+          
+          # Backup existing files
+          ssh -i ~/.ssh/deploy_key ${{ secrets.DEPLOY_USER }}@${{ secrets[format('DEPLOY_HOST_{0}', github.event.inputs.environment)] }} \
+            "rm -rf $TARGET_PATH.backup && cp -r $TARGET_PATH $TARGET_PATH.backup"
+          
+          # Sync new files (preserving .env)
+          rsync -avz --delete -e "ssh -i ~/.ssh/deploy_key" \
+            --exclude='.env' \
+            --exclude='node_modules' \
+            build/ \
+            ${{ secrets.DEPLOY_USER }}@${{ secrets[format('DEPLOY_HOST_{0}', github.event.inputs.environment)] }}:$TARGET_PATH/
+          
+          # Reload angie
+          ssh -i ~/.ssh/deploy_key ${{ secrets.DEPLOY_USER }}@${{ secrets[format('DEPLOY_HOST_{0}', github.event.inputs.environment)] }} \
+            "sudo systemctl reload angie"
