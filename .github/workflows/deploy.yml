@@ -44,13 +44,17 @@ jobs:
           TARGET_PATH="/usr/share/angie/html/galaxy/${{ github.event.inputs.environment }}/user"
           
           # Backup existing files
-          ssh -i ~/.ssh/deploy_key ${{ secrets.DEPLOY_USER }}@${{ secrets[format('DEPLOY_HOST_{0}', github.event.inputs.environment)] }} \
-            "rm -rf $TARGET_PATH.backup && cp -r $TARGET_PATH $TARGET_PATH.backup"
-          
-          # Sync new files (preserving .env)
-          rsync -avz --delete -e "ssh -i ~/.ssh/deploy_key" \
-            --exclude='.env' \
-            --exclude='node_modules' \
-            build/ \
-            ${{ secrets.DEPLOY_USER }}@${{ secrets[format('DEPLOY_HOST_{0}', github.event.inputs.environment)] }}:$TARGET_PATH/
+ssh -i ~/.ssh/deploy_key ${{ secrets.DEPLOY_USER }}@${{ secrets[format('DEPLOY_HOST_{0}', github.event.inputs.environment)] }} \
+  "rm -rf $TARGET_PATH.backup && cp -r $TARGET_PATH $TARGET_PATH.backup"
+
+# Remove old folder and create fresh one
+ssh -i ~/.ssh/deploy_key ${{ secrets.DEPLOY_USER }}@${{ secrets[format('DEPLOY_HOST_{0}', github.event.inputs.environment)] }} \
+  "rm -rf $TARGET_PATH && mkdir -p $TARGET_PATH"
+
+# Sync new files (no --delete needed)
+rsync -avz -e "ssh -i ~/.ssh/deploy_key" \
+  --exclude='.env' \
+  --exclude='node_modules' \
+  build/ \
+  ${{ secrets.DEPLOY_USER }}@${{ secrets[format('DEPLOY_HOST_{0}', github.event.inputs.environment)] }}:$TARGET_PATH/
           
