@@ -1541,7 +1541,7 @@ class VirtualMqttClient extends Component {
     return (
       <Grid
         item
-        xs={leftAsideSize >= 3 ? leftAsideSize : 3}
+        xs={Math.min(leftAsideSize >= 3 ? leftAsideSize : 3, 4)}
         style={{
           backgroundColor: theme.palette.background.paper,
           height: '100%',
