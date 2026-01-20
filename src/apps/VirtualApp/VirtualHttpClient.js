@@ -45,7 +45,7 @@ import {grey} from "@mui/material/colors";
 import {AskQuestion, AudioMode, CloseBroadcast, Fullscreen, Layout, Mute, MuteVideo, Vote} from "./buttons";
 import Settings from "./settings/Settings";
 import SettingsJoined from "./settings/SettingsJoined";
-import HomerLimud from "./components/HomerLimud";
+import StudyMaterialsWidget from "./components/StudyMaterialsWidget";
 import {initCrisp, Support} from "./components/Support";
 import SendQuestionContainer from "./components/SendQuestions/container";
 import {RegistrationModals} from "./components/RegistrationModals";
@@ -1941,7 +1941,7 @@ class VirtualHttpClient extends Component {
 
     let content;
     if (leftAsideName === "material") {
-      content = <HomerLimud />;
+      content = <StudyMaterialsWidget language={language} apiUrl="http://localhost:8080" />;
     } else if (leftAsideName === "drawing") {
       content = (
         <iframe

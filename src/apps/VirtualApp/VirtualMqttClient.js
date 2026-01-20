@@ -49,7 +49,7 @@ import {grey} from "@mui/material/colors";
 import {AskQuestion, AudioMode, CloseBroadcast, Fullscreen, Layout, Mute, MuteVideo, Vote} from "./buttons";
 import Settings from "./settings/Settings";
 import SettingsJoined from "./settings/SettingsJoined";
-import HomerLimud from "./components/HomerLimud";
+import StudyMaterialsWidget from "./components/StudyMaterialsWidget";
 import {initCrisp, Support} from "./components/Support";
 import SendQuestionContainer from "./components/SendQuestions/container";
 import {getUserRole, userRolesEnum} from "../../shared/enums";
@@ -1519,13 +1519,14 @@ class VirtualMqttClient extends Component {
     const {leftAsideName, leftAsideSize} = this.state;
     const {i18n: {language}, theme,} = this.props;
 
-    if (!leftAsideName || leftAsideSize < 3) {
+    if (!leftAsideName) {
       return null;
     }
 
     let content;
     if (leftAsideName === "material") {
-      content = <HomerLimud />;
+      // Add key to force remount when toggled
+      content = <StudyMaterialsWidget key="study-materials" language={language} apiUrl={process.env.REACT_APP_STUDY_MATERIALS_API_URL || "http://10.66.1.76:8080"} />;
     } else if (leftAsideName === "drawing") {
       content = (
         <iframe
@@ -1540,13 +1541,18 @@ class VirtualMqttClient extends Component {
     return (
       <Grid
         item
-        xs={leftAsideSize}
-        size={leftAsideSize}
-        style={{backgroundColor: this.props.theme.palette.background.paper}}
+        xs={leftAsideSize >= 3 ? leftAsideSize : 3}
+        style={{
+          backgroundColor: theme.palette.background.paper,
+          height: '100%',
+          overflow: 'auto',
+          display: 'flex',
+          flexDirection: 'column'
+        }}
       >
         {
           //buttons for resize tab (if want open study materials on browser tab)
-          leftAsideName && false ? (
+          false ? (
             <ButtonGroup>
               <IconButton onClick={() => this.handleAsideResize(false)} size="large">
                 <ChevronLeft />
