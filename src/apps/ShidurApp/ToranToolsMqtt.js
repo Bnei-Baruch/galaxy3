@@ -673,7 +673,7 @@ class ToranToolsMqtt extends Component {
                 { key: 'vip3', content: 'Vip3', icon: 'star' },
                 { key: 'vip4', content: 'Vip4', icon: 'star' },
                 { key: 'vip5', content: 'Vip5', icon: 'star' },
-                { key: 'groups', content: 'Groups', icon: 'star' },
+                // { key: 'groups', content: 'Groups', icon: 'star' },
               ]}
               onItemClick={(e, data) => this.selectMenu(data.content)}
               secondary
