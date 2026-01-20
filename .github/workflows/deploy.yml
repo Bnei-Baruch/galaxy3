@@ -54,6 +54,3 @@ jobs:
             build/ \
             ${{ secrets.DEPLOY_USER }}@${{ secrets[format('DEPLOY_HOST_{0}', github.event.inputs.environment)] }}:$TARGET_PATH/
           
-          # Reload angie
-          ssh -i ~/.ssh/deploy_key ${{ secrets.DEPLOY_USER }}@${{ secrets[format('DEPLOY_HOST_{0}', github.event.inputs.environment)] }} \
-            "sudo systemctl reload angie"
