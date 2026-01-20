@@ -1519,7 +1519,7 @@ class VirtualMqttClient extends Component {
     const {leftAsideName, leftAsideSize} = this.state;
     const {i18n: {language}, theme,} = this.props;
 
-    if (!leftAsideName) {
+    if (!leftAsideName || leftAsideSize < 3) {
       return null;
     }
 
