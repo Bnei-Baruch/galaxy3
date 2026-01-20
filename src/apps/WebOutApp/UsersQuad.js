@@ -1,5 +1,6 @@
 import React, {Component} from "react";
 import {Segment} from "semantic-ui-react";
+import log from "loglevel";
 import UsersHandleMqtt from "./UsersHandleMqtt";
 
 class UsersQuad extends Component {
@@ -47,13 +48,13 @@ class UsersQuad extends Component {
     for (let i = 0; i < 4; i++) {
       // Don't switch if nobody in queue
       if (i === groups.length) {
-        console.log("[Shidur] Queue is END");
+        log.info("[WebOut] Queue is END");
         break;
       }
 
       if (groups_queue >= groups.length) {
         // End round here!
-        console.log("[Shidur] -- ROUND END --");
+        log.info("[WebOut] -- ROUND END --");
         groups_queue = 0;
         round++;
         this.props.setProps({groups_queue, round});
@@ -81,7 +82,7 @@ class UsersQuad extends Component {
   };
 
   render() {
-    const {full_feed, fullscr, vquad = [null, null, null, null]} = this.state;
+    const {col, full_feed, fullscr, vquad = [null, null, null, null]} = this.state;
     const {roomsStatistics = {}, qst} = this.props;
 
     let program = vquad.map((g, i) => {
@@ -114,7 +115,7 @@ class UsersQuad extends Component {
         >
           {qst_mark}
           <div className={fullscr ? "fullscrvideo_title" : "video_title"}>{name}</div>
-          <UsersHandleMqtt key={"q" + i} g={g} index={i} {...this.props} />
+          <UsersHandleMqtt key={"q" + i} g={g} q={i} col={col} index={i} {...this.props} />
         </div>
       );
     });

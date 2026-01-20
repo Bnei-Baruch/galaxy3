@@ -300,9 +300,11 @@ export class SubscriberPlugin extends EventEmitter {
     // The plugin handle is not valid anymore
   }
 
-  hangup () {
-    log.info('[subscriber] - hangup - ', this.janus)
-    this.detach()
+  hangup() {
+    log.info('[subscriber] - hangup - ', this)
+    if(this.janus) {
+      this.janus.detach(this)
+    }
   }
 
   slowLink (uplink, lost, mid) {
@@ -321,7 +323,7 @@ export class SubscriberPlugin extends EventEmitter {
     if(!isReady && typeof this.iceFailed === "function") this.iceFailed("subscriber")
   }
 
-  detach () {
+  detach() {
     if(this.pc) {
       this.pc.getTransceivers().forEach((transceiver) => {
         if(transceiver) {

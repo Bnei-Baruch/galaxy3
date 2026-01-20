@@ -21,15 +21,17 @@ const light = createTheme(
     paper: {
       main: grey[500],
     },
-    overrides: {
+    components: {
       MuiButton: {
-        root: {
-          "&.donate": {
-            background: grey[900],
-            color: grey[100],
-            "& > span": {
-              color: red[500],
-              margin: "0 .5em",
+        styleOverrides: {
+          root: {
+            "&.donate": {
+              background: grey[900],
+              color: grey[100],
+              "& > span": {
+                color: red[500],
+                margin: "0 .5em",
+              },
             },
           },
         },

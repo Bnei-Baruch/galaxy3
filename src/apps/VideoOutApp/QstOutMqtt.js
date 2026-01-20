@@ -38,42 +38,20 @@ class QstOutMqtt extends Component {
 
   componentDidMount() {
     this.initApp();
-    setTimeout(() => {
-      this.getVideoOut()
-    },1000)
   }
 
   componentWillUnmount() {
     Object.values(this.state.gateways).forEach((x) => x.destroy());
   }
 
-  getVideoOut = () => {
-    setInterval(() => {
-      api.fetchProgram().then((qids) => {
-        //TODO: make dynamic gateways - attach currently in use and detach not used
-        // let qlist = [
-        //   ...qids.q1.vquad,
-        //   ...qids.q2.vquad,
-        //   ...qids.q3.vquad,
-        //   ...qids.q4.vquad,
-        // ];
-        this.setState({qids});
-        if (this.state.qg) {
-          const {col, i} = this.state;
-          this.setState({qg: this.state.qids["q" + col].vquad[i]});
-        }
-      })
-        .catch((err) => {
-          log.error("[SDIOut] error fetching quad state", err);
-        });
-
-      api.fetchRoomsStatistics().then((roomsStatistics) => {
-        this.setState({roomsStatistics});
-      })
-        .catch((err) => {
-          log.error("[SDIOut] error fetching rooms statistics", err);
-        });
-    }, 1000);
+  getVideoOut = (callback) => {
+    api.fetchProgram().then((qids) => {
+      this.setState({qids});
+      callback(qids)
+    })
+      .catch((err) => {
+        log.error("[SDIOut] error fetching quad state", err);
+      });
   }
 
   initApp = () => {
@@ -100,19 +78,17 @@ class QstOutMqtt extends Component {
       mqtt.watch((data) => {
         this.onMqttData(data);
       });
-      Object.keys(ConfigStore.globalConfig.gateways.rooms).forEach(gxy => {
-        this.initJanus(user, gxy)
-      })
     });
   };
 
-  initJanus = (user, gxy) => {
+  initJanus = (user, gxy, callback) => {
     log.info("["+gxy+"] Janus init")
     const {gateways} = this.state;
     const token = ConfigStore.globalConfig.gateways.rooms[gxy].token
     gateways[gxy] = new JanusMqtt(user, gxy, gxy);
     gateways[gxy].init(token).then(data => {
-      log.info("["+gxy+"] Janus init success", data)
+      log.info("["+gxy+"] Janus init success", data);
+      callback()
     }).catch(err => {
       log.error("["+gxy+"] Janus init", err);
     })
@@ -126,19 +102,38 @@ class QstOutMqtt extends Component {
     }
   }
 
-  onMqttData = (data) => {
-    const {room, col, feed, group, i, status, qst} = data;
+  cleanSession = () => {
+    const {gateways} = this.state;
+    Object.keys(gateways).forEach(key => {
+      const session = gateways[key];
+      session.destroy();
+      delete gateways[key]
+    })
+  };
 
+  onMqttData = (data) => {
+    const {col, feed, group, i, status, qst} = data;
+    const room = group?.room
+    log.info("[QSTOut] onMqttData: ", data)
     if (data.type === "sdi-fullscr_group" && status) {
       if (qst) {
-        this.setState({col, i, group, room, qg: this.state.qids["q" + col].vquad[i]});
+        this.getVideoOut(qids => {
+          this.initJanus(this.state.user, group.janus, () => {
+            this.setState({col, i, group, room, qg: qids["q" + col].vquad[i]});
+          });
+        })
       } else {
         this["col" + col].toFullGroup(i, feed);
       }
     } else if (data.type === "sdi-fullscr_group" && !status) {
       let {col, feed, i} = data;
       if (qst) {
-        this.setState({group: null, room: null, qg: null});
+        this.setState({group: null, room: null, qg: null}, () => {
+          const {gateways} = this.state;
+          const session = gateways[group.janus];
+          session.destroy();
+          delete gateways[group.janus]
+        });
       } else {
         this["col" + col].toFourGroup(i, feed);
       }
@@ -185,7 +180,7 @@ class QstOutMqtt extends Component {
                     <Fragment>
                       {/*{group && group.questions ? <div className="qst_fullscreentitle">?</div> : ""}*/}
                       <div className="fullscrvideo_title">{name}</div>
-                      <VideoHandleMqtt key={"q5"} g={qg} group={group} index={13} col={5} q={5} qst_group={true} user={user} gateways={gateways} />
+                      <VideoHandleMqtt key={"q5"} g={qg} index={13} col={5} q={5} qst_group={true} user={user} gateways={gateways} {...this.state} />
                     </Fragment>
                   ) : (
                     ""

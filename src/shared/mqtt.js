@@ -61,6 +61,7 @@ class MqttMsg {
     }
 
     const url = user.role !== userRolesEnum.user && !service && user?.isClient ? MQTT_URL : MSG_URL;
+    console.log(options, user)
     this.mq = mqtt.connect(`wss://${url}`, options);
     this.mq.setMaxListeners(50)
 

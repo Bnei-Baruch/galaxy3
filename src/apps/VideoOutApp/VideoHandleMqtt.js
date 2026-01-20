@@ -32,7 +32,7 @@ class VideoHandleMqtt extends Component {
     let {g} = this.props;
     let num_videos = g?.users?.filter((u) => u.camera && u.role === "user").length || 0;
     if (num_videos > 25) num_videos = 25; // Cap at 25 like the original
-    
+
     this.setState({num_videos});
   }
 
@@ -58,7 +58,7 @@ class VideoHandleMqtt extends Component {
     if (g && g.users && JSON.stringify(g) !== JSON.stringify(prevProps.g)) {
       let num_videos = g.users.filter((u) => u.camera && u.role === "user").length;
       if (num_videos > 25) num_videos = 25; // Cap at 25 like the original
-      
+
       this.setState({num_videos});
     }
   }
@@ -68,33 +68,42 @@ class VideoHandleMqtt extends Component {
   }
 
   initVideoRoom = (room, inst) => {
-    const {gateways, user, q, col} = this.props;
-    let janus = gateways[inst];
+    const {user, q, col} = this.props;
     const mit = "col" + col + "_q" + (q+1) + "_" + inst
 
     log.info("["+mit+"] Init room: ", room, inst, ConfigStore.globalConfig)
     log.info("["+mit+"] mit", mit)
 
-    this.setState({mit, janus});
+    this.setState({mit});
 
-    this.initVideoHandles(janus, room, user)
+    this.initVideoHandles(room, user, inst)
   }
 
-  initVideoHandles = (janus, room, user, mit) => {
+  initVideoHandles = (room, user, inst) => {
+    const {gateways} = this.props;
+    const janus = gateways[inst];
+    if(janus?.isConnected !== true) {
+      setTimeout(() => {
+        this.initVideoHandles(room, user, inst)
+        log.info("[no connected")
+      }, 1000)
+      return
+    }
+    this.setState({janus});
     let videoroom = new PublisherPlugin();
     videoroom.subTo = this.onJoinFeed;
     videoroom.unsubFrom = this.unsubscribeFrom
     videoroom.talkEvent = this.handleTalking
 
     janus.attach(videoroom).then(data => {
-      log.info("["+mit+"] Publisher Handle: ", data)
+      log.info("["+inst+"] Publisher Handle: ", data)
 
       videoroom.join(room, user).then(data => {
-        log.info("["+mit+"] Joined respond :", data)
+        log.info("["+inst+"] Joined respond :", data)
         this.setState({videoroom, user, room, remoteFeed: null});
         this.onJoinMe(data.publishers, room)
       }).catch(err => {
-        log.error("["+mit+"] Join error :", err);
+        log.error("["+inst+"] Join error :", err);
       })
     })
   }
@@ -173,16 +182,29 @@ class VideoHandleMqtt extends Component {
 
   exitPlugins = (callback) => {
     const {subscriber, videoroom, janus, mit} = this.state;
-    if(subscriber) janus.detach(subscriber)
-    janus.detach(videoroom).then(() => {
-      log.info("["+mit+"] plugin detached:");
+    if(janus) {
+      if(subscriber) janus?.detach(subscriber)
+      janus?.detach(videoroom).then(() => {
+        log.info("["+mit+"] plugin detached:");
+        this.setState({feeds: [], mids: [], remoteFeed: false, videoroom: null, subscriber: null, janus: null});
+        if(typeof callback === "function") callback();
+      })
+    } else {
       this.setState({feeds: [], mids: [], remoteFeed: false, videoroom: null, subscriber: null, janus: null});
       if(typeof callback === "function") callback();
-    })
+    }
   }
 
   exitVideoRoom = (roomid, callback) => {
-    const {videoroom, mit} = this.state;
+    const {videoroom, mit, feeds} = this.state;
+    feeds.forEach(f => {
+      let e = this.refs["pv" + f.id];
+      if (e) {
+        e.src = "";
+        e.srcObject = null;
+        e.remove();
+      }
+    })
     if(videoroom) {
       videoroom.leave().then(r => {
         log.info("["+mit+"] leave respond:", r);
@@ -194,13 +216,12 @@ class VideoHandleMqtt extends Component {
     } else {
       this.exitPlugins(callback)
     }
-
   };
 
   subscribeTo = (room, subscription) => {
     let {janus, creatingFeed, remoteFeed, subscriber, mit} = this.state
 
-    if (remoteFeed) {
+    if (remoteFeed && subscriber) {
       subscriber.sub(subscription);
       return;
     }
@@ -292,7 +313,7 @@ class VideoHandleMqtt extends Component {
     const groupUsers = g && g.users ? g.users.filter((u) => u.camera && u.role === "user" && u.extra?.isGroup) : [];
     const groupCount = Math.min(groupUsers.length, 2); // Limit to max 2 groups
     const hasAnyGroup = groupCount > 0;
-    
+
     // Get the IDs of the first 2 groups (sorted by rfid for stability)
     const allowedGroupIds = groupUsers
       .sort((a, b) => String(a.rfid).localeCompare(String(b.rfid)))
@@ -314,7 +335,7 @@ class VideoHandleMqtt extends Component {
     const visibleVideoCount = sortedFeeds.filter((feed) => {
       return g && g.users && !!g.users.find((u) => feed.id === u.rfid && u.camera);
     }).length;
-    
+
     // Count only visible groups (max 2) to determine if group is alone
     const visibleGroupCount = sortedFeeds.filter((feed) => {
       const user = g?.users?.find((u) => u.rfid === feed.id);
@@ -333,7 +354,7 @@ class VideoHandleMqtt extends Component {
         // Check if this user has the real group flag AND is in the first 2 groups
         const user = g?.users?.find((u) => u.rfid === id);
         let isGroup = user?.extra?.isGroup && allowedGroupIds.includes(id);
-        
+
         // If there's a group in the room, limit regular users to 4
         if (hasAnyGroup && !isGroup && camera) {
           regularUserCount++;
@@ -341,19 +362,19 @@ class VideoHandleMqtt extends Component {
             camera = false; // Hide users beyond the 4th
           }
         }
-        
+
         // If this is the group and it's the only visible video, add video--alone class
         let isAlone = isGroup && visibleVideoCount === 1;
-        
+
         return (
-          <div 
+          <div
             className={classNames(camera ? "video" : "hidden", {
               "video--group": isGroup,
               "video--group--multiple": isGroup && groupCount > 1,
               "video--alone": isAlone
-            })} 
-            key={"prov" + id} 
-            ref={"provideo" + id} 
+            })}
+            key={"prov" + id}
+            ref={"provideo" + id}
             id={"provideo" + id}
           >
             <div className={classNames("video__overlay", {talk: talk})}>

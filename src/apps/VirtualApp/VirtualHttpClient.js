@@ -54,7 +54,6 @@ import KliOlamiStream from "./components/KliOlamiStream";
 import KliOlamiToggle from "./buttons/KliOlamiToggle";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
-import withTheme from "@mui/styles/withTheme";
 import ThemeSwitcher from "./components/ThemeSwitcher/ThemeSwitcher";
 import mqtt from "../../shared/mqtt";
 import devices from "../../lib/devices";
@@ -1800,7 +1799,7 @@ class VirtualHttpClient extends Component {
     }
 
     return (
-      <Grid item xs={rightAsideName ? 3 : false} style={{backgroundColor: theme.palette.background.paper}}>
+      <Grid item xs={rightAsideName ? 3 : false} size={rightAsideName ? 3 : false} style={{backgroundColor: theme.palette.background.paper}}>
         {content}
         {chat}
       </Grid>
@@ -1958,6 +1957,7 @@ class VirtualHttpClient extends Component {
       <Grid
         item
         xs={leftAsideSize >= 3 && leftAsideName ? leftAsideSize : false}
+        size={leftAsideSize >= 3 && leftAsideName ? leftAsideSize : false}
         style={{backgroundColor: theme.palette.background.paper}}
       >
         {
@@ -2027,6 +2027,7 @@ class VirtualHttpClient extends Component {
           <Grid
             item
             xs={12 - (!leftAsideName ? 0 : leftAsideSize) - (!rightAsideName ? 0 : 3)}
+            size={12 - (!leftAsideName ? 0 : leftAsideSize) - (!rightAsideName ? 0 : 3)}
             style={{display: "flex", flexDirection: "column", overflow: "hidden"}}
           >
             <div
@@ -2250,7 +2251,7 @@ class VirtualHttpClient extends Component {
   }
 }
 
-const WrappedClass = withTranslation()(withTheme(VirtualHttpClient));
+const WrappedClass = withTranslation()(VirtualHttpClient);
 
 export default class WrapperForThemes extends React.Component {
   render() {

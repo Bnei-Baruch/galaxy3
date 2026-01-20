@@ -8,9 +8,12 @@ import {RESET_VOTE} from "../../shared/env";
 import mqtt from "../../shared/mqtt";
 import {short_regions} from "../../shared/consts";
 import {createContext} from "../../shared/tools";
+import ConfigStore from "../../shared/ConfigStore";
+import {JanusMqtt} from "../../lib/janus-mqtt";
 
 class ToranToolsMqtt extends Component {
   state = {
+    gateways: {},
     galaxy_mode: "lesson",
     delay: false,
     index: 0,
@@ -22,6 +25,7 @@ class ToranToolsMqtt extends Component {
     menu_open: false,
     menu_group: null,
     qst_filter: false,
+    gxy_list: []
   };
 
   componentDidUpdate(prevProps) {
@@ -36,12 +40,18 @@ class ToranToolsMqtt extends Component {
     }
   }
 
+  initJanus = (gxy, p) => {
+    log.info("["+gxy+"] Janus init")
+    this.props.initJanus(gxy)
+  };
+
   selectGroup = (group, i) => {
     if (this.state.delay) return;
     log.info(group, i);
     this.setState({pg: group, open: true});
     group.queue = i;
     this.props.setProps({group});
+    this.initJanus(group.janus)
   };
 
   closePopup = (disable = false, group) => {
@@ -327,9 +337,9 @@ class ToranToolsMqtt extends Component {
       region_list,
       roomsStatistics,
     } = this.props;
-    const {open, delay, vote, galaxy_mode, menu_open, qst_filter, pg} = this.state;
-    const q = <b style={{color: "red", fontSize: "20px", fontFamily: "Verdana", fontWeight: "bold"}}>?</b>;
-    const qf = <b style={{color: "red", backgroundColor: "yellow", fontSize: "20px", fontFamily: "Verdana", fontWeight: "bold"}}>?</b>;
+    const {open, delay, vote, galaxy_mode, menu_open, qst_filter, pg, gateways} = this.state;
+    const q = <b style={{color: "red", fontColor: "green", fontSize: "20px", fontFamily: "Verdana", fontWeight: "bold"}}>?</b>;
+    const qf = <b style={{color: "red", fontColor: "yellow", fontSize: "20px", fontFamily: "Verdana", fontWeight: "bold"}}>?</b>;
     const next_group = groups[groups_queue] ? groups[groups_queue].description : groups[0] ? groups[0].description : "";
     const ng = groups[groups_queue] || null;
 
@@ -644,7 +654,7 @@ class ToranToolsMqtt extends Component {
                 <div className="shidur_overlay">
                   <span>{ng.description}</span>
                 </div>
-                <PreviewPanelMqtt pg={ng} {...this.props} next closePopup={this.closePopup} />
+                <PreviewPanelMqtt pg={ng} p={0} gateways={this.props.gateways} next nextInQueue={this.props.nextInQueue} closePopup={this.closePopup} initJanus={this.initJanus} />
               </Segment>
             ) : (
               ""
@@ -663,7 +673,7 @@ class ToranToolsMqtt extends Component {
                 { key: 'vip3', content: 'Vip3', icon: 'star' },
                 { key: 'vip4', content: 'Vip4', icon: 'star' },
                 { key: 'vip5', content: 'Vip5', icon: 'star' },
-                { key: 'groups', content: 'Groups', icon: 'star' },
+                // { key: 'groups', content: 'Groups', icon: 'star' },
               ]}
               onItemClick={(e, data) => this.selectMenu(data.content)}
               secondary
@@ -739,7 +749,7 @@ class ToranToolsMqtt extends Component {
                 <div className="shidur_overlay">
                   <span>{group ? group.description : ""}</span>
                 </div>
-                <PreviewPanelMqtt pg={pg} {...this.props} closePopup={this.closePopup} />
+                <PreviewPanelMqtt pg={pg} p={1} gateways={this.props.gateways} closePopup={this.closePopup} initJanus={this.initJanus} />
               </Segment>
             ) : (
               ""

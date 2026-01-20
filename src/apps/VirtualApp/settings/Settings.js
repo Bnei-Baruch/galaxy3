@@ -181,10 +181,10 @@ const Settings = (props) => {
         getOptionLabel={(option) => option.description}
         renderOption={(props, {description, num_users}) => (
           <Grid container {...props}>
-            <Grid item xs={11}>
+            <Grid item xs={11} size={11}>
               {description}
             </Grid>
-            <Grid item xs={1}>
+            <Grid item xs={1} size={1}>
               {num_users}
             </Grid>
           </Grid>
@@ -220,13 +220,13 @@ const Settings = (props) => {
 
   const renderHeader = () => (
     <>
-      <Grid item xs={8}>
+      <Grid item xs={8} size={8}>
         <Typography variant="h4" display={"block"} color="textPrimary">
           {t("settings.helloUser", {name: user.display})}
         </Typography>
         <Typography color="textPrimary">{t("settings.beforeConnecting")}</Typography>
       </Grid>
-      <Grid item xs={4}>
+      <Grid item xs={4} size={4}>
         <Grid container justify="flex-end" spacing={2}>
           <Grid item>
             <LogoutDropdown display={user.display}/>
@@ -242,13 +242,13 @@ const Settings = (props) => {
   const renderUserSettings = () => {
     return (
       <>
-        <Grid item xs={4}>
+        <Grid item xs={4} size={4}>
           <AccountCircle className={classes.icon} color="action"/>
           <Typography variant="h6" display="inline" style={{verticalAlign: "top"}} color="textPrimary">
             {t("settings.userSettings")}
           </Typography>
         </Grid>
-        <Grid item={true} xs={4}>
+        <Grid item={true} xs={4} size={4}>
           <TextField
             label={t("settings.screenName")}
             fullWidth={true}
@@ -257,7 +257,7 @@ const Settings = (props) => {
             disabled
           />
         </Grid>
-        <Grid item={true} xs={4}>
+        <Grid item={true} xs={4} size={4}>
           <SelectViewLanguage/>
         </Grid>
       </>
@@ -272,38 +272,38 @@ const Settings = (props) => {
         {renderUserSettings()}
         <Divider variant="fullWidth" sx={{width: "100%", marginTop: "2em"}}/>
 
-        <Grid item xs={6}>
+        <Grid item xs={6} size={6}>
           <Videocam className={classes.icon} color="action"/>
           <Typography variant="h6" display="inline" style={{verticalAlign: "top"}} color="textPrimary">
             {t("settings.cameraSettings")}
           </Typography>
         </Grid>
-        <Grid item xs={4}>
+        <Grid item xs={4} size={4}>
           <Mic className={classes.icon} color="action"/>
           <Typography variant="h6" display="inline" style={{verticalAlign: "top"}} color="textPrimary">
             {t("settings.microphoneSettings")}
           </Typography>
         </Grid>
 
-        <Grid item xs={3}>
+        <Grid item xs={3} size={3}>
           {renderCameras()}
         </Grid>
-        <Grid item xs={3}>
+        <Grid item xs={3} size={3}>
           {renderVideoSize()}
         </Grid>
 
-        <Grid item xs={6}>
+        <Grid item xs={6} size={6}>
           {renderSounds()}
         </Grid>
 
-        <Grid item xs={6}>
+        <Grid item xs={6} size={6}>
           {<MyMedia cammuted={cammuted} video={video}/>}
         </Grid>
-        <Grid item xs={6}>
+        <Grid item xs={6} size={6}>
           {<CheckMySelf/>}
         </Grid>
 
-        <Grid item xs={12}>
+        <Grid item xs={12} size={12}>
           <FormControlLabel
             label={<Typography color="textPrimary">{t("oldClient.stopVideo")}</Typography>}
             control={<Checkbox checked={cammuted} onChange={toggleCamera} name="turnOffCamera" color="primary"/>}
@@ -335,10 +335,10 @@ const Settings = (props) => {
           />
         </Grid>
 
-        <Grid item xs={6}>
+        <Grid item xs={6} size={6}>
           {renderRooms()}
         </Grid>
-        <Grid item xs={4}>
+        <Grid item xs={4} size={4}>
           <Button
             variant="contained"
             color="success"

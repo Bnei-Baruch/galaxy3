@@ -111,6 +111,14 @@ class PreviewPanelMqtt extends Component {
     let janus = gateways[inst];
     let {subscriber, room} = this.state
 
+    if(!janus) {
+      // setTimeout(() => {
+      //   log.info("["+inst+"] Not connected, waiting... ", janus)
+      //   this.subscribeTo(subscription, inst)
+      // }, 1000)
+      return
+    }
+
     subscriber = new SubscriberPlugin();
     subscriber.onTrack = this.onRemoteTrack;
     subscriber.onUpdate = this.onUpdateStreams;

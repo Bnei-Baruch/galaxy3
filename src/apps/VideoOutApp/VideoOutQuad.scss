@@ -49,15 +49,16 @@
   // line-height: 1.3285em;
   position: absolute;
   // right: 65px;
-  line-height: 100px;;
-  right:2px;
-  top:2px;
+  line-height: 100px;
+  height: 100px;
+  right: 10px;
+  top: 6px;
   color: #FFF;
   text-align: center;
   font-size: 75px;
   background-color: #2185d0;
   // width: auto;
-  padding: 10px 50px 0px;
+  padding: 0px 50px;
   // float: right !important;
   z-index: 2;
 }
@@ -158,11 +159,11 @@
   height: 100px;
   // padding: 0px 5px;
   // float: right!important;
-  right: 2px;
-  top: 2px;
+  right: 10px;
+  top: 6px;
   z-index: 2;
   + .video_title {
-    right: 101px;
+    right: 110px;
   }
   &__first_time {
     color: red;
@@ -185,15 +186,15 @@
   width: 150px;
   // padding: 0px 5px;
   // float: left !important;
-  right: 2px;
+  right: 10px;
   top: 0;
   z-index: 2;
   + .fullscrvideo_title {
-    margin-right:62px;
+    margin-right: 160px;
   }
   &__first_time {
-    color: white;
-    background-color: #21ba45;
+    color: red;
+    background-color: yellow;
   }
 }
 
