@@ -69,6 +69,7 @@ import {BroadcastNotification} from "./components/BroadcastNotification";
 import GlobalOptions, {GlobalOptionsContext} from "./components/GlobalOptions/GlobalOptions";
 import ShowSelfBtn from "./buttons/ShowSelfBtn";
 import OnboardingDoor from "./components/OnboardingDoor.js";
+import {CountrySelectionDialog, SKIP_COUNTRY_DIALOG_KEY} from "./components/CountrySelectionDialog.js";
 
 const sortAndFilterFeeds = (feeds) =>
   feeds
@@ -150,6 +151,7 @@ class VirtualMqttClient extends Component {
       appFullScreen: false,
       showBars: true,
       barsAnimatingOut: false,
+      showCountryDialog: false,
     };
 
     this.hideBarsTimer = null;
@@ -254,6 +256,15 @@ class VirtualMqttClient extends Component {
         user.vhinfo = {active: false, error: err?.message};
       }).finally(() => {
         user.allowed = !!user.vhinfo.active && user.role === userRolesEnum.user;
+        // Check if country is missing and pricingVersion starts with 't' or is v2
+        const skipDialog = sessionStorage.getItem(SKIP_COUNTRY_DIALOG_KEY) === "true" || localStorage.getItem(SKIP_COUNTRY_DIALOG_KEY) === "true";
+        const shouldShowDialog = user.allowed &&
+          !skipDialog &&
+          (!user.vhinfo.country || user.vhinfo.country === "") &&
+          (user.vhinfo.pricing_version?.startsWith("t") || user.vhinfo.pricing_version === "v2");
+        if (shouldShowDialog) {
+          this.setState({showCountryDialog: true});
+        }
         this.initApp(user);
       });
     } else {
@@ -1731,6 +1742,10 @@ class VirtualMqttClient extends Component {
       <Fragment>
         <PopUp show={show_notification} setClose={() => this.setState({show_notification: false})}/>
         <BroadcastNotification show={show_message} msg={broadcast_message} setClose={() => this.setState({show_message: false})} />
+        <CountrySelectionDialog
+          isOpen={this.state.showCountryDialog}
+          onClose={() => this.setState({showCountryDialog: false})}
+        />
         {user?.allowed && Boolean(room) && (
           <SettingsJoined
             userDisplay={user.display}
