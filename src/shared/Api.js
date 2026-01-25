@@ -67,6 +67,11 @@ class Api {
 
   fetchVHInfo = () => this.logAndParse(`fetch vh info`, fetch(this.urlFor("/v2/vhinfo"), this.defaultOptions()));
 
+  updateVHInfo = (data) => {
+    const options = this.makeOptions("POST", data);
+    return this.logAndParse(`update vh info`, fetch(this.urlFor("/v2/vhinfo"), options));
+  };
+
   fetchStrServer = (data) => {
     const options = this.makeOptions("POST", data);
     return this.logAndParse(`fetch str server for: ${data}`, fetch(this.strUrl(`/server`), options));

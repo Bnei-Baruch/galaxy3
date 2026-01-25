@@ -71,6 +71,7 @@ import {BroadcastNotification} from "./components/BroadcastNotification";
 import GlobalOptions, {GlobalOptionsContext} from "./components/GlobalOptions/GlobalOptions";
 import ShowSelfBtn from "./buttons/ShowSelfBtn";
 import OnboardingDoor from "./components/OnboardingDoor.js";
+import {CountrySelectionDialog} from "./components/CountrySelectionDialog.js";
 
 const sortAndFilterFeeds = (feeds) =>
   feeds
@@ -152,8 +153,9 @@ class VirtualMqttClient extends Component {
       appFullScreen: false,
       showBars: true,
       barsAnimatingOut: false,
+      showCountryDialog: false,
     };
-    
+
     this.hideBarsTimer = null;
     this.handleAppFullScreenChange = this.handleAppFullScreenChange.bind(this);
     this.handleUserActivityForBars = this.handleUserActivityForBars.bind(this);
@@ -256,6 +258,11 @@ class VirtualMqttClient extends Component {
         user.vhinfo = {active: false, error: err?.message};
       }).finally(() => {
         user.allowed = !!user.vhinfo.active && user.role === userRolesEnum.user;
+        // Check if country is missing and show dialog (unless user opted out)
+        const skipDialog = localStorage.getItem("skipCountryDialog") === "true";
+        if (user.allowed && !skipDialog && (!user.vhinfo.country || user.vhinfo.country === "")) {
+          this.setState({showCountryDialog: true});
+        }
         this.initApp(user);
       });
     } else {
@@ -1805,6 +1812,12 @@ class VirtualMqttClient extends Component {
       <Fragment>
         <PopUp show={show_notification} setClose={() => this.setState({show_notification: false})}/>
         <BroadcastNotification show={show_message} msg={broadcast_message} setClose={() => this.setState({show_message: false})} />
+        <CountrySelectionDialog
+          user={user}
+          isOpen={this.state.showCountryDialog}
+          onClose={() => this.setState({showCountryDialog: false})}
+          onSubmit={() => this.setState({showCountryDialog: false})}
+        />
         {user?.allowed && Boolean(room) && (
           <SettingsJoined
             userDisplay={user.display}
