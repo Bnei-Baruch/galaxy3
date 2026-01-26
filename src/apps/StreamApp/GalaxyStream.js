@@ -99,7 +99,7 @@ class GalaxyStream extends Component {
           audio.srcObject = stream;
         })
       })
-      let id = trllang[localStorage.getItem("gxy_langtext")] || 301;
+      let id = trllang[localStorage.getItem("gxy_langtext")] || 01;
       //this.initTranslationStream(id);
     }
   };

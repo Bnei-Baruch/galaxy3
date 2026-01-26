@@ -255,8 +255,7 @@ class VirtualMqttClient extends Component {
         log.error('Error fetching VH info data: ', err?.message);
         user.vhinfo = {active: false, error: err?.message};
       }).finally(() => {
-        //user.allowed = !!user.vhinfo.active && user.role === userRolesEnum.user;
-        user.allowed = user.role === userRolesEnum.user;
+        user.allowed = !!user.vhinfo.active && user.role === userRolesEnum.user;
         this.initApp(user);
       });
     } else {
@@ -476,13 +475,13 @@ class VirtualMqttClient extends Component {
       }
     };
 
-    let videoroom = new PublisherPlugin(config.iceServers);
+    let videoroom = new PublisherPlugin();
     videoroom.subTo = this.makeSubscription;
     videoroom.unsubFrom = this.unsubscribeFrom;
     videoroom.talkEvent = this.handleTalking;
     videoroom.iceFailed = this.iceFailed;
 
-    let subscriber = new SubscriberPlugin(config.iceServers);
+    let subscriber = new SubscriberPlugin();
     subscriber.onTrack = this.onRemoteTrack;
     subscriber.onUpdate = this.onUpdateStreams;
     subscriber.iceFailed = this.iceFailed;
