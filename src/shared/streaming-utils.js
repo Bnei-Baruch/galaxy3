@@ -60,7 +60,7 @@ class JanusStream {
         this.initAudioStream();
       }
       if (!this.trlAudioJanusStream) {
-        let id = trllang[localStorage.getItem("vrt_langtext")] || 301;
+        let id = trllang[localStorage.getItem("vrt_langtext")] || 401;
         this.initTranslationStream(id);
       }
     });

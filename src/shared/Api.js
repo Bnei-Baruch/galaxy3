@@ -72,6 +72,12 @@ class Api {
     return this.logAndParse(`fetch str server for: ${data}`, fetch(this.strUrl(`/server`), options));
   };
 
+  fetchGxyServer = (data) => {
+    const options = this.makeOptions("POST", data);
+    return this.logAndParse(`fetch str server for: ${data}`, fetch(this.urlFor(`/v2/room_server`), options));
+  };
+
+
   // Admin API
 
   adminFetchGateways = (params = {}) =>

@@ -153,7 +153,7 @@ class VirtualMqttClient extends Component {
       showBars: true,
       barsAnimatingOut: false,
     };
-    
+
     this.hideBarsTimer = null;
     this.handleAppFullScreenChange = this.handleAppFullScreenChange.bind(this);
     this.handleUserActivityForBars = this.handleUserActivityForBars.bind(this);
@@ -165,7 +165,7 @@ class VirtualMqttClient extends Component {
     document.addEventListener('webkitfullscreenchange', this.handleAppFullScreenChange);
     document.addEventListener('mozfullscreenchange', this.handleAppFullScreenChange);
     document.addEventListener('MSFullscreenChange', this.handleAppFullScreenChange);
-    
+
     // Add user activity listeners for showing bars
     document.addEventListener('mousemove', this.handleUserActivityForBars);
     document.addEventListener('mousedown', this.handleUserActivityForBars);
@@ -175,13 +175,13 @@ class VirtualMqttClient extends Component {
 
   componentWillUnmount() {
     this.clearHideBarsTimer();
-    
+
     // Remove fullscreen listeners
     document.removeEventListener('fullscreenchange', this.handleAppFullScreenChange);
     document.removeEventListener('webkitfullscreenchange', this.handleAppFullScreenChange);
     document.removeEventListener('mozfullscreenchange', this.handleAppFullScreenChange);
     document.removeEventListener('MSFullscreenChange', this.handleAppFullScreenChange);
-    
+
     // Remove user activity listeners
     document.removeEventListener('mousemove', this.handleUserActivityForBars);
     document.removeEventListener('mousedown', this.handleUserActivityForBars);
@@ -202,7 +202,7 @@ class VirtualMqttClient extends Component {
   handleAppFullScreenChange() {
     const appFullScreen = isFullScreen();
     this.setState({appFullScreen, showBars: true});
-    
+
     if (appFullScreen) {
       // Start hide timer when entering fullscreen
       this.showBarsTemporarily();
@@ -412,14 +412,19 @@ class VirtualMqttClient extends Component {
     if (this.state.janus) {
       this.state.janus.destroy();
     }
-
-    const config = GxyJanus.instanceConfig(user.janus);
-    log.info("[client] Got config: ", config);
-    this.initJanus(user, config, retry);
-    JanusStream.setUser(user);
-    if (!reconnect && shidur) {
-      JanusStream.initStreaming();
-    }
+    api.fetchGxyServer(user).then((data) => {
+      log.info("[client] Got Gxy Server: ", data);
+      user.janus = data.janus;
+      const config = GxyJanus.instanceConfig(user.janus);
+      log.info("[client] Got config: ", config);
+      this.initJanus(user, config, retry);
+      JanusStream.setUser(user);
+      if (!reconnect && shidur) {
+        JanusStream.initStreaming();
+      }
+    }).catch((err) => {
+      log.error("[client] Failed to fetch Gxy Server: ", err);
+    })
   };
 
   reinitClient = (retry) => {
@@ -470,13 +475,13 @@ class VirtualMqttClient extends Component {
       }
     };
 
-    let videoroom = new PublisherPlugin(config.iceServers);
+    let videoroom = new PublisherPlugin();
     videoroom.subTo = this.makeSubscription;
     videoroom.unsubFrom = this.unsubscribeFrom;
     videoroom.talkEvent = this.handleTalking;
     videoroom.iceFailed = this.iceFailed;
 
-    let subscriber = new SubscriberPlugin(config.iceServers);
+    let subscriber = new SubscriberPlugin();
     subscriber.onTrack = this.onRemoteTrack;
     subscriber.onUpdate = this.onUpdateStreams;
     subscriber.iceFailed = this.iceFailed;
