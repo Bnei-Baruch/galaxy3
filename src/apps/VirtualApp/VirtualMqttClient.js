@@ -1314,36 +1314,26 @@ class VirtualMqttClient extends Component {
       displayChat = "block";
     }
 
-    const chat = (
-      <Box style={{display: displayChat, height: "100%"}}>
-        <VirtualChat
-          t={t}
-          ref={(chat) => {
-            this.chat = chat;
-          }}
-          visible={rightAsideName === "chat"}
-          room={room}
-          user={user}
-          onCmdMsg={this.handleCmdData}
-          onNewMsg={this.onChatMessage}
-          room_chat={isRoomChat}
-          setIsRoomChat={this.setIsRoomChat}
-        />
-      </Box>
-    );
-
     if (rightAsideName === "question") {
       content = <SendQuestionContainer user={user} />;
     }
 
-    if (!rightAsideName) {
-      return null;
-    }
-
     return (
-      <Grid item xs={3} size={3} style={{backgroundColor: this.props.theme.palette.background.paper}}>
+      <Grid item xs={3} size={3} style={{backgroundColor: this.props.theme.palette.background.paper, display: !rightAsideName ? "none" : undefined}}>
         {content}
-        {chat}
+        <Box style={{display: displayChat, height: "100%"}}>
+          <VirtualChat
+            t={t}
+            ref={(chat) => {this.chat = chat;}}
+            visible={rightAsideName === "chat"}
+            room={room}
+            user={user}
+            onCmdMsg={this.handleCmdData}
+            onNewMsg={this.onChatMessage}
+            room_chat={isRoomChat}
+            setIsRoomChat={this.setIsRoomChat}
+          />
+        </Box>
       </Grid>
     );
   };
