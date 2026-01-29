@@ -255,7 +255,8 @@ class VirtualMqttClient extends Component {
         log.error('Error fetching VH info data: ', err?.message);
         user.vhinfo = {active: false, error: err?.message};
       }).finally(() => {
-        user.allowed = !!user.vhinfo.active && user.role === userRolesEnum.user;
+        //user.allowed = !!user.vhinfo.active && user.role === userRolesEnum.user;
+        user.allowed = user.role === userRolesEnum.user;
         this.initApp(user);
       });
     } else {

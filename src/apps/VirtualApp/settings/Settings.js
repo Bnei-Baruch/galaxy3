@@ -209,9 +209,7 @@ const Settings = (props) => {
 
   const handleRoomChange = (e, op) => {
     if (!op?.room) return;
-
-    const num = Number(op.room);
-    !isNaN(num) && selectRoom(num);
+    selectRoom(op.room);
   };
 
   const handleInitClient = () => {

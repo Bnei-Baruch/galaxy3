@@ -14,7 +14,7 @@ const envKeys = Object.keys(env).reduce((prev, next) => {
 
 module.exports = {
   devServer: {
-    port: process.env.PORT || '3001',
+    port: process.env.PORT || '3000',
     compress: true,
     historyApiFallback: true,
   },
