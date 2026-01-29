@@ -40,8 +40,6 @@ import JanusStream from "../../shared/streaming-utils";
 import {kc} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 import {captureMessage, sentryDebugAction, setSentryGeo, setSentryTag, updateSentryUser} from "../../shared/sentry";
-import GxyJanus from "../../shared/janus-utils";
-import ConfigStore from "../../shared/ConfigStore";
 import {isFullScreen, toggleFullScreen} from "./FullScreenHelper";
 import {AppBar, Badge, Box, Button as ButtonMD, ButtonGroup, Grid, IconButton, useTheme} from "@mui/material";
 import {ChevronLeft, ChevronRight, PlayCircleOutline} from "@mui/icons-material";
@@ -255,8 +253,7 @@ class VirtualMqttClient extends Component {
         log.error('Error fetching VH info data: ', err?.message);
         user.vhinfo = {active: false, error: err?.message};
       }).finally(() => {
-        //user.allowed = !!user.vhinfo.active && user.role === userRolesEnum.user;
-        user.allowed = user.role === userRolesEnum.user;
+        user.allowed = !!user.vhinfo.active && user.role === userRolesEnum.user;
         this.initApp(user);
       });
     } else {
@@ -301,37 +298,29 @@ class VirtualMqttClient extends Component {
       this.setState({user});
       updateSentryUser(user);
 
-      api.fetchConfig().then((data) => {
-          log.debug("[client] got config: ", data);
-          ConfigStore.setGlobalConfig(data);
-          const premodStatus = ConfigStore.dynamicConfig(ConfigStore.PRE_MODERATION_KEY) === "true";
-          this.setState({premodStatus});
-          GxyJanus.setGlobalConfig(data);
-        }).then(() => {
-          api.fetchAvailableRooms({with_num_users: true}).then(data => {
-            const {rooms} = data;
-            this.setState({rooms});
-            this.initDevices();
-            const {selected_room} = this.state;
-            if (selected_room !== "") {
-              const room = rooms.find((r) => r.room === selected_room);
-              if (room) {
-                user.room = selected_room;
-                user.janus = room.janus;
-                user.group = room.description;
-                this.setState({delay: false, user});
-                updateSentryUser(user);
-              } else {
-                this.setState({selected_room: "", delay: false});
-              }
-            } else {
-              this.setState({delay: false});
-            }
-          }).catch((err) => {
-            log.error("[client] error initializing app", err);
-            this.setState({appInitError: err});
-          });
-        })
+      api.fetchAvailableRooms({with_num_users: true}).then(data => {
+        const {rooms} = data;
+        this.setState({rooms});
+        this.initDevices();
+        const {selected_room} = this.state;
+        if (selected_room !== "") {
+          const room = rooms.find((r) => r.room === selected_room);
+          if (room) {
+            user.room = selected_room;
+            user.janus = room.janus;
+            user.group = room.description;
+            this.setState({delay: false, user});
+            updateSentryUser(user);
+          } else {
+            this.setState({selected_room: "", delay: false});
+          }
+        } else {
+          this.setState({delay: false});
+        }
+      }).catch((err) => {
+        log.error("[client] error initializing app", err);
+        this.setState({appInitError: err});
+      });
     });
   };
 
@@ -416,9 +405,7 @@ class VirtualMqttClient extends Component {
     api.fetchGxyServer(user).then((data) => {
       log.info("[client] Got Gxy Server: ", data);
       user.janus = data.janus;
-      const config = GxyJanus.instanceConfig(user.janus);
-      log.info("[client] Got config: ", config);
-      this.initJanus(user, config, retry);
+      this.initJanus(user, retry);
       JanusStream.setUser(user);
       if (!reconnect && shidur) {
         JanusStream.initStreaming();
@@ -459,9 +446,9 @@ class VirtualMqttClient extends Component {
       }
     };
 
-  initJanus = (user, config, retry) => {
-    setSentryTag(config.name)
-    let janus = new JanusMqtt(user, config.name);
+  initJanus = (user, retry) => {
+    setSentryTag(user.janus)
+    let janus = new JanusMqtt(user, user.janus);
     janus.onStatus = (srv, status) => {
       if (status === "offline") {
         alert("Janus Server - " + srv + " - Offline");
@@ -487,7 +474,7 @@ class VirtualMqttClient extends Component {
     subscriber.onUpdate = this.onUpdateStreams;
     subscriber.iceFailed = this.iceFailed;
 
-    janus.init(config.token).then((data) => {
+    janus.init().then((data) => {
         log.info("[client] Janus init", data);
 
       janus.attach(videoroom).then((data) => {
@@ -642,7 +629,6 @@ class VirtualMqttClient extends Component {
         this.setState({user, myid: id, delay: false, sourceLoading: false});
         updateSentryUser(user);
         updateGxyUser(user);
-        //this.keepAlive();
 
         mqtt.join("galaxy/room/" + selected_room);
         mqtt.join("galaxy/room/" + selected_room + "/chat", true);
@@ -679,8 +665,6 @@ class VirtualMqttClient extends Component {
 
   resetClient = (reconnect, callback) => {
     let {janus, room, shidur} = this.state;
-
-    //this.clearKeepAlive();
 
     localStorage.setItem("question", false);
 
@@ -930,65 +914,11 @@ class VirtualMqttClient extends Component {
       if (videoroom) videoroom.setBitrate(bitrate);
     } else if (type === "audio-out") {
       this.handleAudioOut(data);
-    } else if (type === "reload-config") {
-      this.reloadConfig();
     } else if (type === "client-reload-all") {
       window.location.reload();
     } else if (type === "client-state") {
       this.userState(data.user);
     }
-  };
-
-  keepAlive = () => {
-    // send every 2 seconds
-    this.setState({keepalive: setInterval(this.sendKeepAlive, 2 * 1000)});
-
-    // after 20 seconds, increase interval from 2 to 30 seconds.
-    setTimeout(() => {
-      //this.clearKeepAlive();
-      this.setState({keepalive: setInterval(this.sendKeepAlive, 30 * 1000)});
-    }, 20 * 1000);
-  };
-
-  sendKeepAlive = () => {
-    const {user, janus} = this.state;
-    if (user && janus && janus.isConnected && user.session && user.handle) {
-      api
-        .updateUser(user.id, user)
-        .then((data) => {
-          if (ConfigStore.isNewer(data.config_last_modified)) {
-            log.info("[client] there is a newer config. Reloading ", data.config_last_modified);
-            this.reloadConfig();
-          }
-        })
-        .catch((err) => {
-          log.error("[client] error sending keepalive", user.id, err);
-        });
-    }
-  };
-
-  clearKeepAlive = () => {
-    const {keepalive} = this.state;
-    if (keepalive) {
-      clearInterval(keepalive);
-    }
-    this.setState({keepalive: null});
-  };
-
-  reloadConfig = () => {
-    api.fetchConfig().then((data) => {
-      ConfigStore.setGlobalConfig(data);
-      const {premodStatus, question} = this.state;
-      const newPremodStatus = ConfigStore.dynamicConfig(ConfigStore.PRE_MODERATION_KEY) === "true";
-      if (newPremodStatus !== premodStatus) {
-        this.setState({premodStatus: newPremodStatus});
-        if (question) {
-          this.handleQuestion();
-        }
-      }
-    }).catch((err) => {
-      log.error("[client] error reloading config", err);
-    });
   };
 
   makeDelay = () => {
