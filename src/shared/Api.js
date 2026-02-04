@@ -1,4 +1,4 @@
-import {ADMIN_SECRET, API_BACKEND, AUTH_API_BACKEND, JANUS_ADMIN_GXY, STRDB_BACKEND} from "./env";
+import {ADMIN_SECRET, API_BACKEND, AUTH_API_BACKEND, JANUS_ADMIN_GXY, STRDB_BACKEND, VH_URL} from "./env";
 import {randomString} from "./tools";
 import mqtt from "../shared/mqtt";
 
@@ -65,7 +65,7 @@ class Api {
     return this.logAndParse(`update room ${id}`, fetch(this.urlFor(`/rooms/${id}`), options));
   };
 
-  fetchVHInfo = () => this.logAndParse(`fetch vh info`, fetch(this.urlFor("/v2/vhinfo"), this.defaultOptions()));
+  fetchVHInfo = (id) => this.logAndParse(`fetch vh info`, fetch(`${VH_URL}/profile/v1/profile/${id}/short`, this.defaultOptions()));
 
   fetchStrServer = (data) => {
     const options = this.makeOptions("POST", data);
