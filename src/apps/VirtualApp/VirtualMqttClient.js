@@ -247,7 +247,7 @@ class VirtualMqttClient extends Component {
     user.role = getUserRole();
     user.isClient = true;
     if (user.role !== null) {
-      api.fetchVHInfo().then((data) => {
+      api.fetchVHInfo(user.id).then((data) => {
         user.vhinfo = data;
       }).catch(err => {
         log.error('Error fetching VH info data: ', err?.message);
