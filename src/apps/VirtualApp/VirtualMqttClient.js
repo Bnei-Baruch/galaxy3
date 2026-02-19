@@ -72,21 +72,21 @@ import OnboardingDoor from "./components/OnboardingDoor.js";
 
 const sortAndFilterFeeds = (feeds) =>
   feeds
-    .filter((feed) => !feed.display.role.match(/^(ghost|guest)$/))
+    .filter((feed) => !feed.metadata.role.match(/^(ghost|guest)$/))
     .sort((a, b) => {
       // Groups should go first before non-groups.
       // When both are groups or both non-groups use timestamp
       // to order.
-      if (!!a.display.is_group && !b.display.is_group) {
+      if (!!a.metadata.is_group && !b.metadata.is_group) {
         return -1;
       }
-      if (!a.display.is_group && !!b.display.is_group) {
+      if (!a.metadata.is_group && !!b.metadata.is_group) {
         return 1;
       }
-      return a.display.timestamp - b.display.timestamp;
+      return a.metadata.timestamp - b.metadata.timestamp;
     });
 
-const userFeeds = (feeds) => feeds.filter((feed) => feed.display.role === userRolesEnum.user);
+const userFeeds = (feeds) => feeds.filter((feed) => feed.metadata.role === userRolesEnum.user);
 const monitoringData = new MonitoringData();
 
 
@@ -718,7 +718,6 @@ class VirtualMqttClient extends Component {
 
     newFeeds.forEach((feed) => {
       const {id, streams} = feed;
-      feed.display = JSON.parse(feed.display);
       const vst = streams.find((v) => v.type === "video" && v.h264_profile);
       if (vst) {
         feed.video = vst.h264_profile === "42e01f";
@@ -1133,7 +1132,7 @@ class VirtualMqttClient extends Component {
   }
 
   renderMedia = (feed, width, height, layout) => {
-    const {id, talking, question, cammute, display: {display: userName, is_group: isGroup}} = feed;
+    const {id, talking, question, cammute, metadata: {display: userName, is_group: isGroup}} = feed;
     const {muteOtherCams} = this.state;
     const muteCamera = cammute || muteOtherCams;
 
@@ -1676,15 +1675,15 @@ class VirtualMqttClient extends Component {
       const {question, id} = feed;
       otherFeedHasQuestion = otherFeedHasQuestion || (question && id !== myid);
 
-      if (!localPushed && ((!feed.display.is_group && isGroup) ||
-          (feed.display.is_group === isGroup && feed.display.timestamp >= user.timestamp))) {
+      if (!localPushed && ((!feed.metadata.is_group && isGroup) ||
+          (feed.metadata.is_group === isGroup && feed.metadata.timestamp >= user.timestamp))) {
         localPushed = true;
         for (let i = 0; i < parseInt(numberOfVirtualUsers, 10); i++) {
           result.push(this.renderLocalMedia(width, height, i, isGroup));
         }
       }
 
-      if (feed.display.is_group) {
+      if (feed.metadata.is_group) {
         groupsNum += 1;
       }
 

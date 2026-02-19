@@ -69,7 +69,7 @@ class PreviewPanelMqtt extends Component {
   attachPreview = (g) => {
     if(!g) return
     api.adminListParticipants({request: "listparticipants", room: g.room}, g.janus).then((data) => {
-      let list = data.response.participants.filter((p) => p.publisher && JSON.parse(p.display).role === "user");
+      let list = data.response.participants.filter((p) => p.publisher && p.metadata.role === "user");
       if (list.length === 0) {
         log.error("- No feeds to show -");
       }

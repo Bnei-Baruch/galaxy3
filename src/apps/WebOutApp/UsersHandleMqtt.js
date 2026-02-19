@@ -99,16 +99,15 @@ class UsersHandle extends Component {
   onJoinMe = (list, room) => {
     const {mit} = this.state;
     let feeds = list
-      .sort((a, b) => JSON.parse(a.display).timestamp - JSON.parse(b.display).timestamp)
-      .filter((feeder) => JSON.parse(feeder.display).role === "user");
+      .sort((a, b) => a.metadata.timestamp - b.metadata.timestamp)
+      .filter((feeder) => feeder.metadata.role === "user");
     log.info("["+mit+"] Got publishers list: ", feeds);
     let subscription = [];
     for (let f in feeds) {
       let id = feeds[f]["id"];
-      let display = JSON.parse(feeds[f]["display"]);
+      let display = feeds[f].metadata;
       let talking = feeds[f]["talking"];
       let streams = feeds[f]["streams"];
-      feeds[f].display = display;
       feeds[f].talking = talking;
       for (let i in streams) {
         let stream = streams[i];
@@ -136,10 +135,9 @@ class UsersHandle extends Component {
     let subscription = [];
     for (let f in feed) {
       let id = feed[f]["id"];
-      let display = JSON.parse(feed[f]["display"]);
+      let display = feed[f].metadata;
       if (display.role !== "user") return;
       let streams = feed[f]["streams"];
-      feed[f].display = display;
       for (let i in streams) {
         let stream = streams[i];
         stream["id"] = id;

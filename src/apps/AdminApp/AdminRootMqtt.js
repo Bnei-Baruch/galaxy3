@@ -33,8 +33,8 @@ import {createContext} from "../../shared/tools";
 
 const sortAndFilterFeeds = (feeds) =>
   feeds
-    .filter((feed) => !feed.display.role.match(/^(ghost|guest)$/))
-    .sort((a, b) => a.display.timestamp - b.display.timestamp);
+    .filter((feed) => !feed.metadata.role.match(/^(ghost|guest)$/))
+    .sort((a, b) => a.metadata.timestamp - b.metadata.timestamp);
 
 class AdminRootMqtt extends Component {
   state = {
@@ -309,7 +309,6 @@ class AdminRootMqtt extends Component {
 
     newFeeds.forEach(f => {
       const {id, streams} = f;
-      f.display = JSON.parse(f.display)
       const vst = streams.find((v) => v.type === "video" && v.h264_profile);
       if(vst) {
         f.video = vst.h264_profile === "42e01f";
