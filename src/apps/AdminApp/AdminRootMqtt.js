@@ -396,8 +396,8 @@ class AdminRootMqtt extends Component {
         const users_count = data.map((r) => r.num_users).reduce((su, cur) => su + cur, 0);
         for (let i = 0; i < data.length; i++) {
           for (let j = 0; j < data[i]["users"].length; j++) {
-            if (data[i]["users"][j]["system"] === "iOS") ios_count++;
-            if (data[i]["users"][j]["system"] === "Android") android_count++;
+            if (data[i]["users"][j]["system"].match(/^(ios)/)) ios_count++;
+            if (data[i]["users"][j]["system"].match(/^(android)/)) android_count++;
           }
         }
         web_count = users_count - (ios_count + android_count);
