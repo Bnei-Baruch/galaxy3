@@ -346,6 +346,7 @@ class AdminRootMqtt extends Component {
     });
     const feeds = Array.from(pfMap, ([k, v]) => v);
     this.setState({feeds: sortAndFilterFeeds(feeds)});
+    log.info("Sorted feeds: ", sortAndFilterFeeds(feeds))
     if (subscription.length > 0)
       this.subscribeTo(subscription);
   }
@@ -628,7 +629,7 @@ class AdminRootMqtt extends Component {
         <Table.Row active={feed.id === this.state.feed_id} key={i + "u"} onClick={() => this.getUserInfo(feed_user)}>
           <Table.Cell width={10}>
             {gr ? g : ""}{qt ? q : ""}
-            {feed.display.display}
+            {feed.metadata.display}
           </Table.Cell>
           {/*<Table.Cell positive={st} width={1}>{st ? v : ""}</Table.Cell>*/}
           <Table.Cell width={1}></Table.Cell>
