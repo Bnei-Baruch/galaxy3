@@ -33,8 +33,8 @@ import {createContext} from "../../shared/tools";
 
 const sortAndFilterFeeds = (feeds) =>
   feeds
-    .filter((feed) => !feed.display.role.match(/^(ghost|guest)$/))
-    .sort((a, b) => a.display.timestamp - b.display.timestamp);
+    .filter((feed) => !feed.metadata.role.match(/^(ghost|guest)$/))
+    .sort((a, b) => a.metadata.timestamp - b.metadata.timestamp);
 
 class AdminRootMqtt extends Component {
   state = {
@@ -309,7 +309,6 @@ class AdminRootMqtt extends Component {
 
     newFeeds.forEach(f => {
       const {id, streams} = f;
-      f.display = JSON.parse(f.display)
       const vst = streams.find((v) => v.type === "video" && v.h264_profile);
       if(vst) {
         f.video = vst.h264_profile === "42e01f";
@@ -347,6 +346,7 @@ class AdminRootMqtt extends Component {
     });
     const feeds = Array.from(pfMap, ([k, v]) => v);
     this.setState({feeds: sortAndFilterFeeds(feeds)});
+    log.info("Sorted feeds: ", sortAndFilterFeeds(feeds))
     if (subscription.length > 0)
       this.subscribeTo(subscription);
   }
@@ -397,8 +397,8 @@ class AdminRootMqtt extends Component {
         const users_count = data.map((r) => r.num_users).reduce((su, cur) => su + cur, 0);
         for (let i = 0; i < data.length; i++) {
           for (let j = 0; j < data[i]["users"].length; j++) {
-            if (data[i]["users"][j]["system"] === "iOS") ios_count++;
-            if (data[i]["users"][j]["system"] === "Android") android_count++;
+            if (data[i]["users"][j]["system"].match(/^(ios)/)) ios_count++;
+            if (data[i]["users"][j]["system"].match(/^(android)/)) android_count++;
           }
         }
         web_count = users_count - (ios_count + android_count);
@@ -629,7 +629,7 @@ class AdminRootMqtt extends Component {
         <Table.Row active={feed.id === this.state.feed_id} key={i + "u"} onClick={() => this.getUserInfo(feed_user)}>
           <Table.Cell width={10}>
             {gr ? g : ""}{qt ? q : ""}
-            {feed.display.display}
+            {feed.metadata.display}
           </Table.Cell>
           {/*<Table.Cell positive={st} width={1}>{st ? v : ""}</Table.Cell>*/}
           <Table.Cell width={1}></Table.Cell>

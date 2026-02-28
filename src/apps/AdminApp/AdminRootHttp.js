@@ -202,8 +202,8 @@ class AdminRootHttp extends Component {
 
           // Filter service feeds and sort by timestamp
           let feeds = list
-            .sort((a, b) => JSON.parse(a.display).timestamp - JSON.parse(b.display).timestamp)
-            .filter((feeder) => JSON.parse(feeder.display).role.match(/^(user|guest|ghost)$/));
+            .sort((a, b) => a.metadata.timestamp - b.metadata.timestamp)
+            .filter((feeder) => feeder.metadata.role.match(/^(user|guest|ghost)$/));
 
           mqtt.join("galaxy/room/" + msg["room"]);
           mqtt.join("galaxy/room/" + msg["room"] + "/chat", true);
@@ -212,10 +212,9 @@ class AdminRootHttp extends Component {
           const subscription = [];
           for (let f in feeds) {
             let id = feeds[f]["id"];
-            let display = JSON.parse(feeds[f]["display"]);
+            let display = feeds[f].metadata;
             let talk = feeds[f]["talking"];
             let streams = feeds[f]["streams"];
-            feeds[f].display = display;
             feeds[f].talk = talk;
             feeds[f].janus = gateway.name;
             for (let i in streams) {
@@ -273,10 +272,9 @@ class AdminRootHttp extends Component {
           let subscription = [];
           for (let f in new_feed) {
             let id = new_feed[f]["id"];
-            let display = JSON.parse(new_feed[f]["display"]);
+            let display = new_feed[f].metadata;
             if (!display.role.match(/^(user|guest|ghost)$/)) return;
             let streams = new_feed[f]["streams"];
-            new_feed[f].display = display;
             new_feed[f].janus = gateway.name;
             for (let i in streams) {
               let stream = streams[i];

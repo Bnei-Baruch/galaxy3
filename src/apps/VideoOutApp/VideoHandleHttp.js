@@ -139,16 +139,15 @@ class VideoHandleHttp extends Component {
           let list = msg["publishers"];
           //FIXME: Tmp fix for black screen in room caoused by feed with video_codec = none
           let feeds = list
-            .sort((a, b) => JSON.parse(a.display).timestamp - JSON.parse(b.display).timestamp)
-            .filter((feeder) => JSON.parse(feeder.display).role === "user");
+            .sort((a, b) => a.metadata.timestamp - b.metadata.timestamp)
+            .filter((feeder) => feeder.metadata.role === "user");
           console.log(`[SDIOut] [room ${roomid}] :: Got publishers list: `, feeds);
           let subscription = [];
           for (let f in feeds) {
             let id = feeds[f]["id"];
-            let display = JSON.parse(feeds[f]["display"]);
+            let display = feeds[f].metadata;
             let talk = feeds[f]["talking"];
             let streams = feeds[f]["streams"];
-            feeds[f].display = display;
             feeds[f].talk = talk;
             for (let i in streams) {
               let stream = streams[i];
@@ -208,10 +207,9 @@ class VideoHandleHttp extends Component {
           let subscription = [];
 
           let id = feed[0]["id"];
-          let display = JSON.parse(feed[0]["display"]);
+          let display = feed[0].metadata;
           if (display.role !== "user") return;
           let streams = feed[0]["streams"];
-          feed[0].display = display;
           for (let i in streams) {
             let stream = streams[i];
             stream["id"] = id;
