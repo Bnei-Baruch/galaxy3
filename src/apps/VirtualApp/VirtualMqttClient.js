@@ -111,7 +111,7 @@ class VirtualMqttClient extends Component {
       feeds: [],
       rooms: [],
       room: "",
-      selected_room: parseInt(localStorage.getItem("room"), 10) || "",
+      selected_room: localStorage.getItem("room") || "",
       videoroom: null,
       remoteFeed: null,
       myid: null,
