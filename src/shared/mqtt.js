@@ -1,7 +1,6 @@
 import mqtt from 'mqtt';
 import {MQTT_URL, MSG_URL} from "./env";
 import {isServiceID, userRolesEnum} from "./enums";
-import {randomString} from "./tools";
 import GxyJanus from "./janus-utils";
 import log from "loglevel";
 
@@ -25,17 +24,16 @@ class MqttMsg {
     const service = isServiceID(user.id);
     const svc_token = GxyJanus?.globalConfig?.dynamic_config?.mqtt_auth;
     const token = service ? svc_token : this.token;
-    const id = service ? user.id : user.id + "-" + randomString(3);
 
     const transformUrl = (url, options, client) => {
-      client.options.clientId = service ? user.id : user.id + "-" + randomString(3);
+      client.options.clientId = user.id;
       client.options.password = service ? svc_token : this.token;
       return url;
     };
 
     let options = {
       keepalive: mqttKeepalive,
-      clientId: id,
+      clientId: user.id,
       protocolId: "MQTT",
       protocolVersion: 5,
       clean: true,
