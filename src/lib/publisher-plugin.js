@@ -40,7 +40,7 @@ export class PublisherPlugin extends EventEmitter {
 
   join(roomId, user, metadata) {
     this.roomId = roomId
-    const body = {request: "join", room: roomId, ptype: "publisher", display: JSON.stringify(user), metadata};
+    const body = {request: "join", id: user.id + "-" + randomString(3), room: roomId, ptype: "publisher", display: JSON.stringify(user), metadata};
     return new Promise((resolve, reject) => {
       this.transaction('message', { body }, 'event').then((param) => {
         log.info("[publisher] join: ", param)
