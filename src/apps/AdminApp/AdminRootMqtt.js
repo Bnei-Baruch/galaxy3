@@ -397,8 +397,8 @@ class AdminRootMqtt extends Component {
         const users_count = data.map((r) => r.num_users).reduce((su, cur) => su + cur, 0);
         for (let i = 0; i < data.length; i++) {
           for (let j = 0; j < data[i]["users"].length; j++) {
-            if (data[i]["users"][j]["system"] === "iOS") ios_count++;
-            if (data[i]["users"][j]["system"] === "Android") android_count++;
+            if (data[i]["users"][j]["system"].match(/^(ios)/)) ios_count++;
+            if (data[i]["users"][j]["system"].match(/^(android)/)) android_count++;
           }
         }
         web_count = users_count - (ios_count + android_count);
@@ -490,17 +490,17 @@ class AdminRootMqtt extends Component {
           .fetchHandleInfo(janus, session, handle)
           .then((data) => {
             log.debug("[admin] Publisher info", data);
-            const m0 = data.info.webrtc.media[0];
-            const m1 = data.info.webrtc.media[1];
+            const m0 = data.webrtc.media[0];
+            const m1 = data.webrtc.media[1];
             let video = null;
             let audio = null;
             if (m0 && m1) {
-              audio = data.info.webrtc.media[0].rtcp.main;
-              video = data.info.webrtc.media[1].rtcp.main;
+              audio = data.webrtc.media[0].rtcp.main;
+              video = data.webrtc.media[1].rtcp.main;
             } else if (m0.type === "audio") {
-              audio = data.info.webrtc.media[0].rtcp.main;
+              audio = data.webrtc.media[0].rtcp.main;
             } else if (m0.type === "video") {
-              video = data.info.webrtc.media[0].rtcp.main;
+              video = data.webrtc.media[0].rtcp.main;
             }
             this.setState({feed_rtcp: {video, audio}});
           })
