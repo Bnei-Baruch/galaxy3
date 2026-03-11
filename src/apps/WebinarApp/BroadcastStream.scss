@@ -1,0 +1,378 @@
+.mediaplayer {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+
+  .grid {
+    height: 100%;
+  }
+
+  .column {
+    text-align: center !important;
+  }
+
+  .noVideoPlayerIcon {
+    line-height: 200%;
+    font-size: 20em;
+
+    &.ui.image {
+      display: inline-block;
+    }
+  }
+}
+
+.broadcast__wrapper {
+  position: absolute;
+  // width: 100%;
+  // height:100%;
+  top: 2px;
+  right: 2px;
+  left: 2px;
+  bottom: 2px;
+  display: grid;
+
+}
+
+@keyframes in {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes out {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes bottomin {
+  to {
+    bottom: -48px;
+  }
+}
+
+@keyframes bottomout {
+  to {
+    bottom: 0;
+  }
+}
+
+@keyframes topin {
+  to {
+    top: -48px;
+  }
+}
+
+@keyframes topout {
+  to {
+    top: 0;
+  }
+}
+
+.activities {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+
+  &.on_full_browser {
+    justify-content: flex-end;
+  }
+
+  &:hover {
+    .controls {
+      // opacity: 1!important;
+      animation: out 0s;
+
+      .controls__bottom {
+        animation: bottomout 0s;
+      }
+
+      .controls__top {
+        animation: topout 0s;
+      }
+
+      // animation: in 500ms;
+      // animation-direction: reverse;
+      // animation-fill-mode: forwards;
+    }
+  }
+
+  // controls animation
+  .controls {
+    // opacity:1;
+    animation: in 200ms;
+    animation-fill-mode: forwards;
+    width: 100%;
+
+    &__bottom {
+      animation: bottomin 300ms;
+      animation-fill-mode: forwards;
+    }
+
+    &__top {
+      animation: topin 300ms;
+      animation-fill-mode: forwards;
+    }
+  }
+
+  &.hide-cursor {
+    cursor: none !important;
+    
+    *, *::before, *::after {
+      cursor: none !important;
+    }
+  }
+
+  .controls {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    color: #ffffff;
+    overflow: hidden;
+    z-index: 1;
+    transition: opacity 0.3s ease-in-out;
+    pointer-events: none; // Allow clicks through to video
+
+    * {
+      color: inherit;
+      pointer-events: auto; // Re-enable clicks on buttons
+    }
+
+    &--hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    &__top,
+    &__bottom {
+      display: flex;
+      padding: 4px;
+      direction: ltr;
+      position: absolute;
+      justify-content: space-between;
+      pointer-events: auto; // Ensure control bars are clickable
+    }
+
+    &__top {
+      right: 0;
+      top: 0;
+
+      button {
+        background: rgba(34, 34, 34, .85);
+      }
+    }
+
+    &__bottom {
+      background: rgba(34, 34, 34, .85);
+      width: 100%;
+      bottom: 0;
+
+      button {
+        background: none;
+      }
+
+      .audio-selection {
+        .audio-small-screen {
+          display: none;
+        }
+      }
+    }
+
+    // background: linear-gradient(to top, rgb(34, 34, 34), rgba(34, 34, 34, .85));
+    // transition: opacity .25s, top .25s;
+    // opacity: 0;
+
+
+    // .buttons-wrapper {
+    //   display: flex;
+    // }
+
+    button {
+      // background: none;
+      border: 0;
+      border-radius: 4px;
+      height: 40px;
+      min-width: 40px;
+      padding: 0 .5rem;
+      // text-transform: lowercase;
+      cursor: pointer;
+
+      &:hover {
+        background: rgba(#fff, .2);
+      }
+
+      &:focus {
+        outline: none;
+      }
+
+      i {
+        margin: 0 !important;
+      }
+
+      // @include small-mobile {
+      //   min-width: 2rem;
+      // }
+    }
+
+    &__spacer {
+      flex: 1 1 auto;
+    }
+
+    &__playback-rate,
+    &__volume,
+    &__audiovideo,
+    &__languages,
+    &__seekbar {
+      height: 40px;
+    }
+
+    &__playback-rate,
+    &__languages {
+      .dropdown {
+        height: 100%;
+      }
+    }
+
+    &__volume {
+      position: relative;
+    }
+
+  &__toggle {
+    align-self: center;
+    padding-right: 10px;
+
+    &.ui.toggle.checkbox input~label {
+      color: white !important;
+    }
+    &.ui.toggle.checkbox label:before {
+      background: grey;
+    }
+  }
+
+    // &__seekbar {
+    //   flex: 1 0 100%;
+    //   height: 20px;
+    //   margin: -4px -4px 0;
+    //   order: -1;
+    //   padding: 0 8px;
+
+    //   &:focus {
+    //     outline: none;
+    //   }
+    // }
+  }
+
+  .audio-selection {
+    button .icon {
+      margin-right: 8px !important;
+    }
+
+    div.header {
+      display: flex;
+
+      .icon {
+        margin-left: -2px;
+        margin-right: 10px;
+        color: rgba(0, 0, 0, 0.87);
+      }
+    }
+  }
+
+  .video-selection .item {
+    display: flex !important;
+    flex-direction: row-reverse;
+    justify-content: space-between;
+    //   max-height: 10vh;
+  }
+
+  // Set flag url for detached video
+  .video--pop & {
+    i.flag:not(.icon)::before {
+      $flag-url: "/static/media/flags.9c74e172.png";
+      background-image: url("https://galaxy.kli.one" + $flag-url),
+      url("https://dev-galaxy.kli.one" + $flag-url),
+      url("http://localhost:3000" + $flag-url),
+    }
+  }
+
+  .layout--equal & {
+    .wq-overlay + .controls {
+      .controls {
+        &__top {
+          background: rgba(34, 34, 34, .85);
+
+          button {
+            background: none;
+
+            &:hover {
+              background: rgba(255, 255, 255, 0.2)
+            }
+          }
+        }
+
+        &__bottom {
+          top: 0;
+          bottom: initial;
+          width: calc(100% - 48px);
+          animation: topin 300ms;
+          pointer-events: auto; // Ensure clickable in fullscreen
+
+          .controls__spacer {
+            display: none;
+          }
+
+          .menu {
+            top: 80%;
+            bottom: auto;
+          }
+
+          .volume-popover {
+            top: 100%;
+            bottom: auto;
+          }
+        }
+      }
+    }
+
+    &:hover .wq-overlay + .controls {
+      animation: out 0s;
+
+      .controls__bottom {
+        animation: topout 0s;
+      }
+    }
+  }
+}
+
+@media screen and (max-width: 648px) {
+  .layout--equal .activities .wq-overlay + .controls .controls__bottom .audio-selection {
+    .audio-big-screen {
+      display: none;
+    }
+
+    .audio-small-screen {
+      display: inline-block;
+    }
+  }
+}
+
+@media screen and (max-width: 548px) {
+  .layout--equal .activities .wq-overlay + .controls {
+
+    button {
+      min-width: auto;
+      padding: 0 4px;
+    }
+
+    .controls__bottom {
+      width: calc(100% - 32px);
+    }
+  }
+}

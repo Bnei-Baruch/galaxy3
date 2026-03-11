@@ -73,7 +73,7 @@ class ChatBox extends Component {
     if (message.whisper) {
 
       // Private message
-      console.log("[VirtualChat]:: It's private message: ", message);
+      console.log("[WebinarChat]:: It's private message: ", message);
       let {privates} = this.state;
       privates.push(message);
       this.setState({privates});
@@ -83,7 +83,7 @@ class ChatBox extends Component {
       // Public message
       let {messages} = this.state;
       message.to = this.props.selected_group;
-      console.log("[VirtualChat]-:: It's public message: ", message);
+      console.log("[WebinarChat]-:: It's public message: ", message);
       messages.push(message);
       this.setState({messages}, () => {
         //this.scrollToBottom()
