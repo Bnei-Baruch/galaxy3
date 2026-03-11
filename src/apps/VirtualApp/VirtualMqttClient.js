@@ -247,15 +247,17 @@ class VirtualMqttClient extends Component {
     user.role = getUserRole();
     user.isClient = true;
     if (user.role !== null) {
-      api.fetchVHInfo(user.id).then((data) => {
-        user.vhinfo = data;
-      }).catch(err => {
-        log.error('Error fetching VH info data: ', err?.message);
-        user.vhinfo = {active: false, error: err?.message};
-      }).finally(() => {
-        user.allowed = !!user.vhinfo.active && user.role === userRolesEnum.user;
-        this.initApp(user);
-      });
+      // api.fetchVHInfo(user.id).then((data) => {
+      //   user.vhinfo = data;
+      // }).catch(err => {
+      //   log.error('Error fetching VH info data: ', err?.message);
+      //   user.vhinfo = {active: false, error: err?.message};
+      // }).finally(() => {
+      //   user.allowed = !!user.vhinfo.active && user.role === userRolesEnum.user;
+      //   this.initApp(user);
+      // });
+      user.allowed = user.role === userRolesEnum.user;
+      this.initApp(user);
     } else {
       alert("Access denied!");
       kc.logout();
