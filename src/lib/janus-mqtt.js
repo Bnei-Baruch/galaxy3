@@ -4,10 +4,11 @@ import log from "loglevel";
 import { captureException } from "../shared/sentry";
 
 export class JanusMqtt {
-  constructor(user, srv, mit) {
+  constructor(user, srv, userId) {
     this.user = user
     this.srv = srv
-    this.mit = mit
+    this.userId = userId;
+    this.mit = null;
     this.rxTopic = 'janus/' + srv + '/from-janus'
     this.txTopic = 'janus/' + srv + '/to-janus'
     this.stTopic = 'janus/' + srv + '/status'
@@ -16,7 +17,6 @@ export class JanusMqtt {
     this.sessionId = undefined
     this.transactions = {}
     this.pluginHandles = {}
-    this.sendCreate = true
     this.keeptry = 0
     this.token = null
     this.connect = null
@@ -26,7 +26,7 @@ export class JanusMqtt {
 
   init(token) {
     this.token = token
-    mqtt.sub(this.rxTopic + "/" + this.user.id, 0);
+    mqtt.sub(this.rxTopic + "/" + this.userId, 0);
     mqtt.sub(this.rxTopic, 0);
     mqtt.sub(this.stTopic, 1);
 
@@ -72,7 +72,7 @@ export class JanusMqtt {
       }
 
       this.connect = function () {
-        mqtt.send(JSON.stringify(msg), false, this.txTopic, this.rxTopic + "/" + this.user.id, this.user)
+        mqtt.send(JSON.stringify(msg), false, this.txTopic, this.rxTopic + "/" + this.userId, this.user)
         this.connect = null;
       }
 
@@ -89,7 +89,7 @@ export class JanusMqtt {
 
   attach(plugin) {
     const name = plugin.getPluginName()
-    return this.transaction('attach', {plugin: name, opaque_id: this.user.id}, 'success')
+    return this.transaction('attach', {plugin: name, opaque_id: this.userId}, 'success')
       .then((json) => {
         if (json.janus !== 'success') {
           log.error('[janus] Cannot add plugin', json)
@@ -189,7 +189,7 @@ export class JanusMqtt {
       }
 
       this.transactions[request.transaction] = {resolve, reject, replyType, request}
-      mqtt.send(JSON.stringify(request), false, this.txTopic, this.rxTopic + "/" + this.user.id, this.user)
+      mqtt.send(JSON.stringify(request), false, this.txTopic, this.rxTopic + "/" + this.userId, this.user)
     })
   }
 
@@ -281,7 +281,7 @@ export class JanusMqtt {
     this.sessionId = null
     this.isConnected = false
 
-    mqtt.exit(this.rxTopic + "/" + this.user.id);
+    mqtt.exit(this.rxTopic + "/" + this.userId);
     mqtt.exit(this.rxTopic);
     mqtt.exit(this.stTopic);
 

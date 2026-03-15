@@ -17,6 +17,7 @@ class MqttMsg {
     this.room = null;
     this.token = null;
     this.reconnect_count = 0;
+    this.clientId = null;
   }
 
   init = (user, callback) => {
@@ -25,10 +26,11 @@ class MqttMsg {
     const service = isServiceID(user.id);
     const svc_token = GxyJanus?.globalConfig?.dynamic_config?.mqtt_auth;
     const token = service ? svc_token : this.token;
-    const id = service ? user.id : user.id + "-" + randomString(3);
+    this.clientId = user.id + "-" + randomString(3);
+    const id = service ? user.id : this.clientId;
 
     const transformUrl = (url, options, client) => {
-      client.options.clientId = service ? user.id : user.id + "-" + randomString(3);
+      client.options.clientId = service ? user.id : this.clientId;
       client.options.password = service ? svc_token : this.token;
       return url;
     };

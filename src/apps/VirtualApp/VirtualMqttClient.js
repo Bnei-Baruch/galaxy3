@@ -247,17 +247,15 @@ class VirtualMqttClient extends Component {
     user.role = getUserRole();
     user.isClient = true;
     if (user.role !== null) {
-      // api.fetchVHInfo(user.id).then((data) => {
-      //   user.vhinfo = data;
-      // }).catch(err => {
-      //   log.error('Error fetching VH info data: ', err?.message);
-      //   user.vhinfo = {active: false, error: err?.message};
-      // }).finally(() => {
-      //   user.allowed = !!user.vhinfo.active && user.role === userRolesEnum.user;
-      //   this.initApp(user);
-      // });
-      user.allowed = user.role === userRolesEnum.user;
-      this.initApp(user);
+      api.fetchVHInfo(user.id).then((data) => {
+        user.vhinfo = data;
+      }).catch(err => {
+        log.error('Error fetching VH info data: ', err?.message);
+        user.vhinfo = {active: false, error: err?.message};
+      }).finally(() => {
+        user.allowed = !!user.vhinfo.active && user.role === userRolesEnum.user;
+        this.initApp(user);
+      });
     } else {
       alert("Access denied!");
       kc.logout();
@@ -339,7 +337,7 @@ class VirtualMqttClient extends Component {
         log.info("[client] MQTT reconnected");
       } else {
         this.setState({mqttOn: true});
-
+        log.info("[client] MQTT connected", mqtt);
         mqtt.join("galaxy/users/notification");
         mqtt.join("galaxy/users/broadcast");
         mqtt.join("galaxy/users/" + user.id);
@@ -450,7 +448,7 @@ class VirtualMqttClient extends Component {
 
   initJanus = (user, retry) => {
     setSentryTag(user.janus)
-    let janus = new JanusMqtt(user, user.janus);
+    let janus = new JanusMqtt(user, user.janus, mqtt.clientId);
     janus.onStatus = (srv, status) => {
       if (status === "offline") {
         alert("Janus Server - " + srv + " - Offline");
