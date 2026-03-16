@@ -1,6 +1,6 @@
 import workerUrl from 'worker-plugin/loader!../lib/volmeter-processor';
 
-export default class AudioStreamVolume {
+export class AudioStreamVolume {
   constructor(stream, onVolume) {
     this.volume = 0;
     this.context = new AudioContext();
@@ -42,4 +42,14 @@ export default class AudioStreamVolume {
     this.promise = this.promise.then(() => this.context.close());
     return this.promise;
   }
+}
+
+export const gainStream = (stream, gain) => {
+  const ctx = new AudioContext();
+  const src = ctx.createMediaStreamSource(stream);
+  const dst = ctx.createMediaStreamDestination();
+  const gainNode = ctx.createGain();
+  gainNode.gain.value = 3;
+  [src, gainNode, dst].reduce((a, b) => a && a.connect(b));
+  return [ctx, dst.stream];
 }
