@@ -251,7 +251,7 @@ export const resources = {
         },
         country_selection: {
           title: "Select Your Country",
-          description: "Verify country is set correctly in your profile. Click 'Go to Profile' to open your profile page.",
+          description: "Please validate your country is correctly set.",
           dont_show_again: "Don't show this again",
           close: "Close",
           remind_later: "Remind Me Later",
@@ -534,7 +534,7 @@ export const resources = {
         },
         country_selection: {
           title: "Selecciona tu país",
-          description: "Verifica que tu país esté configurado correctamente en tu perfil. Haz clic en 'Ir al perfil' para abrir tu página de perfil.",
+          description: "Por favor valida que tu país esté configurado correctamente.",
           dont_show_again: "No mostrar esto de nuevo",
           close: "Cerrar",
           remind_later: "Recordármelo más tarde",
@@ -824,7 +824,7 @@ export const resources = {
         },
         country_selection: {
           title: "בחר/י את המדינה שלך",
-          description: "נא לוודא שהמדינה מוגדרת נכון בפרופיל שלך. לחץ/י על 'עבור לפרופיל' כדי לפתוח את דף הפרופיל שלך.",
+          description: "נא לאמת שהמדינה שלך מוגדרת נכון.",
           dont_show_again: "אל תציג/י זאת שוב",
           close: "סגור",
           remind_later: "הזכר/י לי מאוחר יותר",
@@ -1107,7 +1107,7 @@ export const resources = {
         },
         country_selection: {
           title: "Выберите вашу страну",
-          description: "Пожалуйста, убедитесь, что страна правильно указана в вашем профиле. Нажмите 'Перейти в профиль', чтобы открыть страницу профиля.",
+          description: "Пожалуйста, проверьте правильность указания вашей страны.",
           dont_show_again: "Больше не показывать",
           close: "Закрыть",
           remind_later: "Напомнить позже",
