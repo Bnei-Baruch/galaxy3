@@ -1,0 +1,996 @@
+import React, {Component, Fragment, Suspense} from "react";
+import {kc} from "../../components/UserManager";
+import {
+  Button,
+  Confirm, Container,
+  Dropdown,
+  Grid,
+  Header,
+  Icon, Image,
+  List,
+  Menu, Message,
+  Popup,
+  Segment,
+  Select, Tab,
+  Table
+} from "semantic-ui-react";
+import "./AdminClient.css";
+import "./AdminClientVideo.scss";
+import classNames from "classnames";
+import platform from "platform";
+import AdminLogin from "./components/AdminLogin";
+import ChatBox from "./components/ChatBox";
+import api from "../../shared/Api";
+import StatNotes from "./components/StatNotes";
+import mqtt from "../../shared/mqtt";
+import {JanusMqtt} from "../../lib/janus-mqtt";
+import {PublisherPlugin} from "../../lib/publisher-plugin";
+import {SubscriberPlugin} from "../../lib/subscriber-plugin";
+import log from "loglevel";
+import {createContext} from "../../shared/tools";
+
+const sortAndFilterFeeds = (feeds) =>
+  feeds
+    .filter((feed) => !feed.display.role.match(/^(ghost|guest)$/))
+    .sort((a, b) => a.display.timestamp - b.display.timestamp);
+
+class AdminClient extends Component {
+  state = {
+    audio: null,
+    bitrate: 64000,
+    chatRoomsInitialized: false,
+    chatRoomsInitializedError: null,
+    current_room: "",
+    current_janus: "",
+    feedStreams: {},
+    feed_id: null,
+    feed_info: null,
+    feed_rtcp: {},
+    feed_talk: false,
+    feed_user: null,
+    feeds: [],
+    gateways: {},
+    gatewaysInitialized: true,
+    mids: [],
+    muted: true,
+    myid: null,
+    mypvtid: null,
+    mystream: null,
+    rooms: [],
+    users: [],
+    rooms_question: [],
+    user: null,
+    appInitError: null,
+    users_count: 0,
+    command_status: true,
+    premodStatus: false,
+    showConfirmReloadAll: false,
+    android_count: 0,
+    ios_count: 0,
+    web_count: 0,
+    menu_open: false,
+    menu_group: null,
+  };
+
+  componentDidMount() {
+    //this.initApp();
+  }
+
+  componentWillUnmount() {
+    if(this.state.janus) this.state.janus.destroy()
+  }
+
+  isAllowed = (level) => {
+    const {user} = this.state;
+    if (!user) {
+      return false;
+    }
+
+    const {role} = user;
+    switch (level) {
+      case "root":
+        return role === "root";
+      case "admin":
+        return role === "admin" || role === "root";
+      case "viewer":
+        return role === "viewer" || role === "admin" || role === "root";
+      default:
+        return false;
+    }
+  };
+
+
+  checkPermission = (user) => {
+    const roles = new Set(user.roles || []);
+
+    let role = null;
+    if (roles.has("gxy_root")) {
+      role = "root";
+    } else if (roles.has("gxy_admin")) {
+      role = "admin";
+    } else if (roles.has("gxy_viewer")) {
+      role = "viewer";
+    } else if (roles.has("gxy_notify")) {
+      role = "notify";
+    }
+
+    delete user.roles;
+    user.role = role;
+
+    let gxy_admin = !!role;
+    let gxy_monitor = gxy_admin || kc.hasRealmRole("gxy_support");
+    let gxy_rooms = kc.hasRealmRole("gxy_root");
+    let gxy_notify = kc.hasRealmRole("gxy_notify");
+
+    if (gxy_monitor) {
+      this.setState({gxy_admin, gxy_monitor, gxy_rooms, gxy_notify}, () => {
+        //this.initMQTT(user);
+        this.initApp(user);
+      });
+    } else {
+      alert("Access denied!");
+      kc.logout();
+    }
+  };
+
+  withAudio = () => this.isAllowed("admin");
+
+  initApp = (user) => {
+    mqtt.init(user, (data) => {
+      log.info("[Admin] mqtt init: ", data);
+      mqtt.join("galaxy/users/broadcast");
+      mqtt.join("galaxy/users/" + user.id);
+      mqtt.watch(() => {});
+      this.setState({user});
+    });
+    this.pollRooms()
+  };
+
+  initJanus = (user, gxy) => {
+    log.info("["+gxy+"] Janus init")
+    const {gateways} = this.state;
+    //const token = ConfigStore.globalConfig.gateways.rooms[gxy].token
+    gateways[gxy] = new JanusMqtt(user, gxy, gxy);
+    log.info("["+gxy+"] Janus init", gateways[gxy])
+    gateways[gxy].onStatus = (srv, status) => {
+      if (status !== "online") {
+        log.error("["+srv+"] Janus: ", status);
+        //When janus crashed or restarted We need at least clean up events emitters!
+        gateways[srv].destroy().then(() => {
+          delete gateways[srv]
+          setTimeout(() => {
+            const {users, current_group, current_room} = this.state;
+            this.setState({remoteFeed: false, feeds: []})
+            this.joinRoom({users, description: current_group, room: current_room, janus: srv});
+          }, 15000)
+        })
+      }
+    }
+    return new Promise((resolve, reject) => {
+      gateways[gxy].init().then(janus => {
+        log.info("["+gxy+"] Janus init success", janus)
+        resolve(janus);
+      }).catch(err => {
+        log.error("["+gxy+"] Janus init", err);
+        reject(err)
+      })
+    })
+  };
+
+  initPlugins = (gateways, inst, user, room) => {
+    let videoroom = new PublisherPlugin();
+    videoroom.subTo = this.makeSubscription;
+    videoroom.unsubFrom = this.unsubscribeFrom
+    videoroom.talkEvent = this.handleTalking
+
+    let subscriber = new SubscriberPlugin();
+    subscriber.onTrack = this.onRemoteTrack;
+    subscriber.onUpdate = this.onUpdateStreams;
+
+    gateways[inst].attach(videoroom).then(data => {
+      this.setState({gateways, janus: gateways[inst], videoroom, user, current_room: room, inst});
+      log.info('[admin] Publisher Handle: ', data)
+
+      videoroom.join(room, user).then(data => {
+        log.info('[admin] Joined respond :', data)
+        mqtt.join("galaxy/room/" + room);
+        mqtt.join("galaxy/room/" + room + "/chat", true);
+        this.makeSubscription(data.publishers, room)
+      }).catch(err => {
+        log.error('[admin] Join error :', err);
+      })
+
+    })
+
+    gateways[inst].attach(subscriber).then(data => {
+      this.setState({subscriber});
+      log.info('[admin] Subscriber Handle: ', data)
+    })
+  };
+
+  cleanSession = (inst) => {
+    const {gateways} = this.state;
+    Object.keys(gateways).forEach(key => {
+      const session = gateways[key];
+      const sessionEmpty = Object.keys(session.pluginHandles).length === 0;
+      if(sessionEmpty && key !== inst) {
+        session.destroy();
+        delete gateways[key]
+      }
+    })
+  }
+
+  joinRoom = (data) => {
+    const {user, gateways} = this.state;
+    const {users, description, room, janus: inst} = data;
+
+    log.info("%c[admin] -- join room: " + room + " (" + description + ")" + " | on srv : " + inst + " -- ", "color: blue");
+    this.setState({users, current_group: description});
+
+    if(!gateways[inst]?.isConnected) {
+      this.initJanus(user, inst).then(() => {
+        this.initPlugins(gateways, inst, user, room);
+      }).catch(() => {
+        setTimeout(() => {
+          this.joinRoom(data);
+        }, 10000)
+      })
+    } else {
+      this.initPlugins(gateways, inst, user, room);
+      this.cleanSession(inst);
+    }
+
+  };
+
+  exitRoom = (data) => {
+    const {current_room, videoroom, janus} = this.state;
+    const {room} = data;
+
+    if (current_room === room) return;
+
+    if(!janus) {
+      this.joinRoom(data)
+      return
+    }
+
+    this.setState({remoteFeed: false, feeds: [], current_room: room})
+
+    videoroom.leave().then(r => {
+      log.info("[admin] leave respond:", r);
+      this.switchRoom(data, current_room);
+    }).catch(() => {
+      this.switchRoom(data, current_room);
+    });
+
+  };
+
+  switchRoom = (data, current_room) => {
+    mqtt.exit("galaxy/room/" + current_room);
+    mqtt.exit("galaxy/room/" + current_room + "/chat");
+    const {janus, videoroom, subscriber, inst} = this.state;
+
+    if(subscriber) janus.detach(subscriber)
+    janus.detach(videoroom).then(() => {
+      log.info("["+inst+"] plugin detached:");
+      this.setState({feeds: [], mids: [], remoteFeed: false, videoroom: null, subscriber: null, janus: null});
+      this.joinRoom(data)
+    })
+  };
+
+  handleTalking = (id, talking) => {
+    const feeds = Object.assign([], this.state.feeds);
+    for (let i = 0; i < feeds.length; i++) {
+      if (feeds[i] && feeds[i].id === id) {
+        feeds[i].talking = talking;
+      }
+    }
+    this.setState({feeds});
+  }
+
+  onUpdateStreams = (streams) => {
+    const mids = Object.assign([], this.state.mids);
+    for (let i in streams) {
+      let mindex = streams[i]["mid"];
+      //let feed_id = streams[i]["feed_id"];
+      mids[mindex] = streams[i];
+    }
+    this.setState({mids});
+  }
+
+  onRemoteTrack = (track, stream, on) => {
+    let mid = track.id;
+    let feed = stream.id;
+    log.info("[admin] >> This track is coming from feed " + feed + ":", mid, track);
+    if (on) {
+      if (track.kind === "audio") {
+        log.debug("[admin] Created remote audio stream:", stream);
+        let remoteaudio = this.refs["remoteAudio" + feed];
+        if (remoteaudio) remoteaudio.srcObject = stream;
+      } else if (track.kind === "video") {
+        log.debug("[admin] Created remote video stream:", stream);
+        const remotevideo = this.refs["remoteVideo" + feed];
+        if (remotevideo) remotevideo.srcObject = stream;
+      }
+    }
+  };
+
+  makeSubscription = (newFeeds) => {
+    log.info("[admin] makeSubscription", newFeeds);
+    const subscription = [];
+    const {feeds: pf} = this.state;
+    const pfMap = new Map(pf.map((f) => [f.id, f]));
+
+    newFeeds.forEach(f => {
+      const {id, streams} = f;
+      f.display = JSON.parse(f.display)
+      const vst = streams.find((v) => v.type === "video" && v.h264_profile);
+      if(vst) {
+        f.video = vst.h264_profile === "42e01f";
+        if(!f.video)
+          log.warn("[admin] h264 profile is NOT baseline: ", vst);
+      } else {
+        f.video = !!streams.find((v) => v.type === "video" && v.codec === "h264");
+      }
+      f.audio = !!streams.find(a => a.type === "audio" && a.codec === "opus");
+      f.data = !!streams.find(d => d.type === "data");
+      f.cammute = !f.video;
+
+      const pf = pfMap.get(f.id);
+      const pv = !!pf && pf.streams?.find((v) => v.type === "video" && v.codec === "h264");
+      const pa = !!pf && pf.streams?.find((a) => a.type === "audio" && a.codec === "opus");
+
+      streams.forEach(s => {
+        let hasVideo = s.type === "video" && s.codec === "h264" && !pv;
+        const hasAudio = s.type === "audio" && s.codec === "opus" && !pa;
+        if(s?.h264_profile && s?.h264_profile !== "42e01f") {
+          hasVideo = false;
+        }
+
+        if (hasVideo) {
+          pfMap.set(f.id, f);
+          subscription.push({feed: id, mid: s.mid});
+        }
+
+        if (this.withAudio() && hasAudio) {
+          pfMap.set(f.id, f);
+          subscription.push({feed: id, mid: s.mid});
+        }
+
+      });
+    });
+    const feeds = Array.from(pfMap, ([k, v]) => v);
+    this.setState({feeds: sortAndFilterFeeds(feeds)});
+    if (subscription.length > 0)
+      this.subscribeTo(subscription);
+  }
+
+  subscribeTo = (subscription) => {
+    // New feeds are available, do we need create a new plugin handle first?
+    if (this.state.remoteFeed) {
+      this.state.subscriber.sub(subscription);
+      return;
+    }
+
+    // We don't have a handle yet, but we may be creating one already
+    if (this.state.creatingFeed) {
+      // Still working on the handle
+      setTimeout(() => {
+        this.subscribeTo(subscription);
+      }, 500);
+      return;
+    }
+
+    // We don't creating, so let's do it
+    this.setState({creatingFeed: true});
+
+    // We wait for the plugin to send us an offer
+    this.state.subscriber.join(subscription, this.state.current_room).then(data => {
+      log.info('[admin] Subscriber join: ', data)
+
+      this.onUpdateStreams(data.streams);
+
+      this.setState({remoteFeed: true, creatingFeed: false});
+    });
+
+  };
+
+  pollRooms = () => {
+    this.fetchRooms();
+    setInterval(this.fetchRooms, 10 * 1000);
+  };
+
+  fetchRooms = () => {
+    api
+      .fetchUsers()
+      .then((data) => {
+        log.debug("[admin] users", data);
+        let {current_room} = this.state;
+        let ios_count = 0,
+          android_count = 0,
+          web_count = 0;
+        const users_count = data.map((r) => r.num_users).reduce((su, cur) => su + cur, 0);
+        for (let i = 0; i < data.length; i++) {
+          for (let j = 0; j < data[i]["users"].length; j++) {
+            if (data[i]["users"][j]["system"].match(/^(ios)/)) ios_count++;
+            if (data[i]["users"][j]["system"].match(/^(android)/)) android_count++;
+          }
+        }
+        web_count = users_count - (ios_count + android_count);
+        const room = data.find((r) => r.room === current_room);
+        const rooms_question = data.filter((r) => r.questions);
+        let users = current_room && room ? room.users : [];
+        data.sort((a, b) => {
+          if (a.description > b.description) return 1;
+          if (a.description < b.description) return -1;
+          return 0;
+        });
+        this.setState({rooms: data, users, users_count, rooms_question, web_count, ios_count, android_count});
+      })
+      .catch((err) => {
+        log.error("[admin] error fetching active rooms", err);
+      });
+  };
+
+  unsubscribeFrom = (id) => {
+    id = id[0]
+    log.info("[admin] unsubscribeFrom", id);
+    const {feeds, feed_user} = this.state;
+    for (let i = 0; i < feeds.length; i++) {
+      if (feeds[i].id === id) {
+        log.info("[admin] unsubscribeFrom feed", feeds[i]);
+
+        // Remove from feeds list
+        feeds.splice(i, 1);
+
+        const streams = [{feed: id}]
+
+        const {remoteFeed} = this.state;
+        if (remoteFeed !== null && streams.length > 0) {
+          this.state.subscriber.unsub(streams);
+        }
+
+        if (feed_user && feed_user.rfid === id) {
+          this.setState({feed_user: null});
+        }
+
+        this.setState({feeds});
+        break;
+      }
+    }
+  };
+
+  sendRemoteCommand = (command_type, value) => {
+    const {feed_user, current_room, command_status} = this.state;
+    const {camera, question, rfid} = feed_user
+    const cmd = {
+      type: command_type,
+      room: current_room,
+      status: command_status,
+      id: feed_user?.id,
+      user: {camera, question, rfid},
+    };
+
+    if(feed_user && command_type === "client-bitrate")
+      cmd.bitrate = value;
+
+    log.info("[admin] sending cmd json", cmd);
+    let topic = command_type.match(/^(reload-config|client-reload-all)$/)
+      ? "galaxy/users/broadcast"
+      : "galaxy/room/" + current_room;
+    mqtt.send(JSON.stringify(cmd), false, topic);
+
+    if (command_type === "audio-out") {
+      this.setState({command_status: !command_status});
+    }
+  };
+
+  getUserInfo = (selected_user) => {
+    const {feed_user} = this.state;
+    if (feed_user) mqtt.exit("galaxy/users/" + feed_user.id);
+    log.info("[admin] getUserInfo", selected_user);
+    if (selected_user) {
+      mqtt.join("galaxy/users/" + selected_user.id);
+      const feed_info = selected_user.system ? platform.parse(selected_user.system) : null;
+      this.setState({feed_id: selected_user.rfid, feed_user: selected_user, feed_info});
+    }
+  };
+
+  getFeedInfo = () => {
+    const {feed_user} = this.state;
+    if (feed_user) {
+      const {janus, session, handle} = this.state.feed_user;
+      if (janus && session && handle) {
+        api
+          .fetchHandleInfo(janus, session, handle)
+          .then((data) => {
+            log.debug("[admin] Publisher info", data);
+            const m0 = data.webrtc.media[0];
+            const m1 = data.webrtc.media[1];
+            let video = null;
+            let audio = null;
+            if (m0 && m1) {
+              audio = data.webrtc.media[0].rtcp.main;
+              video = data.webrtc.media[1].rtcp.main;
+            } else if (m0.type === "audio") {
+              audio = data.webrtc.media[0].rtcp.main;
+            } else if (m0.type === "video") {
+              video = data.webrtc.media[0].rtcp.main;
+            }
+            this.setState({feed_rtcp: {video, audio}});
+          })
+          .catch((err) => {
+            alert("Error fetching handle_info: " + err);
+          });
+      }
+    }
+  };
+
+  onConfirmReloadAllCancel = (e, data) => {
+    this.setState({showConfirmReloadAll: false});
+  };
+
+  onConfirmReloadAllConfirm = (e, data) => {
+    this.setState({showConfirmReloadAll: false});
+    this.sendRemoteCommand("client-reload-all");
+  };
+
+  showMenu = (e, data) => {
+    console.log("preventDefault", data)
+    e.preventDefault();
+    this.contextRef = React.createRef();
+    this.contextRef.current = createContext(e)
+    this.setState({menu_open: true, menu_group: data})
+  };
+
+  selectMenu = (c) => {
+    if(c === "group") {
+      this.setExtra(c)
+    }
+    this.setState({menu_open: false})
+  };
+
+  setExtra = (extra) => {
+    let {menu_group} = this.state;
+    menu_group = {...menu_group, extra: {...(menu_group.extra || {}), [extra]: true}};
+    delete menu_group.users;
+    api.updateRoom(menu_group.room, menu_group);
+  };
+
+  render() {
+    const {user, menu_open, bitrate, current_room, current_group, feed_id, feed_info, feed_rtcp, feed_user, feeds, users, rooms_question, gatewaysInitialized, rooms, users_count, appInitError, command_status, showConfirmReloadAll,} = this.state;
+
+    if (appInitError) {
+      return (
+        <Fragment>
+          <h1>Error Initializing Application</h1>
+          {`${appInitError}`}
+        </Fragment>
+      );
+    }
+
+    if (!!user && !gatewaysInitialized) {
+      return "Initializing connections to janus instances...";
+    }
+
+    const width = "134";
+    const height = "100";
+    const autoPlay = true;
+    const controls = false;
+    const muted = true;
+
+    //const f = (<Icon name='volume up' />);
+    const q = <Icon color="red" name="help" />;
+    const g = <Icon color="blue" name="users" />;
+    const v = (<Icon name='checkmark' />);
+    //const x = (<Icon name='close' />);
+
+    let group_options = rooms.map((feed, i) => {
+      const display = feed.description;
+      return {key: i, value: feed, text: display};
+    });
+
+    const bitrate_options = [
+      {key: 1, text: "64 KBit", value: 64000},
+      {key: 2, text: "128 KBit", value: 128000},
+      {key: 3, text: "256 KBit", value: 256000},
+      {key: 4, text: "512 KBit", value: 512000},
+      {key: 5, text: "1024 KBit", value: 102400},
+      {key: 6, text: "2048 KBit", value: 204800},
+    ];
+
+    let rooms_question_grid = rooms_question.map((data, i) => {
+      const {room, num_users, description, questions} = data;
+      return (
+        <Table.Row active={current_room === room} key={i + "q"} onClick={() => this.exitRoom(data)}>
+          <Table.Cell width={5}>
+            {questions ? q : ""}
+            {description}
+          </Table.Cell>
+          <Table.Cell width={1}>{num_users}</Table.Cell>
+        </Table.Row>
+      );
+    });
+
+    let rooms_grid = rooms.map((data, i) => {
+      const {room, num_users, description, questions, extra} = data;
+      let ugr = data.users.find(u => u.extra?.isGroup);
+      let gr = extra?.group;
+      return (
+        <Table.Row active={current_room === room} key={room}
+                   onClick={() => this.exitRoom(data)}
+                   onContextMenu={(e) => this.showMenu(e, data)} >
+          <Table.Cell width={5}>
+            {ugr ? g : ""}{gr ? v : ""}
+            {questions ? q : ""}
+            {description}
+          </Table.Cell>
+          <Table.Cell width={1}>{num_users}</Table.Cell>
+        </Table.Row>
+      );
+    });
+
+    const users_grid = feeds.map((feed, i) => {
+      if (!feed) {
+        return null;
+      }
+      //let qt = users[feed.display.id].question;
+      //let st = users[feed.display.id].sound_test;
+      let feed_user = users.find((u) => feed.id === u.rfid);
+      let qt = feed_user && !!feed_user.question;
+      let gr = feed_user && feed_user?.extra?.isGroup;
+      return (
+        <Table.Row active={feed.id === this.state.feed_id} key={i + "u"} onClick={() => this.getUserInfo(feed_user)}>
+          <Table.Cell width={10}>
+            {gr ? g : ""}{qt ? q : ""}
+            {feed.display.display}
+          </Table.Cell>
+          {/*<Table.Cell positive={st} width={1}>{st ? v : ""}</Table.Cell>*/}
+          <Table.Cell width={1}></Table.Cell>
+        </Table.Row>
+      );
+    });
+
+    let videos = feeds.map((feed) => {
+      if (feed) {
+        let id = feed.id;
+        let talk = feed.talking;
+        let selected = id === feed_id;
+        return (
+          <div className="video" key={"v" + id} ref={"video" + id} id={"video" + id}>
+            <div className={classNames("video__overlay", {talk: talk}, {selected: selected})} key={"t" + id} />
+            <video
+              key={id}
+              ref={"remoteVideo" + id}
+              id={"remoteVideo" + id}
+              width={width}
+              height={height}
+              autoPlay={autoPlay}
+              controls={controls}
+              muted={muted}
+              playsInline={true}
+            />
+            {this.withAudio() ? (
+              <audio
+                key={"a" + id}
+                ref={"remoteAudio" + id}
+                id={"remoteAudio" + id}
+                autoPlay={autoPlay}
+                controls={controls}
+                playsInline={true}
+              />
+            ) : null}
+          </div>
+        );
+      }
+      return true;
+    });
+
+    let login = (<AdminLogin user={user} checkPermission={this.checkPermission} />);
+
+    const infoPopup = (
+      <Popup
+        trigger={<Button positive icon="info" onClick={this.getFeedInfo} />}
+        position="bottom left"
+        content={
+          <List as="ul">
+            <List.Item as="li">
+              System
+              <List.List as="ul">
+                <List.Item as="li">OS: {feed_info ? feed_info.os.toString() : ""}</List.Item>
+                <List.Item as="li">Browser: {feed_info ? feed_info.name : ""}</List.Item>
+                <List.Item as="li">Version: {feed_info ? feed_info.version : ""}</List.Item>
+              </List.List>
+            </List.Item>
+            {feed_rtcp.video ? (
+              <List.Item as="li">
+                Video
+                <List.List as="ul">
+                  <List.Item as="li">in-link-quality: {feed_rtcp.video["in-link-quality"]}</List.Item>
+                  <List.Item as="li">in-media-link-quality: {feed_rtcp.video["in-media-link-quality"]}</List.Item>
+                  <List.Item as="li">jitter-local: {feed_rtcp.video["jitter-local"]}</List.Item>
+                  <List.Item as="li">jitter-remote: {feed_rtcp.video["jitter-remote"]}</List.Item>
+                  <List.Item as="li">lost: {feed_rtcp.video["lost"]}</List.Item>
+                </List.List>
+              </List.Item>
+            ) : null}
+            {feed_rtcp.audio ? (
+              <List.Item as="li">
+                Audio
+                <List.List as="ul">
+                  <List.Item as="li">in-link-quality: {feed_rtcp.audio["in-link-quality"]}</List.Item>
+                  <List.Item as="li">in-media-link-quality: {feed_rtcp.audio["in-media-link-quality"]}</List.Item>
+                  <List.Item as="li">jitter-local: {feed_rtcp.audio["jitter-local"]}</List.Item>
+                  <List.Item as="li">jitter-remote: {feed_rtcp.audio["jitter-remote"]}</List.Item>
+                  <List.Item as="li">lost: {feed_rtcp.audio["lost"]}</List.Item>
+                </List.List>
+              </List.Item>
+            ) : null}
+          </List>
+        }
+        on="click"
+        hideOnScroll
+      />
+    );
+
+    const rootControlPanel = [];
+    if (this.isAllowed("root")) {
+      rootControlPanel.push(
+        ...[
+          <Popup
+            trigger={<Button color="purple" icon="upload" />}
+            position="bottom left"
+            content={
+              <List as="ul">
+                <List.Item as="li">
+                  Set user bitrate:
+                  <br />  <br />
+                  <Select
+                    options={bitrate_options}
+                    value={bitrate}
+                    onChange={(e, {value}) => this.setState({bitrate: value})}
+                  />
+                </List.Item>
+                <List.Item as="li">
+                  <br />
+                  <Button color="green" content="Set" fluid onClick={() => this.sendRemoteCommand("client-bitrate", bitrate)} />
+                </List.Item>
+              </List>
+            }
+            on="click"
+            hideOnScroll
+          />,
+          <Popup
+            trigger={
+              <Button color="yellow" icon="question" onClick={() => this.sendRemoteCommand("client-question")} />
+            }
+            content="Set/Unset question"
+            inverted
+          />,
+          <Popup
+            trigger={
+              <Button
+                color="brown"
+                icon="sync alternate"
+                alt="test"
+                onClick={() => this.sendRemoteCommand("client-reconnect")}
+              />
+            }
+            content="Reconnect"
+            inverted
+          />,
+          <Popup
+            trigger={
+              <Button color="olive" icon="redo alternate" onClick={() => this.sendRemoteCommand("client-reload")} />
+            }
+            content="Reload page(LOST FEED HERE!)"
+            inverted
+          />,
+          <Popup
+            trigger={<Button color="teal" icon="microphone" onClick={() => this.sendRemoteCommand("client-mute")} />}
+            content="Mic Mute/Unmute"
+            inverted
+          />,
+          <Popup
+            trigger={<Button color="pink" icon="eye" onClick={() => this.sendRemoteCommand("video-mute")} />}
+            content="Cam Mute/Unmute"
+            inverted
+          />,
+          <Popup
+            trigger={
+              <Button
+                color="orange"
+                icon={command_status ? "volume off" : "volume up"}
+                onClick={() => this.sendRemoteCommand("audio-out")}
+              />
+            }
+            content="Talk event"
+            inverted
+          />,
+          <Popup
+            trigger={<Button negative icon="user x" onClick={() => this.sendRemoteCommand("client-kicked")} />}
+            content="Kick"
+            inverted
+          />,
+          /*<Popup trigger={<Button color="pink" icon='eye' onClick={() => this.sendDataMessage("video-mute")} />} content='Cam Mute/Unmute' inverted />,*/
+          /*<Popup trigger={<Button color="blue" icon='power off' onClick={() => this.sendRemoteCommand("client-disconnect")} />} content='Disconnect(LOST FEED HERE!)' inverted />,*/
+          // <Popup inverted
+          //        content={`${premodStatus ? 'Disable' : 'Enable'} Pre Moderation Mode`}
+          //        trigger={
+          //            <Button color="blue"
+          //                    icon='copyright'
+          //                    inverted={premodStatus}
+          //                    onClick={() => this.sendRemoteCommand("premoder-mode")}/>
+          //        }/>,
+          <Popup
+            trigger={
+              <Button color="blue" icon="cloud download" onClick={() => this.sendRemoteCommand("reload-config")} />
+            }
+            content="Silently reload dynamic config on ALL clients"
+            inverted
+          />,
+          <Popup
+            trigger={
+              <Button
+                color="red"
+                icon="redo"
+                onClick={() => this.setState({showConfirmReloadAll: !showConfirmReloadAll})}
+              />
+            }
+            content="RELOAD ALL"
+            inverted
+          />,
+          // <Dropdown icon='plug' className='button icon' inline item text={tcp === "mqtt" ? 'MQTT' : 'WebRTC'} >
+          //   <Dropdown.Menu>
+          //     <Dropdown.Item onClick={this.setProtocol}>MQTT</Dropdown.Item>
+          //     <Dropdown.Item onClick={this.setProtocol}>WebRTC</Dropdown.Item>
+          //   </Dropdown.Menu>
+          // </Dropdown>
+        ]
+      );
+    }
+
+    let adminContent = (
+      <Grid>
+        <Grid.Row>
+          <Grid.Column>
+            {this.isAllowed("admin") ? (
+              <Segment textAlign="center" className="ingest_segment">
+                {/*<Button color='blue' icon='sound' onClick={() => this.sendRemoteCommand("sound_test")} />*/}
+                {infoPopup}
+                {rootControlPanel}
+                <StatNotes
+                  data={rooms}
+                  android_count={this.state.android_count}
+                  ios_count={this.state.ios_count}
+                  web_count={this.state.web_count}
+                  root={this.isAllowed("root")}
+                />
+              </Segment>
+            ) : null}
+          </Grid.Column>
+        </Grid.Row>
+        <Grid.Row columns="equal">
+          <Grid.Column width={4}>
+            <Segment.Group className="user_list">
+              <Segment textAlign="center" raised>
+                <Table selectable compact="very" basic structured className="admin_table" unstackable>
+                  <Table.Body>
+                    <Table.Row disabled positive>
+                      <Table.Cell colSpan={3} textAlign="center">
+                        Users:
+                      </Table.Cell>
+                    </Table.Row>
+                    <Table.Row disabled>
+                      <Table.Cell width={10}>Title</Table.Cell>
+                      <Table.Cell width={1}>ST</Table.Cell>
+                    </Table.Row>
+                    {users_grid}
+                  </Table.Body>
+                </Table>
+              </Segment>
+            </Segment.Group>
+          </Grid.Column>
+          <Grid.Column largeScreen={9}>
+            <div className={`vclient__main-wrapper no-of-videos-${feeds.length} layout--equal broadcast--off`}>
+              <div className="videos-panel">
+                <div className="videos">
+                  <div className="videos__wrapper">{videos}</div>
+                </div>
+              </div>
+            </div>
+          </Grid.Column>
+          <Grid.Column width={3}>
+            <Dropdown
+              placeholder="Search.."
+              fluid
+              search
+              selection
+              options={group_options}
+              onClick={this.sortGroups}
+              onChange={(e, {value}) => this.exitRoom(value)}
+            />
+            <Segment textAlign="center" className="group_list">
+              <Table selectable compact="very" basic structured className="admin_table" unstackable>
+                <Table.Body>
+                  <Table.Row disabled positive>
+                    <Table.Cell width={5}>Rooms: {rooms.length}</Table.Cell>
+                    <Table.Cell width={1}>{users_count}</Table.Cell>
+                  </Table.Row>
+                  {rooms_grid}
+                </Table.Body>
+              </Table>
+            </Segment>
+          </Grid.Column>
+        </Grid.Row>
+
+        <Popup
+          context={this.contextRef}
+          onClose={() => this.setState({menu_open: false})}
+          open={menu_open}
+        >
+          <Menu text size='massive' compact
+                items={[
+                  { key: 'disable', content: 'disable', icon: 'window close' },
+                  { key: 'vip1', content: 'vip1', icon: 'star' },
+                  { key: 'vip2', content: 'vip2', icon: 'star' },
+                  { key: 'vip3', content: 'vip3', icon: 'star' },
+                  { key: 'vip4', content: 'vip4', icon: 'star' },
+                  { key: 'vip5', content: 'vip5', icon: 'star' },
+                  { key: 'groups', content: 'group', icon: 'star' },
+                ]}
+                onItemClick={(e, data) => this.selectMenu(data.content)}
+                secondary
+                vertical
+          />
+        </Popup>
+
+        {this.isAllowed("admin") ? (
+          <Grid.Row>
+            <Grid.Column width={13}>
+              <ChatBox
+                onRef={(ref) => (this.chat = ref)}
+                user={user}
+                rooms={rooms}
+                selected_room={current_room}
+                selected_group={current_group}
+                selected_user={feed_user}
+              />
+            </Grid.Column>
+            <Grid.Column width={3}>
+              <Segment textAlign="center" className="vip_list">
+                <Table selectable compact="very" basic structured className="admin_table" unstackable>
+                  <Table.Body>
+                    <Table.Row disabled positive>
+                      <Table.Cell width={5}>Question Rooms: {rooms_question.length}</Table.Cell>
+                      <Table.Cell width={1}>{}</Table.Cell>
+                    </Table.Row>
+                    {rooms_question_grid}
+                  </Table.Body>
+                </Table>
+              </Segment>
+            </Grid.Column>
+          </Grid.Row>
+        ) : null}
+
+        {this.isAllowed("root") ? (
+          <Confirm
+            open={showConfirmReloadAll}
+            header={
+              <Header>
+                <Icon name="warning circle" color="red" />
+                Caution
+              </Header>
+            }
+            content="Are you sure you want to force ALL USERS to reload their page ?!"
+            onCancel={this.onConfirmReloadAllCancel}
+            onConfirm={this.onConfirmReloadAllConfirm}
+          />
+        ) : null}
+      </Grid>
+    );
+
+    return <div>{user ? adminContent : login}</div>;
+  }
+}
+
+export default AdminClient;
