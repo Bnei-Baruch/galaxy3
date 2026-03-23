@@ -401,30 +401,30 @@ class AdminClient extends Component {
 
   fetchRooms = () => {
     api
-      .fetchUsers()
-      .then((data) => {
-        log.debug("[admin] users", data);
+      .fetchSessions()
+      .then((sessions) => {
+        log.debug("[admin] users", sessions);
         let {current_room} = this.state;
         let ios_count = 0,
           android_count = 0,
           web_count = 0;
-        const users_count = data.map((r) => r.num_users).reduce((su, cur) => su + cur, 0);
-        for (let i = 0; i < data.length; i++) {
-          for (let j = 0; j < data[i]["users"].length; j++) {
-            if (data[i]["users"][j]["system"].match(/^(ios)/)) ios_count++;
-            if (data[i]["users"][j]["system"].match(/^(android)/)) android_count++;
+        const users_count = sessions.total
+        for (let i = 0; i < sessions.data.length; i++) {
+          for (let j = 0; j < sessions.data[i].length; j++) {
+            if (sessions.data[i][j]["system"].match(/^(ios)/)) ios_count++;
+            if (sessions.data[i][j]["system"].match(/^(android)/)) android_count++;
           }
         }
         web_count = users_count - (ios_count + android_count);
-        const room = data.find((r) => r.room === current_room);
-        const rooms_question = data.filter((r) => r.questions);
-        let users = current_room && room ? room.users : [];
-        data.sort((a, b) => {
-          if (a.description > b.description) return 1;
-          if (a.description < b.description) return -1;
-          return 0;
-        });
-        this.setState({rooms: data, users, users_count, rooms_question, web_count, ios_count, android_count});
+        // const room = sessions.data.find((r) => r.room === current_room);
+        const rooms_question = sessions.data.filter((r) => r.questions);
+        // let users = current_room && room ? room.users : [];
+        // sessions.data.sort((a, b) => {
+        //   if (a.description > b.description) return 1;
+        //   if (a.description < b.description) return -1;
+        //   return 0;
+        // });
+        this.setState({rooms: sessions.data, users_count, rooms_question, web_count, ios_count, android_count});
       })
       .catch((err) => {
         log.error("[admin] error fetching active rooms", err);
@@ -612,19 +612,16 @@ class AdminClient extends Component {
     });
 
     let rooms_grid = rooms.map((data, i) => {
-      const {room, num_users, description, questions, extra} = data;
-      let ugr = data.users.find(u => u.extra?.isGroup);
-      let gr = extra?.group;
+      const {room, description, questions, display} = data;
       return (
         <Table.Row active={current_room === room} key={room}
                    onClick={() => this.exitRoom(data)}
                    onContextMenu={(e) => this.showMenu(e, data)} >
           <Table.Cell width={5}>
-            {ugr ? g : ""}{gr ? v : ""}
             {questions ? q : ""}
-            {description}
+            {display}
           </Table.Cell>
-          <Table.Cell width={1}>{num_users}</Table.Cell>
+          <Table.Cell width={1}>{0}</Table.Cell>
         </Table.Row>
       );
     });

@@ -42,6 +42,8 @@ class Api {
 
   fetchUsers = () => this.logAndParse("fetch users", fetch(this.urlFor("/users"), this.defaultOptions()));
 
+  fetchSessions = () => this.logAndParse("fetch sessions", fetch(this.urlFor("admin/sessions"), this.defaultOptions()));
+
   fetchQuad = (col) =>
     this.logAndParse(`fetch quad ${col}`, fetch(this.urlFor(`/qids/q${col}`), this.defaultOptions()));
 
