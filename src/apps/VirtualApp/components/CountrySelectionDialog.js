@@ -17,17 +17,17 @@ export const CountrySelectionDialog = ({
   const handleRemindLater = () => {
     if (dontShowAgain) {
       // Don't show again - store in localStorage permanently
-      localStorage.setItem("SKIP_COUNTRY_DIALOG_KEY", "true");
+      localStorage.setItem(SKIP_COUNTRY_DIALOG_KEY, "true");
     } else {
       // Remind later - store in sessionStorage for this session only
-      sessionStorage.setItem("SKIP_COUNTRY_DIALOG_KEY", "true");
+      sessionStorage.setItem(SKIP_COUNTRY_DIALOG_KEY, "true");
     }
     onClose();
   };
 
   const handleRedirect = () => {
     // Always permanently hide when user goes to profile
-    localStorage.setItem("SKIP_COUNTRY_DIALOG_KEY", "true");
+    localStorage.setItem(SKIP_COUNTRY_DIALOG_KEY, "true");
     window.open(`${PAY_USER_PROFILE}`, "_blank");
     onClose();
   };
