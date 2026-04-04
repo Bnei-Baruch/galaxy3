@@ -5,6 +5,7 @@ import log from "loglevel";
 import GxyJanus from "./janus-utils";
 import {getVideosFromLocalstorage} from "./tools";
 import api from "./Api";
+import mqtt from "./mqtt";
 
 class JanusStream {
   constructor() {
@@ -89,7 +90,7 @@ class JanusStream {
   };
 
   initJanus = (str, cb) => {
-    let janus = new JanusMqtt(this.user, str);
+    let janus = new JanusMqtt(this.user, str, mqtt.clientId);
 
     janus.onStatus = (srv, status) => {
       if (status !== "online") {
