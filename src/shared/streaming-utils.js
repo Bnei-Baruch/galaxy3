@@ -30,6 +30,8 @@ class JanusStream {
     this.mixvolume = null;
     this.talking = null;
     this.config = null;
+    this.reconnectAttempts = 0;
+    this.onReconnectExhausted = null;
 
     this.videoElement = null;
     this.audioElement = new Audio();
@@ -53,6 +55,7 @@ class JanusStream {
 
   initStreaming = (srv) => {
     this.clean();
+    this.reconnectAttempts = 0;
     this.initStrServer(srv, () => {
       if (!this.videoJanusStream) {
         this.initVideoStream();
@@ -89,23 +92,47 @@ class JanusStream {
     })
   };
 
+  _handleStreamReconnect = (streamName, reinitFn) => {
+    this.reconnectAttempts++;
+    log.warn("[shidur] " + streamName + " failed, reconnect attempt: " + this.reconnectAttempts + "/30");
+    if (this.reconnectAttempts >= 30) {
+      log.error("[shidur] broadcast reconnect exhausted after 30 attempts");
+      this.reconnectAttempts = 0;
+      if (typeof this.onReconnectExhausted === "function") {
+        this.onReconnectExhausted();
+      }
+    } else if (this.janus) {
+      reinitFn();
+    }
+  };
+
   initJanus = (str, cb) => {
     let janus = new JanusMqtt(this.user, str, mqtt.clientId);
 
     janus.onStatus = (srv, status) => {
       if (status !== "online") {
-        log.warn("[shidur] janus status: ", status);
+        this.reconnectAttempts++;
+        log.warn("[shidur] janus status: " + status + ", reconnect attempt: " + this.reconnectAttempts + "/30");
         if (this.janus) this.janus.destroy();
         this.janus = null;
-        setTimeout(() => {
-          this.initStrServer();
-        }, 7000);
+        if (this.reconnectAttempts >= 30) {
+          log.error("[shidur] broadcast reconnect exhausted after 30 attempts");
+          this.reconnectAttempts = 0;
+          if (typeof this.onReconnectExhausted === "function") {
+            this.onReconnectExhausted();
+          }
+        } else {
+          setTimeout(() => {
+            this.initStrServer();
+          }, 7000);
+        }
       }
     };
 
     janus.init().then((data) => {
       log.debug("[shidur] init: ", data);
       this.janus = janus;
+      this.reconnectAttempts = 0;
       if (typeof cb === "function") cb();
     });
   }
@@ -114,7 +141,7 @@ class JanusStream {
     if (this.videos === NO_VIDEO_OPTION_VALUE) return;
     this.videoJanusStream = new StreamingPlugin(this.config?.iceServers);
     this.videoJanusStream.onStatus = () => {
-      if (this.janus) this.initVideoStream();
+      this._handleStreamReconnect("video", () => this.initVideoStream());
     };
     this.janus.attach(this.videoJanusStream).then((data) => {
       log.debug("[shidur] attach video", data);
@@ -128,7 +155,7 @@ class JanusStream {
   initAudioStream = () => {
     this.audioJanusStream = new StreamingPlugin(this.config?.iceServers);
     this.audioJanusStream.onStatus = () => {
-      if (this.janus) this.initAudioStream();
+      this._handleStreamReconnect("audio", () => this.initAudioStream());
     };
     this.janus.attach(this.audioJanusStream).then((data) => {
       log.debug("[shidur] attach audio", data);
@@ -142,7 +169,7 @@ class JanusStream {
   initTranslationStream = (streamId) => {
     this.trlAudioJanusStream = new StreamingPlugin(this.config?.iceServers);
     this.trlAudioJanusStream.onStatus = () => {
-      if (this.janus) this.initTranslationStream(streamId);
+      this._handleStreamReconnect("translation", () => this.initTranslationStream(streamId));
     };
     this.janus.attach(this.trlAudioJanusStream).then((data) => {
       log.debug("[shidur] attach translation", data);
@@ -163,7 +190,7 @@ class JanusStream {
     this.initStrServer(null, () => {
       this.videoQuadStream = new StreamingPlugin(this.config?.iceServers);
       this.videoQuadStream.onStatus = () => {
-        if (this.janus) this.initQuadStream(callback);
+        this._handleStreamReconnect("quad", () => this.initQuadStream(callback));
       };
       this.janus.attach(this.videoQuadStream).then((data) => {
         log.debug("[shidur] attach quad", data);
