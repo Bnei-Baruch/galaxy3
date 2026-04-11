@@ -155,6 +155,7 @@ class VirtualMqttClient extends Component {
     };
 
     this.hideBarsTimer = null;
+    this.conferenceReconnectAttempts = 0;
     this.handleAppFullScreenChange = this.handleAppFullScreenChange.bind(this);
     this.handleUserActivityForBars = this.handleUserActivityForBars.bind(this);
   }
@@ -280,6 +281,12 @@ class VirtualMqttClient extends Component {
     }
 
     JanusStream.setUser(user);
+    JanusStream.onReconnectExhausted = () => {
+      log.error("[client] broadcast reconnect exhausted after 30 attempts, exiting room");
+      this.exitRoom(false, () => {
+        alert(this.props.t("oldClient.networkSettingsChanged"));
+      });
+    };
     this.initMQTT(user);
 
     const {t} = this.props;
@@ -404,7 +411,10 @@ class VirtualMqttClient extends Component {
     });
   };
 
-  initClient = (reconnect, retry = 0) => {
+  initClient = (reconnect) => {
+    if (!reconnect) {
+      this.conferenceReconnectAttempts = 0;
+    }
     this.setState({delay: true});
     const {user, shidur} = this.state;
     if (this.state.janus) {
@@ -413,7 +423,7 @@ class VirtualMqttClient extends Component {
     api.fetchGxyServer(user).then((data) => {
       log.info("[client] Got Gxy Server: ", data);
       user.janus = data.janus;
-      this.initJanus(user, retry);
+      this.initJanus(user);
       JanusStream.setUser(user);
       if (!reconnect && shidur) {
         JanusStream.initStreaming();
@@ -423,22 +433,24 @@ class VirtualMqttClient extends Component {
     })
   };
 
-  reinitClient = (retry) => {
-    retry++;
-    log.error("[client] reinitializing try: ", retry);
+  reinitClient = () => {
+    this.conferenceReconnectAttempts++;
+    log.warn("[client] conference reconnect attempt: " + this.conferenceReconnectAttempts + "/30");
     if(!mqtt.isConnected) {
       log.error("[client] mqtt is not connected, waiting 5 sec");
       setTimeout(() => {
-        this.reinitClient(retry);
+        this.reinitClient();
       }, 5000);
+      return;
     }
-    if (retry < 10) {
+    if (this.conferenceReconnectAttempts <= 30) {
       setTimeout(() => {
-        this.initClient(true, retry);
+        this.initClient(true);
       }, 5000);
     } else {
+      this.conferenceReconnectAttempts = 0;
       this.exitRoom(false, () => {
-        log.error("[client] reinitializing failed after: " + retry + " retries");
+        log.error("[client] conference reconnect failed after 30 attempts");
         alert(this.props.t("oldClient.networkSettingsChanged"));
       });
     }
@@ -447,26 +459,29 @@ class VirtualMqttClient extends Component {
     iceFailed = (data) => {
       const {exit_room} = this.state;
       if(!exit_room && data === "publisher") {
-        this.setState({show_notification: true});
-        this.exitRoom();
         captureMessage("reconnect", {});
-        log.warn("[client] iceFailed for: ", data);
+        log.warn("[client] iceFailed for: ", data, " - attempting silent reconnect");
+        this.exitRoom(true, () => {
+          this.reinitClient();
+        });
       }
     };
 
-  initJanus = (user, retry) => {
+  initJanus = (user) => {
     setSentryTag(user.janus)
     let janus = new JanusMqtt(user, user.janus, mqtt.clientId);
     janus.onStatus = (srv, status) => {
       if (status === "offline") {
-        alert("Janus Server - " + srv + " - Offline");
-        window.location.reload();
+        log.warn("[client] Janus Server - " + srv + " - Offline, attempting silent reconnect");
+        this.exitRoom(true, () => {
+          this.reinitClient();
+        });
       }
 
       if (status === "error") {
         log.error("[client] Janus error, reconnecting...");
         this.exitRoom(true, () => {
-          this.reinitClient(retry);
+          this.reinitClient();
         });
       }
     };
@@ -498,7 +513,7 @@ class VirtualMqttClient extends Component {
       .catch((err) => {
         log.error("[client] Janus init", err);
         this.exitRoom(true, () => {
-          this.reinitClient(retry);
+          this.reinitClient();
         });
       });
   };
@@ -634,6 +649,7 @@ class VirtualMqttClient extends Component {
           captureMessage("h264_profile", vst);
         }
 
+        this.conferenceReconnectAttempts = 0;
         this.setState({user, myid: id, delay: false, sourceLoading: false});
         updateSentryUser(user);
         updateGxyUser(user);
@@ -894,8 +910,9 @@ class VirtualMqttClient extends Component {
     const {type, id, bitrate} = data;
 
     if (type === "client-reconnect" && user.id === id) {
+      this.conferenceReconnectAttempts = 0;
       this.exitRoom(true, () => {
-        this.reinitClient(0);
+        this.reinitClient();
       });
     } else if (type === "client-reload" && user.id === id) {
       window.location.reload();
