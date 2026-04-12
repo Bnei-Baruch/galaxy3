@@ -20,6 +20,7 @@ export class SubscriberPlugin extends EventEmitter {
     this.pc = new RTCPeerConnection({
       iceServers: list
     })
+    this.jsepQueue = Promise.resolve()
   }
 
   getPluginName () {
@@ -135,19 +136,23 @@ export class SubscriberPlugin extends EventEmitter {
   }
 
   handleJsep(jsep) {
-    this.pc.setRemoteDescription(new RTCSessionDescription(jsep)).then(() => {
+    this.jsepQueue = this.jsepQueue.then(() => this.processJsep(jsep)).catch(error => {
+      log.error('[subscriber] JSEP queue error:', error)
+      captureException(error, { context: 'SubscriberPlugin.handleJsep', jsep });
+    })
+  }
+
+  processJsep(jsep) {
+    return this.pc.setRemoteDescription(new RTCSessionDescription(jsep)).then(() => {
       return this.pc.createAnswer()
     }).then(answer => {
       log.debug('[subscriber] Answer created', answer)
-      this.pc.setLocalDescription(answer).then(data => {
-        log.debug('[subscriber] setLocalDescription', data)
-      }).catch(error => {
-        log.error(error, answer)
-        captureException(error, { context: 'SubscriberPlugin.handleJsep.setLocalDescription', answer });
+      return this.pc.setLocalDescription(answer).then(() => {
+        log.debug('[subscriber] setLocalDescription done')
+        this.start(answer)
       })
-      this.start(answer)
     }).catch(error => {
-      captureException(error, { context: 'SubscriberPlugin.handleJsep', jsep });
+      captureException(error, { context: 'SubscriberPlugin.processJsep', jsep });
       throw error;
     })
   }
@@ -215,6 +220,19 @@ export class SubscriberPlugin extends EventEmitter {
       this.pc.ontrack = (e) => {
         try {
           log.debug("[subscriber] Got track: ", e)
+
+          if (!e.streams || e.streams.length === 0) {
+            log.warn("[subscriber] Track received without associated stream (missing MSID?), kind:", e.track.kind,
+              "mid:", e.transceiver?.mid);
+            captureException(new Error('Track received without stream'), {
+              context: 'SubscriberPlugin.initPcEvents.ontrack',
+              trackKind: e.track.kind,
+              trackId: e.track.id,
+              transceiverMid: e.transceiver?.mid
+            });
+            return;
+          }
+
           this.onTrack(e.track, e.streams[0], true)
 
           e.track.onmute = (ev) => {
