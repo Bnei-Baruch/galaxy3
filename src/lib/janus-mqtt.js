@@ -111,7 +111,11 @@ export class JanusMqtt {
 
   destroy () {
     if (!this.isConnected) {
-      return Promise.resolve()
+      return this._cleanupPlugins().then(() => {
+        this._cleanupTransactions()
+      }).catch(() => {
+        this._cleanupTransactions()
+      })
     }
 
     return new Promise((resolve, reject) => {
@@ -313,7 +317,14 @@ export class JanusMqtt {
 
     if(tD === "status" && !json.online) {
       this.isConnected = false
-      log.debug("[janus] Janus Server - " + this.srv + " - Offline")
+      log.debug("[janus] Janus Server - " + this.srv + " - Offline, detaching " + Object.keys(this.pluginHandles).length + " plugins")
+      Object.keys(this.pluginHandles).forEach(id => {
+        const plugin = this.pluginHandles[id];
+        if (plugin && typeof plugin.detach === "function") {
+          plugin.detach();
+        }
+      });
+      this.pluginHandles = {};
       if(typeof this.disconnect === "function")
         this.disconnect(json)
       if(typeof this.onStatus === "function")
