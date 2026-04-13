@@ -204,6 +204,7 @@ export class StreamingPlugin extends EventEmitter {
           clearInterval(chk);
           const error = new Error("[streaming] - ICE Restart failed - ");
           captureException(error, { context: 'StreamingPlugin.iceRestart', count });
+          this.onStatus(this.iceState)
         } else {
           log.debug("[streaming] ICE Restart try: " + count)
         }
