@@ -848,7 +848,10 @@ class VirtualMqttClient extends Component {
       if (track.kind === "audio") {
         log.debug("[client] Created remote audio stream:", stream);
         let remoteaudio = this.refs["remoteAudio" + feed];
-        if (remoteaudio) remoteaudio.srcObject = stream;
+        if (remoteaudio) {
+          remoteaudio.srcObject = stream;
+          remoteaudio.play().catch((e) => log.warn("[client] Audio play() failed for feed " + feed + ":", e.message));
+        }
       } else if (track.kind === "video") {
         log.debug("[client] Created remote video stream:", stream);
         this.pendingStreams.set(feed, stream);
@@ -864,6 +867,7 @@ class VirtualMqttClient extends Component {
     const remotevideo = this.refs["remoteVideo" + feed];
     if (remotevideo) {
       remotevideo.srcObject = stream;
+      remotevideo.play().catch((e) => log.warn("[client] Video play() failed for feed " + feed + ":", e.message));
       this.pendingStreams.delete(feed);
       if (attempt > 0) {
         log.info("[client] Attached pending video stream for feed " + feed + " on attempt " + attempt);
