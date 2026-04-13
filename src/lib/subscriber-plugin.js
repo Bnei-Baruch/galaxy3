@@ -200,10 +200,26 @@ export class SubscriberPlugin extends EventEmitter {
           this.iceState = e.target.connectionState
           if(this.iceState === "disconnected") {
             this.iceRestart()
+            this._iceRecoveryTimeout = setTimeout(() => {
+              if (this.iceState !== "connected") {
+                log.warn("[subscriber] ICE not recovered in 10s, triggering reconnect");
+                this.iceFailed("subscriber")
+              }
+            }, 10000);
           }
-            if(this.iceState === "failed") {
+
+          if(this.iceState === "connected" && this._iceRecoveryTimeout) {
+            clearTimeout(this._iceRecoveryTimeout);
+            this._iceRecoveryTimeout = null;
+          }
+
+          if(this.iceState === "failed") {
             const error = new Error('ICE connection failed');
             captureException(error, { context: 'SubscriberPlugin.initPcEvents.onconnectionstatechange', iceState: this.iceState });
+            if (this._iceRecoveryTimeout) {
+              clearTimeout(this._iceRecoveryTimeout);
+              this._iceRecoveryTimeout = null;
+            }
             this.iceFailed("subscriber")
           }
         } catch (error) {
@@ -324,6 +340,10 @@ export class SubscriberPlugin extends EventEmitter {
   }
 
   detach() {
+    if (this._iceRecoveryTimeout) {
+      clearTimeout(this._iceRecoveryTimeout);
+      this._iceRecoveryTimeout = null;
+    }
     if(this.pc) {
       this.pc.getTransceivers().forEach((transceiver) => {
         if(transceiver) {

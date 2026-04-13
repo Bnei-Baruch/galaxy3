@@ -159,11 +159,26 @@ export class StreamingPlugin extends EventEmitter {
         this.iceState = e.target.connectionState
         if(this.iceState === "disconnected") {
           this.iceRestart()
+          this._iceRecoveryTimeout = setTimeout(() => {
+            if (this.iceState !== "connected") {
+              log.warn("[streaming] ICE not recovered in 10s, triggering reconnect");
+              this.onStatus(this.iceState)
+            }
+          }, 10000);
+        }
+
+        if(this.iceState === "connected" && this._iceRecoveryTimeout) {
+          clearTimeout(this._iceRecoveryTimeout);
+          this._iceRecoveryTimeout = null;
         }
 
         if(this.iceState === "failed") {
           const error = new Error('ICE connection failed');
           captureException(error, { context: 'StreamingPlugin.initPcEvents.onconnectionstatechange', iceState: this.iceState });
+          if (this._iceRecoveryTimeout) {
+            clearTimeout(this._iceRecoveryTimeout);
+            this._iceRecoveryTimeout = null;
+          }
           this.onStatus(this.iceState)
         }
       } catch (error) {
@@ -262,6 +277,10 @@ export class StreamingPlugin extends EventEmitter {
   }
 
   detach () {
+    if (this._iceRecoveryTimeout) {
+      clearTimeout(this._iceRecoveryTimeout);
+      this._iceRecoveryTimeout = null;
+    }
     try {
       this.pc.close()
       this.removeAllListeners()

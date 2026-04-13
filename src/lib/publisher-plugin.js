@@ -270,11 +270,26 @@ export class PublisherPlugin extends EventEmitter {
 
         if(this.iceState === "disconnected") {
           this.iceRestart()
+          this._iceRecoveryTimeout = setTimeout(() => {
+            if (this.iceState !== "connected") {
+              log.warn("[publisher] ICE not recovered in 10s, triggering reconnect");
+              this.iceFailed("publisher")
+            }
+          }, 10000);
+        }
+
+        if(this.iceState === "connected" && this._iceRecoveryTimeout) {
+          clearTimeout(this._iceRecoveryTimeout);
+          this._iceRecoveryTimeout = null;
         }
 
         if(this.iceState === "failed") {
           const error = new Error('ICE connection failed');
           captureException(error, { context: 'PublisherPlugin.initPcEvents.onconnectionstatechange', iceState: this.iceState });
+          if (this._iceRecoveryTimeout) {
+            clearTimeout(this._iceRecoveryTimeout);
+            this._iceRecoveryTimeout = null;
+          }
           this.iceFailed("publisher")
         }
       } catch (error) {
@@ -386,6 +401,10 @@ export class PublisherPlugin extends EventEmitter {
   }
 
   detach() {
+    if (this._iceRecoveryTimeout) {
+      clearTimeout(this._iceRecoveryTimeout);
+      this._iceRecoveryTimeout = null;
+    }
     if(this.pc) {
       this.pc.getTransceivers().forEach((transceiver) => {
         if(transceiver) {
