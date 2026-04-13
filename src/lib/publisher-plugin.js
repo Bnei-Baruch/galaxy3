@@ -272,10 +272,10 @@ export class PublisherPlugin extends EventEmitter {
           this.iceRestart()
         }
 
-      // ICE restart does not help here, peer connection will be down
         if(this.iceState === "failed") {
           const error = new Error('ICE connection failed');
           captureException(error, { context: 'PublisherPlugin.initPcEvents.onconnectionstatechange', iceState: this.iceState });
+          this.iceFailed("publisher")
         }
       } catch (error) {
         captureException(error, { context: 'PublisherPlugin.initPcEvents.onconnectionstatechange', iceState: this.iceState });

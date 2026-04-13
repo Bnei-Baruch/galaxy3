@@ -5,8 +5,8 @@ import {randomString} from "./tools";
 import GxyJanus from "./janus-utils";
 import log from "loglevel";
 
-const mqttTimeout = 30 // Seconds
-const mqttKeepalive = 10 // Seconds
+const mqttTimeout = 10 // Seconds
+const mqttKeepalive = 2 // Seconds
 
 class MqttMsg {
   constructor() {

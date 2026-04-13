@@ -256,7 +256,8 @@ class VirtualMqttClient extends Component {
         log.error('Error fetching VH info data: ', err?.message);
         user.vhinfo = {active: false, error: err?.message};
       }).finally(() => {
-        user.allowed = !!user.vhinfo.active && user.role === userRolesEnum.user;
+        //user.allowed = !!user.vhinfo.active && user.role === userRolesEnum.user;
+        user.allowed = user.role === userRolesEnum.user;
         // Show country dialog to all allowed users
         const skipDialog = sessionStorage.getItem(SKIP_COUNTRY_DIALOG_KEY) === "true" || localStorage.getItem(SKIP_COUNTRY_DIALOG_KEY) === "true";
         const shouldShowDialog = user.allowed && !skipDialog;
@@ -458,8 +459,8 @@ class VirtualMqttClient extends Component {
 
     iceFailed = (data) => {
       const {exit_room} = this.state;
-      if(!exit_room && data === "publisher") {
-        captureMessage("reconnect", {});
+      if(!exit_room && (data === "publisher" || data === "subscriber")) {
+        captureMessage("reconnect", {source: data});
         log.warn("[client] iceFailed for: ", data, " - attempting silent reconnect");
         this.exitRoom(true, () => {
           this.reinitClient();
