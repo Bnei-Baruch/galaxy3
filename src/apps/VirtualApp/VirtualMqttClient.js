@@ -155,6 +155,8 @@ class VirtualMqttClient extends Component {
     };
 
     this.hideBarsTimer = null;
+    this.pendingStreams = new Map();
+    this.pendingSubscriptions = [];
     this.handleAppFullScreenChange = this.handleAppFullScreenChange.bind(this);
     this.handleUserActivityForBars = this.handleUserActivityForBars.bind(this);
   }
@@ -697,6 +699,9 @@ class VirtualMqttClient extends Component {
 
     if (janus) janus.destroy();
 
+    this.pendingStreams.clear();
+    this.pendingSubscriptions = [];
+
     this.setState({
       muted: false,
       question: false,
@@ -788,9 +793,8 @@ class VirtualMqttClient extends Component {
     }
 
     if (this.state.creatingFeed) {
-      setTimeout(() => {
-        this.subscribeTo(subscription);
-      }, 500);
+      log.info("[client] Queuing subscription while subscriber is being created:", subscription);
+      this.pendingSubscriptions.push(...subscription);
       return;
     }
 
@@ -801,7 +805,13 @@ class VirtualMqttClient extends Component {
 
       this.onUpdateStreams(data.streams);
 
-      this.setState({remoteFeed: true, creatingFeed: false});
+      this.setState({remoteFeed: true, creatingFeed: false}, () => {
+        if (this.pendingSubscriptions.length > 0) {
+          const queued = this.pendingSubscriptions.splice(0);
+          log.info("[client] Flushing " + queued.length + " queued subscriptions");
+          this.state.subscriber.sub(queued);
+        }
+      });
     });
   };
 
@@ -827,6 +837,10 @@ class VirtualMqttClient extends Component {
   };
 
   onRemoteTrack = (track, stream, on) => {
+    if (!stream) {
+      log.warn("[client] onRemoteTrack called with no stream, track:", track.kind, track.id);
+      return;
+    }
     let mid = track.id;
     let feed = stream.id;
     log.info("[client] >> This track is coming from feed " + feed + ":", mid, track);
@@ -834,12 +848,39 @@ class VirtualMqttClient extends Component {
       if (track.kind === "audio") {
         log.debug("[client] Created remote audio stream:", stream);
         let remoteaudio = this.refs["remoteAudio" + feed];
-        if (remoteaudio) remoteaudio.srcObject = stream;
+        if (remoteaudio) {
+          remoteaudio.srcObject = stream;
+          remoteaudio.play().catch((e) => log.warn("[client] Audio play() failed for feed " + feed + ":", e.message));
+        }
       } else if (track.kind === "video") {
         log.debug("[client] Created remote video stream:", stream);
-        const remotevideo = this.refs["remoteVideo" + feed];
-        if (remotevideo) remotevideo.srcObject = stream;
+        this.pendingStreams.set(feed, stream);
+        this.attachPendingStream(feed);
       }
+    }
+  };
+
+  attachPendingStream = (feed, attempt = 0) => {
+    const stream = this.pendingStreams.get(feed);
+    if (!stream) return;
+
+    const remotevideo = this.refs["remoteVideo" + feed];
+    if (remotevideo) {
+      remotevideo.srcObject = stream;
+      remotevideo.play().catch((e) => log.warn("[client] Video play() failed for feed " + feed + ":", e.message));
+      this.pendingStreams.delete(feed);
+      if (attempt > 0) {
+        log.info("[client] Attached pending video stream for feed " + feed + " on attempt " + attempt);
+      }
+      return;
+    }
+
+    if (attempt < 10) {
+      const delay = attempt < 3 ? 50 : 200;
+      setTimeout(() => this.attachPendingStream(feed, attempt + 1), delay);
+    } else {
+      log.warn("[client] Failed to attach video stream for feed " + feed + " after " + attempt + " attempts, ref not found");
+      this.pendingStreams.delete(feed);
     }
   };
 
@@ -871,6 +912,7 @@ class VirtualMqttClient extends Component {
       this.state.subscriber.unsub(streams);
     }
     if (!onlyVideo) {
+      idsSet.forEach((id) => this.pendingStreams.delete(id));
       this.setState({feeds: feeds.filter((feed) => !idsSet.has(feed.id))});
     }
   };
