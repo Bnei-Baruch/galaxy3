@@ -5,7 +5,7 @@ import {randomString} from "./tools";
 import GxyJanus from "./janus-utils";
 import log from "loglevel";
 
-const mqttTimeout = 10 // Seconds
+const mqttTimeout = 30 // Seconds
 const mqttKeepalive = 2 // Seconds
 
 class MqttMsg {
@@ -68,21 +68,23 @@ class MqttMsg {
     this.mq.setMaxListeners(50)
 
     this.mq.on("connect", (data) => {
-      if (data && !this.isConnected) {
+      const reconnecting = this.reconnect_count > 0;
+      const prevCount = this.reconnect_count;
+      this.isConnected = true;
+      this.reconnect_count = 0;
+      if (!reconnecting) {
         log.info('[mqtt] Connected to server: ', data);
-        this.isConnected = true;
         if (typeof callback === "function") callback(false, false);
       } else {
-        log.info("[mqtt] Connected: ", data);
-        this.isConnected = true;
-        if (this.reconnect_count > RC) {
+        log.info("[mqtt] Reconnected after " + prevCount + " attempts: ", data);
+        if (prevCount > RC) {
           if (typeof callback === "function") callback(true, false);
         }
-        this.reconnect_count = 0;
       }
     });
 
     this.mq.on("close", () => {
+      this.isConnected = false;
       if (this.reconnect_count < RC + 2) {
         this.reconnect_count++;
         log.debug("[mqtt] reconnecting counter: " + this.reconnect_count)

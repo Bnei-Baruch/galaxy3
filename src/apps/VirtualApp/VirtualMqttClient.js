@@ -437,7 +437,7 @@ class VirtualMqttClient extends Component {
   reinitClient = () => {
     this.conferenceReconnectAttempts++;
     log.warn("[client] conference reconnect attempt: " + this.conferenceReconnectAttempts + "/30");
-    if(!mqtt.isConnected) {
+    if(!mqtt.mq?.connected) {
       log.error("[client] mqtt is not connected, waiting 5 sec");
       setTimeout(() => {
         this.reinitClient();
