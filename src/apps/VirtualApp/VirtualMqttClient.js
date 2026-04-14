@@ -256,8 +256,7 @@ class VirtualMqttClient extends Component {
         log.error('Error fetching VH info data: ', err?.message);
         user.vhinfo = {active: false, error: err?.message};
       }).finally(() => {
-        //user.allowed = !!user.vhinfo.active && user.role === userRolesEnum.user;
-        user.allowed = user.role === userRolesEnum.user;
+        user.allowed = !!user.vhinfo.active && user.role === userRolesEnum.user;
         // Show country dialog to all allowed users
         const skipDialog = sessionStorage.getItem(SKIP_COUNTRY_DIALOG_KEY) === "true" || localStorage.getItem(SKIP_COUNTRY_DIALOG_KEY) === "true";
         const shouldShowDialog = user.allowed && !skipDialog;
