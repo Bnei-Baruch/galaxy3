@@ -93,26 +93,38 @@ class LocalDevices {
       this.video.device = "";
     }
 
-    // navigator.mediaDevices.ondevicechange = async(e) => {
-    //   if(e.timeStamp - ts < 1000) return
-    //   ts = e.timeStamp
-    //   devices = await navigator.mediaDevices.enumerateDevices();
-    //   log.debug("[devices] devices list refreshed: ", devices);
-    //   this.audio.devices = devices.filter((a) => !!a.deviceId && a.kind === "audioinput");
-    //   this.video.devices = devices.filter((v) => !!v.deviceId && v.kind === "videoinput");
-    //   // Refresh audio devices list
-    //   let storage_audio = localStorage.getItem("audio_device");
-    //   let isSavedAudio = this.audio.devices.find(d => d.deviceId === storage_audio)
-    //   let default_audio = this.audio.devices.length > 0 ? this.audio.devices[0].deviceId : null;
-    //   this.audio.device = isSavedAudio ? storage_audio : default_audio;
-    //   // Refresh video devices list
-    //   let storage_video = localStorage.getItem("video_device");
-    //   let isSavedVideo = this.video.devices.find(d => d.deviceId === storage_video)
-    //   let default_video = this.video.devices.length > 0 ? this.video.devices[0].deviceId : null;
-    //   this.video.device = isSavedVideo ? storage_video : default_video;
-    //
-    //   if(typeof onChange === "function") onChange({video: this.video, audio: this.audio})
-    // }
+    navigator.mediaDevices.ondevicechange = async (e) => {
+      if (e.timeStamp - ts < 1000) return;
+      ts = e.timeStamp;
+
+      devices = await navigator.mediaDevices.enumerateDevices();
+      log.debug("[devices] devices list refreshed: ", devices);
+      this.audio.devices = devices.filter((a) => !!a.deviceId && a.kind === "audioinput");
+      this.video.devices = devices.filter((v) => !!v.deviceId && v.kind === "videoinput");
+
+      // Snapshot device IDs before any mutation so the callback can compare old vs new
+      const prevAudioDevice = this.audio.device;
+      const prevVideoDevice = this.video.device;
+
+      // If the active audio device was unplugged, pick the best available replacement
+      const activeAudioExists = this.audio.devices.find(d => d.deviceId === this.audio.device);
+      if (!activeAudioExists) {
+        const saved_audio = localStorage.getItem("audio_device");
+        const isSavedAudio = this.audio.devices.find(d => d.deviceId === saved_audio);
+        this.audio.device = isSavedAudio ? saved_audio : (this.audio.devices[0]?.deviceId || null);
+      }
+
+      // If the active video device was unplugged, pick the best available replacement
+      const activeVideoExists = this.video.devices.find(d => d.deviceId === this.video.device);
+      if (!activeVideoExists) {
+        const saved_video = localStorage.getItem("video_device");
+        const isSavedVideo = this.video.devices.find(d => d.deviceId === saved_video);
+        this.video.device = isSavedVideo ? saved_video : (this.video.devices[0]?.deviceId || null);
+      }
+
+      log.debug("[devices] ondevicechange: audio", prevAudioDevice, "->", this.audio.device, "| video", prevVideoDevice, "->", this.video.device);
+      if (typeof onChange === "function") onChange({video: this.video, audio: this.audio}, prevAudioDevice, prevVideoDevice);
+    };
 
     log.debug("[devices] init: ", this)
     return {video: this.video, audio: this.audio};

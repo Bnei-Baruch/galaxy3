@@ -521,10 +521,16 @@ class VirtualMqttClient extends Component {
   initDevices = () => {
     const {t} = this.props;
 
-    devices.init((media) => {
+    devices.init((media, prevAudioDevice) => {
       setTimeout(() => {
         if (media.audio.device) {
-          this.setAudioDevice(media.audio.device);
+          if (media.audio.device !== prevAudioDevice) {
+            // Active device was removed and replaced — re-acquire stream
+            this.setAudioDevice(media.audio.device);
+          } else {
+            // Device list changed but active device is the same — just refresh UI
+            this.setState({media});
+          }
         } else {
           log.warn("[client] No left audio devices");
           //FIXME: remove it from pc?
@@ -580,12 +586,14 @@ class VirtualMqttClient extends Component {
   };
 
   setAudioDevice = (device, cam_mute) => {
+    log.debug("[client] setAudioDevice:", device, "muted:", this.state.muted);
     devices.setAudioDevice(device, cam_mute).then((media) => {
       if (media.audio.device) {
         this.setState({media, localAudioTrack: media.audio.stream.getAudioTracks()[0]});
-        const {videoroom} = this.state;
+        const {videoroom, muted} = this.state;
+        log.debug("[client] setAudioDevice result: device:", media.audio.device, "videoroom:", !!videoroom, "enabled:", !muted);
         if (videoroom) {
-          media.audio.stream.getAudioTracks()[0].enabled = false;
+          media.audio.stream.getAudioTracks()[0].enabled = !muted;
           videoroom.audio(media.audio.stream);
         }
       }
