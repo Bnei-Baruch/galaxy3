@@ -41,7 +41,7 @@ import {kc} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 import {captureMessage, sentryDebugAction, setSentryGeo, setSentryTag, updateSentryUser} from "../../shared/sentry";
 import {isFullScreen, toggleFullScreen} from "./FullScreenHelper";
-import {AppBar, Badge, Box, Button as ButtonMD, ButtonGroup, Grid, IconButton, useTheme} from "@mui/material";
+import {AppBar, Badge, Box, Button as ButtonMD, ButtonGroup, CircularProgress, Grid, IconButton, useTheme} from "@mui/material";
 import {ChevronLeft, ChevronRight, PlayCircleOutline} from "@mui/icons-material";
 import {grey} from "@mui/material/colors";
 import {AskQuestion, AudioMode, CloseBroadcast, Fullscreen, Layout, Mute, MuteVideo, Vote} from "./buttons";
@@ -109,6 +109,7 @@ class VirtualMqttClient extends Component {
       janus: null,
       exit_room: true,
       show_notification: false,
+      reconnecting: false,
       feeds: [],
       rooms: [],
       room: "",
@@ -283,6 +284,7 @@ class VirtualMqttClient extends Component {
     JanusStream.setUser(user);
     JanusStream.onReconnectExhausted = () => {
       log.error("[client] broadcast reconnect exhausted after 30 attempts, exiting room");
+      this.setState({reconnecting: false});
       this.exitRoom(false, () => {
         alert(this.props.t("oldClient.networkSettingsChanged"));
       });
@@ -436,6 +438,7 @@ class VirtualMqttClient extends Component {
   reinitClient = () => {
     this.conferenceReconnectAttempts++;
     log.warn("[client] conference reconnect attempt: " + this.conferenceReconnectAttempts + "/30");
+    this.setState({reconnecting: true});
     if(!mqtt.mq?.connected) {
       log.error("[client] mqtt is not connected, waiting 5 sec");
       setTimeout(() => {
@@ -449,6 +452,7 @@ class VirtualMqttClient extends Component {
       }, 5000);
     } else {
       this.conferenceReconnectAttempts = 0;
+      this.setState({reconnecting: false});
       this.exitRoom(false, () => {
         log.error("[client] conference reconnect failed after 30 attempts");
         alert(this.props.t("oldClient.networkSettingsChanged"));
@@ -658,7 +662,7 @@ class VirtualMqttClient extends Component {
         }
 
         this.conferenceReconnectAttempts = 0;
-        this.setState({user, myid: id, delay: false, sourceLoading: false});
+        this.setState({user, myid: id, delay: false, sourceLoading: false, reconnecting: false});
         updateSentryUser(user);
         updateGxyUser(user);
 
@@ -1154,12 +1158,30 @@ class VirtualMqttClient extends Component {
   };
 
   renderLocalMedia = (width, height, index, isGroup) => {
-    const {user, cammuted, question, muted} = this.state;
+    const {user, cammuted, question, muted, reconnecting} = this.state;
     const userName = user ? user.username : "";
+    const {t} = this.props;
 
     return (
       <div className={classNames("video", {"hidden": this.context.hideSelf})} key={index}>
         {this.renderVideoOverlay(!muted, question, cammuted, userName, isGroup)}
+
+        {reconnecting && (
+          <div style={{
+            position: "absolute", top: 0, left: 0, width: "100%", height: "100%",
+            background: "rgba(0,0,0,0.78)", zIndex: 2,
+            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+            gap: "10px", color: "#fff", textAlign: "center", padding: "8px",
+          }}>
+            <CircularProgress size={28} style={{color: "#ffb300"}} />
+            <span style={{fontWeight: 700, fontSize: "0.85em", lineHeight: 1.3}}>
+              {t("oldClient.reconnectingTitle")}
+            </span>
+            <span style={{fontSize: "0.72em", opacity: 0.85, lineHeight: 1.3}}>
+              {t("oldClient.reconnectingHint")}
+            </span>
+          </div>
+        )}
 
         {this.renderVideo(cammuted, "localVideo", width, height)}
       </div>
