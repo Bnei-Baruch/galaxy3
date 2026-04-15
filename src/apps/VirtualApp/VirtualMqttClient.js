@@ -522,16 +522,21 @@ class VirtualMqttClient extends Component {
     const {t} = this.props;
 
     devices.init((media) => {
+      log.debug("[devices.init] media: ", media)
+      const prevMedia = this.state.media;
+      this.setState({media});
       setTimeout(() => {
-        if (media.audio.device) {
+        if (media.audio.device && prevMedia?.audio?.device !== media.audio.device) {
+          log.info("[client] Audio device changed, switching to: ", media.audio.device);
           this.setAudioDevice(media.audio.device);
-        } else {
+        } else if (!media.audio.device) {
           log.warn("[client] No left audio devices");
-          //FIXME: remove it from pc?
         }
-        if (!media.video.device) {
+        if (media.video.device && prevMedia?.video?.device !== media.video.device) {
+          log.info("[client] Video device changed, switching to: ", media.video.device);
+          this.setVideoDevice(media.video.device);
+        } else if (!media.video.device) {
           log.warn("[client] No left video devices");
-          //FIXME: remove it from pc?
         }
       }, 1000);
     }).then((data) => {

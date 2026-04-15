@@ -93,26 +93,28 @@ class LocalDevices {
       this.video.device = "";
     }
 
-    // navigator.mediaDevices.ondevicechange = async(e) => {
-    //   if(e.timeStamp - ts < 1000) return
-    //   ts = e.timeStamp
-    //   devices = await navigator.mediaDevices.enumerateDevices();
-    //   log.debug("[devices] devices list refreshed: ", devices);
-    //   this.audio.devices = devices.filter((a) => !!a.deviceId && a.kind === "audioinput");
-    //   this.video.devices = devices.filter((v) => !!v.deviceId && v.kind === "videoinput");
-    //   // Refresh audio devices list
-    //   let storage_audio = localStorage.getItem("audio_device");
-    //   let isSavedAudio = this.audio.devices.find(d => d.deviceId === storage_audio)
-    //   let default_audio = this.audio.devices.length > 0 ? this.audio.devices[0].deviceId : null;
-    //   this.audio.device = isSavedAudio ? storage_audio : default_audio;
-    //   // Refresh video devices list
-    //   let storage_video = localStorage.getItem("video_device");
-    //   let isSavedVideo = this.video.devices.find(d => d.deviceId === storage_video)
-    //   let default_video = this.video.devices.length > 0 ? this.video.devices[0].deviceId : null;
-    //   this.video.device = isSavedVideo ? storage_video : default_video;
-    //
-    //   if(typeof onChange === "function") onChange({video: this.video, audio: this.audio})
-    // }
+    navigator.mediaDevices.ondevicechange = async(e) => {
+      log.debug("[devices] ondevicechange: ")
+      if(e.timeStamp - ts < 1000) return
+      ts = e.timeStamp
+      devices = await navigator.mediaDevices.enumerateDevices();
+      log.debug("[devices] devices list refreshed: ", devices);
+      this.audio.devices = devices.filter((a) => !!a.deviceId && a.kind === "audioinput");
+      this.video.devices = devices.filter((v) => !!v.deviceId && v.kind === "videoinput");
+      let defaultAudioEntry = devices.find(d => d.deviceId === "default" && d.kind === "audioinput");
+      let resolvedAudio = defaultAudioEntry
+        ? devices.find(d => d.deviceId !== "default" && d.kind === "audioinput" && d.groupId === defaultAudioEntry.groupId)
+        : null;
+      this.audio.device = resolvedAudio?.deviceId || this.audio.devices[0]?.deviceId || null;
+
+      let defaultVideoEntry = devices.find(d => d.deviceId === "default" && d.kind === "videoinput");
+      let resolvedVideo = defaultVideoEntry
+        ? devices.find(d => d.deviceId !== "default" && d.kind === "videoinput" && d.groupId === defaultVideoEntry.groupId)
+        : null;
+      this.video.device = resolvedVideo?.deviceId || this.video.devices[0]?.deviceId || null;
+
+      if(typeof onChange === "function") onChange({video: {...this.video}, audio: {...this.audio}})
+    }
 
     log.debug("[devices] init: ", this)
     return {video: this.video, audio: this.audio};
