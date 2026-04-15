@@ -126,7 +126,7 @@ class LocalDevices {
       }
 
       log.debug("[devices] ondevicechange: audio", prevAudioDevice, "->", this.audio.device, "| video", prevVideoDevice, "->", this.video.device);
-      if (typeof onChange === "function") onChange({video: this.video, audio: this.audio}, prevAudioDevice, prevVideoDevice);
+      if (typeof onChange === "function") onChange({video: {...this.video}, audio: {...this.audio}}, prevAudioDevice, prevVideoDevice);
     };
 
     log.debug("[devices] init: ", this)
