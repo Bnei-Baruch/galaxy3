@@ -1050,6 +1050,7 @@ class VirtualMqttClient extends Component {
     if (stream) {
       if (muted) this.micVolume();
       stream.getAudioTracks()[0].enabled = muted;
+      devices.micMuted = !muted; // true when going muted, false when going unmuted
       muted ? devices.audio.context.resume() : devices.audio.context.suspend();
       this.setState({muted: !muted});
     }

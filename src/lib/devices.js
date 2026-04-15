@@ -20,6 +20,9 @@ class LocalDevices {
 
     this.audio_stream = null
     this.micLevel = null
+    // Tracks intentional suspension (user muted / cam off) so onstatechange
+    // can distinguish it from unexpected browser-triggered suspension.
+    this.micMuted = false
   }
 
   init = async (onChange) => {
@@ -149,28 +152,30 @@ class LocalDevices {
 
     this.audio.context = new AudioContext()
     log.debug("[devices] AudioContext: ", this.audio.context)
-    await this.audio.context.audioWorklet.addModule(workerUrl)
-    let microphone = this.audio.context.createMediaStreamSource(this.audio_stream)
-    const node = new AudioWorkletNode(this.audio.context, 'volume_meter')
 
-    node.port.onmessage = event => {
-      let _volume = 0
-      let _rms = 0
-      let _dB = 0
-
-      log.trace('[devices] mic level: ', event.data)
-
-      if (event.data.volume) {
-        _volume = event.data.volume
-        _rms = event.data.rms
-        _dB = event.data.dB
-
-        if(typeof this.micLevel === "function")
-          this.micLevel(_volume)
+    this.audio.context.onstatechange = () => {
+      log.debug("[devices] AudioContext state:", this.audio.context.state, "micMuted:", this.micMuted)
+      if (this.audio.context.state === 'suspended' && !this.micMuted) {
+        // Browser auto-suspended the context (e.g. during device change on macOS).
+        // Resume it since the user has not intentionally muted.
+        log.debug("[devices] AudioContext unexpectedly suspended — resuming")
+        this.audio.context.resume()
       }
     }
 
-    microphone.connect(node)
+    await this.audio.context.audioWorklet.addModule(workerUrl)
+    this.micNode = new AudioWorkletNode(this.audio.context, 'volume_meter')
+
+    this.micNode.port.onmessage = event => {
+      if (event.data.volume) {
+        log.trace('[devices] mic level: ', event.data.volume)
+        if(typeof this.micLevel === "function")
+          this.micLevel(event.data.volume)
+      }
+    }
+
+    this.micSource = this.audio.context.createMediaStreamSource(this.audio_stream)
+    this.micSource.connect(this.micNode)
   };
 
   setVideoSize = (setting) => {
@@ -222,11 +227,18 @@ class LocalDevices {
           this.audio.stream = stream;
           this.audio.device = device;
           this.audio_stream = stream.clone()
-          if (this.audio.context) {
-            this.audio.context.close();
-            this.initMicLevel()
-            if(cam_mute) {
+          if (this.audio.context && this.micNode) {
+            // Reuse the existing AudioContext — just reconnect the source to the new stream.
+            // Closing and recreating the context would cause it to start suspended
+            // when triggered without a user gesture (e.g. ondevicechange).
+            if (this.micSource) this.micSource.disconnect()
+            this.micSource = this.audio.context.createMediaStreamSource(this.audio_stream)
+            this.micSource.connect(this.micNode)
+            this.micMuted = !!cam_mute
+            if (cam_mute) {
               this.audio.context.suspend()
+            } else {
+              this.audio.context.resume()
             }
           }
         }
