@@ -48,7 +48,10 @@ jobs:
           ssh-keyscan -H ${{ secrets[format('DEPLOY_HOST_{0}', github.event.inputs.environment)] }} >> ~/.ssh/known_hosts
           
           TARGET_PATH="/usr/share/angie/html/galaxy/${{ github.event.inputs.environment }}/user"
-          
+            # Ensure deploy user owns the target directory
+          ssh -i ~/.ssh/deploy_key ${{ secrets.DEPLOY_USER }}@${{ secrets[format('DEPLOY_HOST_{0}', github.event.inputs.environment)] }} \
+            "sudo chown -R ${{ secrets.DEPLOY_USER }}:${{ secrets.DEPLOY_USER }} /usr/share/angie/html/galaxy/ 2>/dev/null || true"
+
           # Backup existing files
           ssh -i ~/.ssh/deploy_key ${{ secrets.DEPLOY_USER }}@${{ secrets[format('DEPLOY_HOST_{0}', github.event.inputs.environment)] }} \
             "rm -rf $TARGET_PATH.backup && cp -r $TARGET_PATH $TARGET_PATH.backup"
