@@ -1,5 +1,6 @@
 import React, {Component, Fragment} from "react";
 import classNames from "classnames";
+import {CircularProgress} from "@mui/material";
 import {Dropdown, Grid, Header, Icon, Image, Label, Radio} from "semantic-ui-react";
 import NewWindow from "@hinaser/react-new-window";
 import {audiog_options2, NO_VIDEO_OPTION_VALUE, NOTRL_STREAM_ID} from "../../shared/consts";
@@ -19,6 +20,7 @@ class VirtualStreaming extends Component {
     cssFixInterval: null,
     talking: false,
     showControls: true,
+    reconnecting: false,
   };
 
   hideControlsTimer = null;
@@ -94,6 +96,8 @@ class VirtualStreaming extends Component {
 
   componentDidMount() {
     JanusStream.onTalking((talking) => this.setState({talking}));
+    JanusStream.onReconnecting = () => this.setState({reconnecting: true});
+    JanusStream.onReconnectSuccess = () => this.setState({reconnecting: false});
     //this.setState({ cssFixInterval: setInterval(() => this.cssFix(), 500) });
     
     // Event listeners will be added in setVideoWrapperRef when the ref is set
@@ -123,6 +127,8 @@ class VirtualStreaming extends Component {
   }
 
   componentWillUnmount() {
+    JanusStream.onReconnecting = null;
+    JanusStream.onReconnectSuccess = null;
     if (this.state.cssFixInterval) {
       clearInterval(this.state.cssFixInterval);
     }
@@ -191,7 +197,7 @@ class VirtualStreaming extends Component {
 
   render() {
     const {attached, closeShidur, t, videos, layout, audios, setAudio, isDoubleSize, isAv1} = this.props;
-    const {room, talking, showControls} = this.state;
+    const {room, talking, showControls, reconnecting} = this.state;
 
     if (!room) {
       return <b> :: THIS PAGE CAN NOT BE OPENED DIRECTLY ::</b>;
@@ -214,6 +220,22 @@ class VirtualStreaming extends Component {
         id="video1"
         style={{height: !attached ? "100%" : null, width: !attached ? "100%" : null}}
       >
+        {reconnecting && (
+          <div style={{
+            position: "absolute", top: 0, left: 0, width: "100%", height: "100%",
+            background: "rgba(0,0,0,0.78)", zIndex: 2,
+            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+            gap: "10px", color: "#fff", textAlign: "center", padding: "8px",
+          }}>
+            <CircularProgress size={28} style={{color: "#ffb300"}} />
+            <span style={{fontWeight: 700, fontSize: "1.5em", lineHeight: 1.3}}>
+              {t("oldClient.reconnectingTitle")}
+            </span>
+            <span style={{fontSize: "1.2em", opacity: 0.85, lineHeight: 1.3}}>
+              {t("oldClient.reconnectingHint")}
+            </span>
+          </div>
+        )}
         <div className="video__overlay">
           <div className={classNames("activities", {
             "on_full_browser": isOnFullScreen || !attached,
