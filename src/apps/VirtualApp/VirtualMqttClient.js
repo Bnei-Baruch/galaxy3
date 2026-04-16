@@ -1174,10 +1174,10 @@ class VirtualMqttClient extends Component {
             gap: "10px", color: "#fff", textAlign: "center", padding: "8px",
           }}>
             <CircularProgress size={28} style={{color: "#ffb300"}} />
-            <span style={{fontWeight: 700, fontSize: "0.85em", lineHeight: 1.3}}>
+            <span style={{fontWeight: 700, fontSize: "1.5em", lineHeight: 1.3}}>
               {t("oldClient.reconnectingTitle")}
             </span>
-            <span style={{fontSize: "0.72em", opacity: 0.85, lineHeight: 1.3}}>
+            <span style={{fontSize: "1.2em", opacity: 0.85, lineHeight: 1.3}}>
               {t("oldClient.reconnectingHint")}
             </span>
           </div>
