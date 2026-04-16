@@ -526,14 +526,12 @@ class VirtualMqttClient extends Component {
     const {t} = this.props;
 
     devices.init((media, prevAudioDevice) => {
+      this.setState({media});
       setTimeout(() => {
         if (media.audio.device) {
           if (media.audio.device !== prevAudioDevice) {
             // Active device was removed and replaced — re-acquire stream
             this.setAudioDevice(media.audio.device);
-          } else {
-            // Device list changed but active device is the same — just refresh UI
-            this.setState({media});
           }
         } else {
           log.warn("[client] No left audio devices");

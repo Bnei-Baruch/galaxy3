@@ -20,6 +20,11 @@ class LocalDevices {
 
     this.audio_stream = null
     this.micLevel = null
+    // Tracks intentional suspension (user muted / cam off) so onstatechange
+    // can distinguish it from unexpected browser-triggered suspension.
+    this.micMuted = false
+    // groupId of the OS default audio device — used to detect when the system default changes
+    this._audioDefaultGroupId = null
   }
 
   init = async (onChange) => {
@@ -77,12 +82,17 @@ class LocalDevices {
       this.audio.devices = devices.filter((a) => !!a.deviceId && a.kind === "audioinput");
       this.video.devices = devices.filter((v) => !!v.deviceId && v.kind === "videoinput");
       this.audio.stream = this.video.stream;
+      this._audioDefaultGroupId = devices.find(d => d.kind === "audioinput" && d.deviceId === "default")?.groupId || null;
     }
 
     if (this.audio.stream) {
       this.audio_stream = this.audio.stream.clone()
       await this.initMicLevel()
-      this.audio.device = this.audio.stream.getAudioTracks()[0].getSettings().deviceId;
+      // Preserve "default" if that's what was requested — getSettings() always returns
+      // the physical device ID and would overwrite the user's explicit "default" choice.
+      if (this.audio.device !== "default") {
+        this.audio.device = this.audio.stream.getAudioTracks()[0].getSettings().deviceId;
+      }
     } else {
       this.audio.device = "";
     }
@@ -93,26 +103,64 @@ class LocalDevices {
       this.video.device = "";
     }
 
-    // navigator.mediaDevices.ondevicechange = async(e) => {
-    //   if(e.timeStamp - ts < 1000) return
-    //   ts = e.timeStamp
-    //   devices = await navigator.mediaDevices.enumerateDevices();
-    //   log.debug("[devices] devices list refreshed: ", devices);
-    //   this.audio.devices = devices.filter((a) => !!a.deviceId && a.kind === "audioinput");
-    //   this.video.devices = devices.filter((v) => !!v.deviceId && v.kind === "videoinput");
-    //   // Refresh audio devices list
-    //   let storage_audio = localStorage.getItem("audio_device");
-    //   let isSavedAudio = this.audio.devices.find(d => d.deviceId === storage_audio)
-    //   let default_audio = this.audio.devices.length > 0 ? this.audio.devices[0].deviceId : null;
-    //   this.audio.device = isSavedAudio ? storage_audio : default_audio;
-    //   // Refresh video devices list
-    //   let storage_video = localStorage.getItem("video_device");
-    //   let isSavedVideo = this.video.devices.find(d => d.deviceId === storage_video)
-    //   let default_video = this.video.devices.length > 0 ? this.video.devices[0].deviceId : null;
-    //   this.video.device = isSavedVideo ? storage_video : default_video;
-    //
-    //   if(typeof onChange === "function") onChange({video: this.video, audio: this.audio})
-    // }
+    navigator.mediaDevices.ondevicechange = async (e) => {
+
+      //Ignore first event
+      if (e.timeStamp - ts < 1000) return;
+      ts = e.timeStamp;
+
+      // Devices list not ready on first event
+      setTimeout(async() => {
+        devices = await navigator.mediaDevices.enumerateDevices();
+        log.debug("[devices] devices list refreshed: ", devices);
+
+        const prevAudioCount = this.audio.devices.length;
+        this.audio.devices = devices.filter((a) => !!a.deviceId && a.kind === "audioinput");
+        this.video.devices = devices.filter((v) => !!v.deviceId && v.kind === "videoinput");
+        const audioDeviceAdded = this.audio.devices.length > prevAudioCount;
+
+        // Snapshot device IDs before any mutation so the callback can compare old vs new
+        let prevAudioDevice = this.audio.device;
+        const prevVideoDevice = this.video.device;
+
+        const newDefaultGroupId = devices.find(d => d.kind === "audioinput" && d.deviceId === "default")?.groupId || null;
+        const defaultChanged = !!(newDefaultGroupId && this._audioDefaultGroupId && newDefaultGroupId !== this._audioDefaultGroupId);
+
+        // If the active audio device was unplugged, pick the best available replacement
+        const activeAudioExists = this.audio.devices.find(d => d.deviceId === this.audio.device);
+        if (!activeAudioExists) {
+          const saved_audio = localStorage.getItem("audio_device");
+          const isSavedAudio = this.audio.devices.find(d => d.deviceId === saved_audio);
+          this.audio.device = isSavedAudio ? saved_audio : (this.audio.devices[0]?.deviceId || null);
+        } else if (defaultChanged) {
+          if (this.audio.device === "default") {
+            // User is on the virtual "default" — keep it, just re-acquire stream for new default.
+            prevAudioDevice = null;
+          } else if (!audioDeviceAdded) {
+            // No new device added → off-ear / mode change (not a fresh connection).
+            // If the user was on the device that was the old default, follow the new default.
+            const oldDefaultDevice = this.audio.devices.find(d => d.groupId === this._audioDefaultGroupId && d.deviceId !== "default");
+            if (oldDefaultDevice?.deviceId === this.audio.device) {
+              const newDefaultDevice = this.audio.devices.find(d => d.groupId === newDefaultGroupId && d.deviceId !== "default");
+              if (newDefaultDevice) this.audio.device = newDefaultDevice.deviceId;
+            }
+          }
+        }
+
+        this._audioDefaultGroupId = newDefaultGroupId;
+
+        // If the active video device was unplugged, pick the best available replacement
+        const activeVideoExists = this.video.devices.find(d => d.deviceId === this.video.device);
+        if (!activeVideoExists) {
+          const saved_video = localStorage.getItem("video_device");
+          const isSavedVideo = this.video.devices.find(d => d.deviceId === saved_video);
+          this.video.device = isSavedVideo ? saved_video : (this.video.devices[0]?.deviceId || null);
+        }
+
+        log.debug("[devices] ondevicechange: audio", prevAudioDevice, "->", this.audio.device, "| video", prevVideoDevice, "->", this.video.device);
+        if (typeof onChange === "function") onChange({video: {...this.video}, audio: {...this.audio}}, prevAudioDevice, prevVideoDevice);
+      }, 500)
+    };
 
     log.debug("[devices] init: ", this)
     return {video: this.video, audio: this.audio};
@@ -137,28 +185,30 @@ class LocalDevices {
 
     this.audio.context = new AudioContext()
     log.debug("[devices] AudioContext: ", this.audio.context)
-    await this.audio.context.audioWorklet.addModule(workerUrl)
-    let microphone = this.audio.context.createMediaStreamSource(this.audio_stream)
-    const node = new AudioWorkletNode(this.audio.context, 'volume_meter')
 
-    node.port.onmessage = event => {
-      let _volume = 0
-      let _rms = 0
-      let _dB = 0
-
-      log.trace('[devices] mic level: ', event.data)
-
-      if (event.data.volume) {
-        _volume = event.data.volume
-        _rms = event.data.rms
-        _dB = event.data.dB
-
-        if(typeof this.micLevel === "function")
-          this.micLevel(_volume)
+    this.audio.context.onstatechange = () => {
+      log.debug("[devices] AudioContext state:", this.audio.context.state, "micMuted:", this.micMuted)
+      if (this.audio.context.state === 'suspended' && !this.micMuted) {
+        // Browser auto-suspended the context (e.g. during device change on macOS).
+        // Resume it since the user has not intentionally muted.
+        log.debug("[devices] AudioContext unexpectedly suspended — resuming")
+        this.audio.context.resume()
       }
     }
 
-    microphone.connect(node)
+    await this.audio.context.audioWorklet.addModule(workerUrl)
+    this.micNode = new AudioWorkletNode(this.audio.context, 'volume_meter')
+
+    this.micNode.port.onmessage = event => {
+      if (event.data.volume) {
+        log.trace('[devices] mic level: ', event.data.volume)
+        if(typeof this.micLevel === "function")
+          this.micLevel(event.data.volume)
+      }
+    }
+
+    this.micSource = this.audio.context.createMediaStreamSource(this.audio_stream)
+    this.micSource.connect(this.micNode)
   };
 
   setVideoSize = (setting) => {
@@ -210,11 +260,18 @@ class LocalDevices {
           this.audio.stream = stream;
           this.audio.device = device;
           this.audio_stream = stream.clone()
-          if (this.audio.context) {
-            this.audio.context.close();
-            this.initMicLevel()
-            if(cam_mute) {
+          if (this.audio.context && this.micNode) {
+            // Reuse the existing AudioContext — just reconnect the source to the new stream.
+            // Closing and recreating the context would cause it to start suspended
+            // when triggered without a user gesture (e.g. ondevicechange).
+            if (this.micSource) this.micSource.disconnect()
+            this.micSource = this.audio.context.createMediaStreamSource(this.audio_stream)
+            this.micSource.connect(this.micNode)
+            this.micMuted = !!cam_mute
+            if (cam_mute) {
               this.audio.context.suspend()
+            } else {
+              this.audio.context.resume()
             }
           }
         }
