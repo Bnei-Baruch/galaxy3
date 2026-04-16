@@ -23,6 +23,8 @@ class LocalDevices {
     // Tracks intentional suspension (user muted / cam off) so onstatechange
     // can distinguish it from unexpected browser-triggered suspension.
     this.micMuted = false
+    // groupId of the OS default audio device — used to detect when the system default changes
+    this._audioDefaultGroupId = null
   }
 
   init = async (onChange) => {
@@ -80,12 +82,17 @@ class LocalDevices {
       this.audio.devices = devices.filter((a) => !!a.deviceId && a.kind === "audioinput");
       this.video.devices = devices.filter((v) => !!v.deviceId && v.kind === "videoinput");
       this.audio.stream = this.video.stream;
+      this._audioDefaultGroupId = devices.find(d => d.kind === "audioinput" && d.deviceId === "default")?.groupId || null;
     }
 
     if (this.audio.stream) {
       this.audio_stream = this.audio.stream.clone()
       await this.initMicLevel()
-      this.audio.device = this.audio.stream.getAudioTracks()[0].getSettings().deviceId;
+      // Preserve "default" if that's what was requested — getSettings() always returns
+      // the physical device ID and would overwrite the user's explicit "default" choice.
+      if (this.audio.device !== "default") {
+        this.audio.device = this.audio.stream.getAudioTracks()[0].getSettings().deviceId;
+      }
     } else {
       this.audio.device = "";
     }
@@ -110,8 +117,10 @@ class LocalDevices {
         this.video.devices = devices.filter((v) => !!v.deviceId && v.kind === "videoinput");
 
         // Snapshot device IDs before any mutation so the callback can compare old vs new
-        const prevAudioDevice = this.audio.device;
+        let prevAudioDevice = this.audio.device;
         const prevVideoDevice = this.video.device;
+
+        const newDefaultGroupId = devices.find(d => d.kind === "audioinput" && d.deviceId === "default")?.groupId || null;
 
         // If the active audio device was unplugged, pick the best available replacement
         const activeAudioExists = this.audio.devices.find(d => d.deviceId === this.audio.device);
@@ -119,7 +128,14 @@ class LocalDevices {
           const saved_audio = localStorage.getItem("audio_device");
           const isSavedAudio = this.audio.devices.find(d => d.deviceId === saved_audio);
           this.audio.device = isSavedAudio ? saved_audio : (this.audio.devices[0]?.deviceId || null);
+        } else if (this.audio.device === "default" && newDefaultGroupId && this._audioDefaultGroupId && newDefaultGroupId !== this._audioDefaultGroupId) {
+          // User is on the virtual "default" and the OS default changed (e.g. AirPods taken off-ear).
+          // Keep "default" as the selected device but spoof prevAudioDevice so onChange
+          // triggers a stream re-acquisition pointed at the new OS default.
+          prevAudioDevice = null;
         }
+
+        this._audioDefaultGroupId = newDefaultGroupId;
 
         // If the active video device was unplugged, pick the best available replacement
         const activeVideoExists = this.video.devices.find(d => d.deviceId === this.video.device);
