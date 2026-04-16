@@ -44,8 +44,15 @@ jobs:
         env:
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
-          DEPLOY_HOST: ${{ secrets[format('DEPLOY_HOST_{0}', github.event.inputs.environment)] }}
+          DEPLOY_HOST_DEV: ${{ secrets.DEPLOY_HOST_DEV }}
+          DEPLOY_HOST_PROD: ${{ secrets.DEPLOY_HOST_PROD }}
         run: |
+          if [ "${{ github.event.inputs.environment }}" = "prod" ]; then
+            DEPLOY_HOST="$DEPLOY_HOST_PROD"
+          else
+            DEPLOY_HOST="$DEPLOY_HOST_DEV"
+          fi
+
           mkdir -p ~/.ssh
           echo "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
