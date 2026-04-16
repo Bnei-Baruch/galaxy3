@@ -33,6 +33,8 @@ class JanusStream {
     this.reconnectAttempts = 0;
     this.onReconnectExhausted = null;
     this.quadCallback = null;
+    this.onReconnecting = null;
+    this.onReconnectSuccess = null;
 
     this.videoElement = null;
     this.audioElement = new Audio();
@@ -96,6 +98,9 @@ class JanusStream {
   _handleStreamReconnect = (streamName, reinitFn) => {
     this.reconnectAttempts++;
     log.warn("[shidur] " + streamName + " failed, reconnect attempt: " + this.reconnectAttempts + "/30");
+    if (this.reconnectAttempts === 1 && typeof this.onReconnecting === "function") {
+      this.onReconnecting();
+    }
     if (this.reconnectAttempts >= 30) {
       log.error("[shidur] broadcast reconnect exhausted after 30 attempts");
       this.reconnectAttempts = 0;
@@ -114,6 +119,9 @@ class JanusStream {
       if (status !== "online") {
         this.reconnectAttempts++;
         log.warn("[shidur] janus status: " + status + ", reconnect attempt: " + this.reconnectAttempts + "/30");
+        if (this.reconnectAttempts === 1 && typeof this.onReconnecting === "function") {
+          this.onReconnecting();
+        }
         if (this.janus) this.janus.destroy();
         this.janus = null;
         const hadQuad = !!this.videoQuadStream;
@@ -149,6 +157,9 @@ class JanusStream {
     janus.init().then((data) => {
       log.debug("[shidur] init: ", data);
       this.janus = janus;
+      if (this.reconnectAttempts > 0 && typeof this.onReconnectSuccess === "function") {
+        this.onReconnectSuccess();
+      }
       this.reconnectAttempts = 0;
       if (typeof cb === "function") cb();
     });
@@ -165,6 +176,9 @@ class JanusStream {
       this.videoJanusStream.watch(this.videos).then((stream) => {
         this.videoMediaStream = stream;
         this.attachVideoStream_(this.videoElement, /* reattach= */ false);
+        if (this.reconnectAttempts > 0 && typeof this.onReconnectSuccess === "function") {
+          this.onReconnectSuccess();
+        }
       });
     });
   };
