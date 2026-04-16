@@ -113,14 +113,18 @@ class LocalDevices {
       setTimeout(async() => {
         devices = await navigator.mediaDevices.enumerateDevices();
         log.debug("[devices] devices list refreshed: ", devices);
+
+        const prevAudioCount = this.audio.devices.length;
         this.audio.devices = devices.filter((a) => !!a.deviceId && a.kind === "audioinput");
         this.video.devices = devices.filter((v) => !!v.deviceId && v.kind === "videoinput");
+        const audioDeviceAdded = this.audio.devices.length > prevAudioCount;
 
         // Snapshot device IDs before any mutation so the callback can compare old vs new
         let prevAudioDevice = this.audio.device;
         const prevVideoDevice = this.video.device;
 
         const newDefaultGroupId = devices.find(d => d.kind === "audioinput" && d.deviceId === "default")?.groupId || null;
+        const defaultChanged = !!(newDefaultGroupId && this._audioDefaultGroupId && newDefaultGroupId !== this._audioDefaultGroupId);
 
         // If the active audio device was unplugged, pick the best available replacement
         const activeAudioExists = this.audio.devices.find(d => d.deviceId === this.audio.device);
@@ -128,11 +132,19 @@ class LocalDevices {
           const saved_audio = localStorage.getItem("audio_device");
           const isSavedAudio = this.audio.devices.find(d => d.deviceId === saved_audio);
           this.audio.device = isSavedAudio ? saved_audio : (this.audio.devices[0]?.deviceId || null);
-        } else if (this.audio.device === "default" && newDefaultGroupId && this._audioDefaultGroupId && newDefaultGroupId !== this._audioDefaultGroupId) {
-          // User is on the virtual "default" and the OS default changed (e.g. AirPods taken off-ear).
-          // Keep "default" as the selected device but spoof prevAudioDevice so onChange
-          // triggers a stream re-acquisition pointed at the new OS default.
-          prevAudioDevice = null;
+        } else if (defaultChanged) {
+          if (this.audio.device === "default") {
+            // User is on the virtual "default" — keep it, just re-acquire stream for new default.
+            prevAudioDevice = null;
+          } else if (!audioDeviceAdded) {
+            // No new device added → off-ear / mode change (not a fresh connection).
+            // If the user was on the device that was the old default, follow the new default.
+            const oldDefaultDevice = this.audio.devices.find(d => d.groupId === this._audioDefaultGroupId && d.deviceId !== "default");
+            if (oldDefaultDevice?.deviceId === this.audio.device) {
+              const newDefaultDevice = this.audio.devices.find(d => d.groupId === newDefaultGroupId && d.deviceId !== "default");
+              if (newDefaultDevice) this.audio.device = newDefaultDevice.deviceId;
+            }
+          }
         }
 
         this._audioDefaultGroupId = newDefaultGroupId;
