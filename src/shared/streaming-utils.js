@@ -32,6 +32,7 @@ class JanusStream {
     this.config = null;
     this.reconnectAttempts = 0;
     this.onReconnectExhausted = null;
+    this.quadCallback = null;
 
     this.videoElement = null;
     this.audioElement = new Audio();
@@ -115,6 +116,14 @@ class JanusStream {
         log.warn("[shidur] janus status: " + status + ", reconnect attempt: " + this.reconnectAttempts + "/30");
         if (this.janus) this.janus.destroy();
         this.janus = null;
+        const hadQuad = !!this.videoQuadStream;
+        this.videoJanusStream = null;
+        this.videoMediaStream = null;
+        this.audioJanusStream = null;
+        this.audioMediaStream = null;
+        this.trlAudioJanusStream = null;
+        this.trlAudioMediaStream = null;
+        this.videoQuadStream = null;
         if (this.reconnectAttempts >= 30) {
           log.error("[shidur] broadcast reconnect exhausted after 30 attempts");
           this.reconnectAttempts = 0;
@@ -123,7 +132,15 @@ class JanusStream {
           }
         } else {
           setTimeout(() => {
-            this.initStrServer();
+            this.initStrServer(null, () => {
+              this.initVideoStream();
+              this.initAudioStream();
+              let id = trllang[localStorage.getItem("vrt_langtext")] || 401;
+              this.initTranslationStream(id);
+              if (hadQuad && this.quadCallback) {
+                this.initQuadStream(this.quadCallback);
+              }
+            });
           }, 7000);
         }
       }
@@ -181,9 +198,10 @@ class JanusStream {
   };
 
   initQuadStream = (callback) => {
+    if (callback) this.quadCallback = callback;
     if (!this.janus) {
       setTimeout(() => {
-        this.initQuadStream(callback);
+        this.initQuadStream(this.quadCallback);
       }, 1000);
       return;
     }
