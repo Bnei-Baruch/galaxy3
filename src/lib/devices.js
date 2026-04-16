@@ -97,36 +97,41 @@ class LocalDevices {
     }
 
     navigator.mediaDevices.ondevicechange = async (e) => {
+
+      //Ignore first event
       if (e.timeStamp - ts < 1000) return;
       ts = e.timeStamp;
 
-      devices = await navigator.mediaDevices.enumerateDevices();
-      log.debug("[devices] devices list refreshed: ", devices);
-      this.audio.devices = devices.filter((a) => !!a.deviceId && a.kind === "audioinput");
-      this.video.devices = devices.filter((v) => !!v.deviceId && v.kind === "videoinput");
+      // Devices list not ready on first event
+      setTimeout(async() => {
+        devices = await navigator.mediaDevices.enumerateDevices();
+        log.debug("[devices] devices list refreshed: ", devices);
+        this.audio.devices = devices.filter((a) => !!a.deviceId && a.kind === "audioinput");
+        this.video.devices = devices.filter((v) => !!v.deviceId && v.kind === "videoinput");
 
-      // Snapshot device IDs before any mutation so the callback can compare old vs new
-      const prevAudioDevice = this.audio.device;
-      const prevVideoDevice = this.video.device;
+        // Snapshot device IDs before any mutation so the callback can compare old vs new
+        const prevAudioDevice = this.audio.device;
+        const prevVideoDevice = this.video.device;
 
-      // If the active audio device was unplugged, pick the best available replacement
-      const activeAudioExists = this.audio.devices.find(d => d.deviceId === this.audio.device);
-      if (!activeAudioExists) {
-        const saved_audio = localStorage.getItem("audio_device");
-        const isSavedAudio = this.audio.devices.find(d => d.deviceId === saved_audio);
-        this.audio.device = isSavedAudio ? saved_audio : (this.audio.devices[0]?.deviceId || null);
-      }
+        // If the active audio device was unplugged, pick the best available replacement
+        const activeAudioExists = this.audio.devices.find(d => d.deviceId === this.audio.device);
+        if (!activeAudioExists) {
+          const saved_audio = localStorage.getItem("audio_device");
+          const isSavedAudio = this.audio.devices.find(d => d.deviceId === saved_audio);
+          this.audio.device = isSavedAudio ? saved_audio : (this.audio.devices[0]?.deviceId || null);
+        }
 
-      // If the active video device was unplugged, pick the best available replacement
-      const activeVideoExists = this.video.devices.find(d => d.deviceId === this.video.device);
-      if (!activeVideoExists) {
-        const saved_video = localStorage.getItem("video_device");
-        const isSavedVideo = this.video.devices.find(d => d.deviceId === saved_video);
-        this.video.device = isSavedVideo ? saved_video : (this.video.devices[0]?.deviceId || null);
-      }
+        // If the active video device was unplugged, pick the best available replacement
+        const activeVideoExists = this.video.devices.find(d => d.deviceId === this.video.device);
+        if (!activeVideoExists) {
+          const saved_video = localStorage.getItem("video_device");
+          const isSavedVideo = this.video.devices.find(d => d.deviceId === saved_video);
+          this.video.device = isSavedVideo ? saved_video : (this.video.devices[0]?.deviceId || null);
+        }
 
-      log.debug("[devices] ondevicechange: audio", prevAudioDevice, "->", this.audio.device, "| video", prevVideoDevice, "->", this.video.device);
-      if (typeof onChange === "function") onChange({video: {...this.video}, audio: {...this.audio}}, prevAudioDevice, prevVideoDevice);
+        log.debug("[devices] ondevicechange: audio", prevAudioDevice, "->", this.audio.device, "| video", prevVideoDevice, "->", this.video.device);
+        if (typeof onChange === "function") onChange({video: {...this.video}, audio: {...this.audio}}, prevAudioDevice, prevVideoDevice);
+      }, 500)
     };
 
     log.debug("[devices] init: ", this)
