@@ -195,7 +195,11 @@ class VirtualMqttClient extends Component {
     const {videoroom, localVideoTrack, localAudioTrack, user} = this.state;
     if (videoroom !== prevState.videoroom || localVideoTrack !== prevState.localVideoTrack || localAudioTrack !== prevState.localAudioTrack || JSON.stringify(user) !== JSON.stringify(prevState.user)) {
       monitoringData.setConnection(videoroom, localAudioTrack, localVideoTrack, user, JanusStream);
-      monitoringData.setOnStatus((connectionStatus) => {
+      monitoringData.setOnStatus((connectionStatus, formula) => {
+        const prev = this.state.connectionStatus;
+        if (prev !== connectionStatus) {
+          log.warn(`[connection] status changed: ${prev || "(none)"} -> ${connectionStatus}. ${formula || ""}`);
+        }
         this.setState({connectionStatus});
       });
     }
