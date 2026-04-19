@@ -3,7 +3,6 @@ import {EventEmitter} from "events";
 import log from "loglevel";
 import mqtt from "../shared/mqtt";
 import {STUN_SRV_GXY} from "../shared/env";
-import { captureException } from "../shared/sentry";
 
 export class SubscriberPlugin extends EventEmitter {
   constructor (list = [{urls: STUN_SRV_GXY}]) {
@@ -31,7 +30,6 @@ export class SubscriberPlugin extends EventEmitter {
 
     if (!this.janus) {
       const error = new Error('JanusPlugin is not connected');
-      captureException(error, { message, additionalFields });
       return Promise.reject(error)
     }
     return this.janus.transaction(message, payload, replyType)
@@ -59,7 +57,6 @@ export class SubscriberPlugin extends EventEmitter {
 
       }).catch((error) => {
         log.error('[subscriber] Subscribe to: ', error)
-        captureException(error, { context: 'SubscriberPlugin.sub', subscription });
         reject(error)
       })
     })
@@ -87,7 +84,6 @@ export class SubscriberPlugin extends EventEmitter {
 
       }).catch((error) => {
         log.error('[subscriber] Unsubscribe from: ', error)
-        captureException(error, { context: 'SubscriberPlugin.unsub', streams });
         reject(error)
       })
     })
@@ -113,7 +109,6 @@ export class SubscriberPlugin extends EventEmitter {
 
       }).catch((error) => {
         log.error('[subscriber] join: ', error)
-        captureException(error, { context: 'SubscriberPlugin.join', roomId, subscription });
         reject(error)
       })
     })
@@ -129,7 +124,6 @@ export class SubscriberPlugin extends EventEmitter {
         this.handleJsep(json.jsep)
       }
     }).catch(error => {
-      captureException(error, { context: 'SubscriberPlugin.configure' });
       throw error;
     })
   }
@@ -143,11 +137,9 @@ export class SubscriberPlugin extends EventEmitter {
         log.debug('[subscriber] setLocalDescription', data)
       }).catch(error => {
         log.error(error, answer)
-        captureException(error, { context: 'SubscriberPlugin.handleJsep.setLocalDescription', answer });
       })
       this.start(answer)
     }).catch(error => {
-      captureException(error, { context: 'SubscriberPlugin.handleJsep', jsep });
       throw error;
     })
   }
@@ -162,7 +154,6 @@ export class SubscriberPlugin extends EventEmitter {
         resolve()
       }).catch((error) => {
         log.error('[subscriber] start', error, jsep)
-        captureException(error, { context: 'SubscriberPlugin.start', roomId: this.roomId, jsep });
         reject(error)
       })
     })
@@ -189,7 +180,6 @@ export class SubscriberPlugin extends EventEmitter {
             return this.transaction('trickle', { candidate })
           }
         } catch (error) {
-          captureException(error, { context: 'SubscriberPlugin.initPcEvents.onicecandidate' });
           throw error;
         }
       };
@@ -214,8 +204,6 @@ export class SubscriberPlugin extends EventEmitter {
           }
 
           if(this.iceState === "failed") {
-            const error = new Error('ICE connection failed');
-            captureException(error, { context: 'SubscriberPlugin.initPcEvents.onconnectionstatechange', iceState: this.iceState });
             if (this._iceRecoveryTimeout) {
               clearTimeout(this._iceRecoveryTimeout);
               this._iceRecoveryTimeout = null;
@@ -223,7 +211,6 @@ export class SubscriberPlugin extends EventEmitter {
             this.iceFailed("subscriber")
           }
         } catch (error) {
-          captureException(error, { context: 'SubscriberPlugin.initPcEvents.onconnectionstatechange', iceState: this.iceState });
           throw error;
         }
       };
@@ -245,7 +232,6 @@ export class SubscriberPlugin extends EventEmitter {
             log.debug("[subscriber] onended event: ", ev)
           }
         } catch (error) {
-          captureException(error, { context: 'SubscriberPlugin.initPcEvents.ontrack' });
           throw error;
         }
       };
@@ -282,8 +268,6 @@ export class SubscriberPlugin extends EventEmitter {
   }
 
   error (cause) {
-    const error = new Error('[subscriber] Plugin error');
-    captureException(error, { cause });
   }
 
   onmessage (data, json) {
@@ -299,7 +283,6 @@ export class SubscriberPlugin extends EventEmitter {
         this.handleJsep(json.jsep)
       }
     } catch (error) {
-      captureException(error, { context: 'SubscriberPlugin.onmessage', data, json });
       throw error;
     }
   }

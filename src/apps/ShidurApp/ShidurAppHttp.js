@@ -8,7 +8,7 @@ import ToranToolsHttp from "./ToranToolsHttp";
 import QuadPanelHttp from "./QuadPanelHttp";
 import "./ShidurApp.css";
 import {LOST_CONNECTION, short_regions, region_filter} from "../../shared/consts";
-import {captureException, updateSentryUser} from "../../shared/sentry";
+import {updateSentryUser} from "../../shared/sentry";
 import {getDateString} from "../../shared/tools";
 import mqtt from "../../shared/mqtt";
 
@@ -103,7 +103,6 @@ class ShidurAppHttp extends Component {
       .catch((err) => {
         console.error("[Shidur] error initializing app", err);
         this.setState({appInitError: err});
-        captureException(err, {source: "ShidurAppHttp"});
       });
   };
 
@@ -124,7 +123,6 @@ class ShidurAppHttp extends Component {
 
     const gatewayToInitPromise = (gateway) =>
       this.initGateway(user, gateway).catch((error) => {
-        captureException(error, {source: "ShidurAppHttp", gateway: gateway.name});
         throw error;
       });
 
@@ -259,7 +257,6 @@ class ShidurAppHttp extends Component {
       })
       .catch((err) => {
         console.error("[Shidur] error fetching active rooms", err);
-        captureException(err, {source: "Shidur"});
       });
 
     api
@@ -269,7 +266,6 @@ class ShidurAppHttp extends Component {
       })
       .catch((err) => {
         console.error("[Shidur] error fetching rooms statistics", err);
-        captureException(err, {source: "Shidur"});
       });
   };
 

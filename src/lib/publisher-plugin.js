@@ -3,7 +3,6 @@ import {EventEmitter} from "events";
 import log from "loglevel";
 import mqtt from "../shared/mqtt";
 import {STUN_SRV_GXY} from "../shared/env";
-import { captureException } from "../shared/sentry";
 
 export class PublisherPlugin extends EventEmitter {
   constructor (list = [{urls: STUN_SRV_GXY}]) {
@@ -32,7 +31,6 @@ export class PublisherPlugin extends EventEmitter {
 
     if (!this.janus) {
       const error = new Error('[publisher] JanusPlugin is not connected');
-      captureException(error, { message, additionalFields });
       return Promise.reject(error)
     }
     return this.janus.transaction(message, payload, replyType)
@@ -51,7 +49,6 @@ export class PublisherPlugin extends EventEmitter {
 
       }).catch((error) => {
         log.error('[publisher] error join room', error)
-        captureException(error, { context: 'PublisherPlugin.join', roomId, user });
         reject(error)
       })
     })
@@ -70,7 +67,6 @@ export class PublisherPlugin extends EventEmitter {
 
         }).catch((error) => {
           log.debug('[publisher] error leave room', error)
-          captureException(error, { context: 'PublisherPlugin.leave', roomId: this.roomId });
           reject(error)
         })
       })
@@ -123,15 +119,12 @@ export class PublisherPlugin extends EventEmitter {
             resolve(data)
             this.pc.setRemoteDescription(jsep)
           }).catch(error => {
-            captureException(error, { context: 'PublisherPlugin.publish.configure', video: !!video, audio: !!audio });
             reject(error)
           })
         }).catch(error => {
-          captureException(error, { context: 'PublisherPlugin.publish.createOffer' });
           reject(error)
         })
       } catch (error) {
-        captureException(error, { context: 'PublisherPlugin.publish', video: !!video, audio: !!audio });
         reject(error)
       }
     })
@@ -161,7 +154,6 @@ export class PublisherPlugin extends EventEmitter {
       if(!video) videoTransceiver.sender.replaceTrack(stream.getVideoTracks()[0])
       if(stream) this.configure()
     } catch (error) {
-      captureException(error, { context: 'PublisherPlugin.mute', video: !!video, hasStream: !!stream });
       throw error;
     }
   }
@@ -178,7 +170,6 @@ export class PublisherPlugin extends EventEmitter {
 
       }).catch((error) => {
         log.debug('[publisher] error set bitrate', error)
-        captureException(error, { context: 'PublisherPlugin.setBitrate', bitrate });
         reject(error)
       })
     })
@@ -206,7 +197,6 @@ export class PublisherPlugin extends EventEmitter {
       audioTransceiver.sender.replaceTrack(stream.getAudioTracks()[0])
       this.configure()
     } catch (error) {
-      captureException(error, { context: 'PublisherPlugin.audio', hasStream: !!stream });
       throw error;
     }
   }
@@ -215,7 +205,6 @@ export class PublisherPlugin extends EventEmitter {
     this.pc.createOffer().then((offer) => {
       this.pc.setLocalDescription(offer).catch(error => {
         log.error("[publisher] setLocalDescription: ", error)
-        captureException(error, { context: 'PublisherPlugin.configure.setLocalDescription', restart });
       })
       const body = {request: 'configure', restart}
       return this.transaction('message', {body, jsep: offer}, 'event').then((param) => {
@@ -224,14 +213,11 @@ export class PublisherPlugin extends EventEmitter {
         log.info('[publisher] Configure respond: ', param)
         this.pc.setRemoteDescription(jsep).then(e => log.info(e)).catch(error => {
           log.error(error)
-          captureException(error, { context: 'PublisherPlugin.configure.setRemoteDescription', restart });
         })
       }).catch(error => {
-        captureException(error, { context: 'PublisherPlugin.configure', restart });
         throw error;
       })
     }).catch(error => {
-      captureException(error, { context: 'PublisherPlugin.configure.createOffer', restart });
       throw error;
     })
   }
@@ -254,7 +240,6 @@ export class PublisherPlugin extends EventEmitter {
           return this.transaction('trickle', { candidate })
         }
       } catch (error) {
-        captureException(error, { context: 'PublisherPlugin.initPcEvents.onicecandidate' });
         throw error;
       }
     };
@@ -284,8 +269,6 @@ export class PublisherPlugin extends EventEmitter {
         }
 
         if(this.iceState === "failed") {
-          const error = new Error('ICE connection failed');
-          captureException(error, { context: 'PublisherPlugin.initPcEvents.onconnectionstatechange', iceState: this.iceState });
           if (this._iceRecoveryTimeout) {
             clearTimeout(this._iceRecoveryTimeout);
             this._iceRecoveryTimeout = null;
@@ -293,7 +276,6 @@ export class PublisherPlugin extends EventEmitter {
           this.iceFailed("publisher")
         }
       } catch (error) {
-        captureException(error, { context: 'PublisherPlugin.initPcEvents.onconnectionstatechange', iceState: this.iceState });
         throw error;
       }
     };
@@ -330,8 +312,6 @@ export class PublisherPlugin extends EventEmitter {
   }
 
   error (cause) {
-    const error = new Error('[publisher] Plugin error');
-    captureException(error, { cause });
   }
 
   onmessage(data) {

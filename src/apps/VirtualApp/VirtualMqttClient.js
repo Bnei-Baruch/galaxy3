@@ -39,7 +39,7 @@ import VirtualStreaming from "./VirtualStreaming";
 import JanusStream from "../../shared/streaming-utils";
 import {kc} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
-import {captureMessage, sentryDebugAction, setSentryGeo, setSentryTag, updateSentryUser} from "../../shared/sentry";
+import {captureException, captureMessage, sentryDebugAction, setSentryGeo, setSentryTag, updateSentryUser} from "../../shared/sentry";
 import {isFullScreen, toggleFullScreen} from "./FullScreenHelper";
 import {AppBar, Badge, Box, Button as ButtonMD, ButtonGroup, CircularProgress, Grid, IconButton, useTheme} from "@mui/material";
 import {ChevronLeft, ChevronRight, PlayCircleOutline} from "@mui/icons-material";
@@ -438,6 +438,7 @@ class VirtualMqttClient extends Component {
   reinitClient = () => {
     this.conferenceReconnectAttempts++;
     log.warn("[client] conference reconnect attempt: " + this.conferenceReconnectAttempts + "/30");
+    captureException(new Error("conference reconnect"), {attempt: this.conferenceReconnectAttempts});
     this.setState({reconnecting: true});
     if(!mqtt.mq?.connected) {
       log.error("[client] mqtt is not connected, waiting 5 sec");
@@ -463,7 +464,7 @@ class VirtualMqttClient extends Component {
     iceFailed = (data) => {
       const {exit_room} = this.state;
       if(!exit_room && (data === "publisher" || data === "subscriber")) {
-        captureMessage("reconnect", {source: data});
+        captureException(new Error("ice failed"), {source: data});
         log.warn("[client] iceFailed for: ", data, " - attempting silent reconnect");
         this.exitRoom(true, () => {
           this.reinitClient();

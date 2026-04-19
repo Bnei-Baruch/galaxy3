@@ -3,7 +3,6 @@ import {EventEmitter} from "events";
 import log from "loglevel";
 import mqtt from "../shared/mqtt";
 import {STUN_SRV_GXY} from "../shared/env";
-import { captureException } from "../shared/sentry";
 
 export class StreamingPlugin extends EventEmitter {
   constructor (list = [{urls: STUN_SRV_GXY}]) {
@@ -30,7 +29,6 @@ export class StreamingPlugin extends EventEmitter {
 
     if (!this.janus) {
       const error = new Error('[streaming] JanusPlugin is not connected');
-      captureException(error, { message, additionalFields });
       return Promise.reject(error)
     }
 
@@ -75,7 +73,6 @@ export class StreamingPlugin extends EventEmitter {
 
       }).catch((error) => {
         log.error('[streaming] StreamingJanusPlugin, cannot watch stream', error)
-        captureException(error, { context: 'StreamingPlugin.watch', id, restart });
         reject(error)
       })
     })
@@ -84,18 +81,15 @@ export class StreamingPlugin extends EventEmitter {
   sdpExchange(jsep) {
     this.pc.setRemoteDescription(jsep).catch(error => {
       log.error('[streaming] SDP Exchange setRemoteDescription', error)
-      captureException(error, { context: 'StreamingPlugin.sdpExchange.setRemoteDescription', jsep });
     });
     this.pc.createAnswer().then((desc) => {
       desc.sdp = desc.sdp.replace(/a=fmtp:111 minptime=10;useinbandfec=1\r\n/g, 'a=fmtp:111 minptime=10;useinbandfec=1;stereo=1;sprop-stereo=1\r\n');
       this.pc.setLocalDescription(desc).catch(error => {
         log.error('[streaming] SDP Exchange setLocalDescription', error)
-        captureException(error, { context: 'StreamingPlugin.sdpExchange.setLocalDescription', desc });
       });
       this.start(desc)
     }, error => {
       log.error('[streaming] SDP Exchange createAnswer', error)
-      captureException(error, { context: 'StreamingPlugin.sdpExchange.createAnswer', jsep });
     });
   }
 
@@ -110,7 +104,6 @@ export class StreamingPlugin extends EventEmitter {
       return { data, json }
     }).catch((error) => {
       log.error('[streaming] StreamingJanusPlugin, cannot start stream', error)
-      captureException(error, { context: 'StreamingPlugin.start', jsep });
       throw error
     })
   }
@@ -120,7 +113,6 @@ export class StreamingPlugin extends EventEmitter {
 
     return this.transaction('message', { body }, 'event').catch((error) => {
       log.error('[streaming] StreamingJanusPlugin, cannot switch stream', error)
-      captureException(error, { context: 'StreamingPlugin.switch', id });
       throw error
     })
   }
@@ -135,10 +127,8 @@ export class StreamingPlugin extends EventEmitter {
           result(res.audioLevel ? res.audioLevel : 0);
         });
       }).catch(error => {
-        captureException(error, { context: 'StreamingPlugin.getVolume.getStats', mid });
       });
     } catch (error) {
-      captureException(error, { context: 'StreamingPlugin.getVolume', mid });
       throw error;
     }
   }
@@ -148,7 +138,6 @@ export class StreamingPlugin extends EventEmitter {
       try {
         return this.transaction('trickle', { candidate: e.candidate })
       } catch (error) {
-        captureException(error, { context: 'StreamingPlugin.initPcEvents.onicecandidate' });
         throw error;
       }
     };
@@ -173,8 +162,6 @@ export class StreamingPlugin extends EventEmitter {
         }
 
         if(this.iceState === "failed") {
-          const error = new Error('ICE connection failed');
-          captureException(error, { context: 'StreamingPlugin.initPcEvents.onconnectionstatechange', iceState: this.iceState });
           if (this._iceRecoveryTimeout) {
             clearTimeout(this._iceRecoveryTimeout);
             this._iceRecoveryTimeout = null;
@@ -182,7 +169,6 @@ export class StreamingPlugin extends EventEmitter {
           this.onStatus(this.iceState)
         }
       } catch (error) {
-        captureException(error, { context: 'StreamingPlugin.initPcEvents.onconnectionstatechange', iceState: this.iceState });
         throw error;
       }
     };
@@ -193,7 +179,6 @@ export class StreamingPlugin extends EventEmitter {
         let stream = new MediaStream([e.track]);
         resolve(stream);
       } catch (error) {
-        captureException(error, { context: 'StreamingPlugin.initPcEvents.ontrack' });
         throw error;
       }
     };
@@ -211,14 +196,11 @@ export class StreamingPlugin extends EventEmitter {
           try {
             this.watch(this.streamId, true);
           } catch (error) {
-            captureException(error, { context: 'StreamingPlugin.iceRestart', count });
             throw error;
           }
           clearInterval(chk);
         } else if (count >= 10) {
           clearInterval(chk);
-          const error = new Error("[streaming] - ICE Restart failed - ");
-          captureException(error, { context: 'StreamingPlugin.iceRestart', count });
           this.onStatus(this.iceState)
         } else {
           log.debug("[streaming] ICE Restart try: " + count)
@@ -233,15 +215,12 @@ export class StreamingPlugin extends EventEmitter {
   }
 
   error (cause) {
-    const error = new Error('[streaming] Plugin error');
-    captureException(error, { cause });
   }
 
   onmessage (data) {
     try {
       log.info('[streaming] onmessage: ', data)
     } catch (error) {
-      captureException(error, { context: 'StreamingPlugin.onmessage', data });
       throw error;
     }
   }
@@ -286,7 +265,6 @@ export class StreamingPlugin extends EventEmitter {
       this.removeAllListeners()
       this.janus = null
     } catch (error) {
-      captureException(error, { context: 'StreamingPlugin.detach' });
       throw error;
     }
   }
