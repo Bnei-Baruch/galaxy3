@@ -1156,6 +1156,21 @@ class VirtualMqttClient extends Component {
     }
   };
 
+  connectionLabel = () => {
+    const {t} = this.props;
+    switch (this.state.connectionStatus) {
+      case LINK_STATE_GOOD:
+        return t("oldClient.connectionGood");
+      case LINK_STATE_MEDIUM:
+        return t("oldClient.connectionMedium");
+      case LINK_STATE_WEAK:
+        return t("oldClient.connectionWeak");
+      case LINK_STATE_INIT:
+      default:
+        return t("oldClient.connectionInit");
+    }
+  };
+
   renderLocalMedia = (width, height, index, isGroup) => {
     const {user, cammuted, question, muted, reconnecting} = this.state;
     const userName = user ? user.username : "";
@@ -1163,7 +1178,7 @@ class VirtualMqttClient extends Component {
 
     return (
       <div className={classNames("video", {"hidden": this.context.hideSelf})} key={index}>
-        {this.renderVideoOverlay(!muted, question, cammuted, userName, isGroup)}
+        {this.renderVideoOverlay(!muted, question, cammuted, userName, isGroup, true)}
 
         {reconnecting && (
           <div style={{
@@ -1215,7 +1230,7 @@ class VirtualMqttClient extends Component {
     );
   };
 
-  renderVideoOverlay = (talking, question, muteCamera, userName, isGroup) => {
+  renderVideoOverlay = (talking, question, muteCamera, userName, isGroup, isLocal = false) => {
     const { hideUserDisplays } = this.state;
 
     return (
@@ -1246,6 +1261,17 @@ class VirtualMqttClient extends Component {
               mouseLeaveDelay={500}
               on="hover"
               trigger={<span className="title-name">{userName}</span>}/>
+          )}
+          {isLocal && (
+            <Popup
+              content={this.connectionLabel()}
+              mouseEnterDelay={200}
+              mouseLeaveDelay={500}
+              on="hover"
+              trigger={
+                <Icon style={{marginLeft: "0.3rem"}} name="signal" size="small" color={this.connectionColor()} />
+              }
+            />
           )}
         </div>
       </div>
