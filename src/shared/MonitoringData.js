@@ -22,6 +22,33 @@ export const LINK_STATE_GOOD = "good";
 export const LINK_STATE_MEDIUM = "medium";
 export const LINK_STATE_WEAK = "weak";
 
+// --- Local connection-quality scorer (publisher-side) ---
+// Absolute thresholds (what the current value looks like).
+const ABS_RTT_MEDIUM_MS = 150;
+const ABS_RTT_WEAK_MS = 300;
+const ABS_JITTER_MEDIUM_MS = 30;
+const ABS_JITTER_WEAK_MS = 50;
+const ABS_LOSS_MEDIUM = 0.01; // 1% packet loss.
+const ABS_LOSS_WEAK = 0.03;   // 3% packet loss.
+
+// Delta thresholds (short window vs long window).
+const DELTA_RTT_MEDIUM_MS = 100;
+const DELTA_RTT_WEAK_MS = 250;
+const DELTA_JITTER_MEDIUM_MS = 15;
+const DELTA_JITTER_WEAK_MS = 40;
+const DELTA_LOSS_MEDIUM = 0.02;
+const DELTA_LOSS_WEAK = 0.05;
+
+// Rolling-window sizes for the local scorer (in ms).
+const QUALITY_SHORT_WINDOW_MS = 10 * ONE_SECOND_IN_MS;
+const QUALITY_LONG_WINDOW_MS = 45 * ONE_SECOND_IN_MS;
+// How long to stay in LINK_STATE_INIT before we start reporting real quality.
+const QUALITY_WARMUP_MS = 15 * ONE_SECOND_IN_MS;
+// Severity tiers used internally.
+const TIER_GOOD = 0;
+const TIER_MEDIUM = 1;
+const TIER_WEAK = 2;
+
 export const Stats = class {
   constructor() {
     this.mean = 0;
@@ -138,6 +165,11 @@ export const MonitoringData = class {
     this.scoreFormula = "";
     this.virtualStreamingJanus = null;
 
+    // Local quality scorer state.
+    this.qualitySamples = []; // [{timestamp, rtt, jitter, packetsLost, packetsSent, qualityLimit}]
+    this.qualityFirstTimestamp = 0;
+    this.lastQualityStatus = "";
+
     this.spec = {
       sample_interval: INITIAL_SAMPLE_INTERVAL,
       store_interval: INITIAL_STORE_INTERVAL,
@@ -181,6 +213,15 @@ export const MonitoringData = class {
   }
 
   setConnection(pluginHandle, localAudioTrack, localVideoTrack, user, virtualStreamingJanus) {
+    if (this.pluginHandle !== pluginHandle) {
+      // New peer-connection: drop any quality samples collected from the old one.
+      this.qualitySamples = [];
+      this.qualityFirstTimestamp = 0;
+      this.lastQualityStatus = "";
+      if (this.miscData) {
+        delete this.miscData.iceState;
+      }
+    }
     this.pluginHandle = pluginHandle;
     this.localAudioTrack = localAudioTrack;
     this.localVideoTrack = localVideoTrack;
@@ -254,6 +295,11 @@ export const MonitoringData = class {
       return; // User not connected.
     }
     const pc = (this.pluginHandle && this.pluginHandle.webrtcStuff && this.pluginHandle.webrtcStuff.pc) || (this.pluginHandle && this.pluginHandle.pc) || null;
+    // Publisher plugin keeps its own iceState on the handle itself. Pick it up so
+    // the local scorer sees ICE transitions even when nobody calls onIceState().
+    if (this.pluginHandle && typeof this.pluginHandle.iceState === "string" && this.pluginHandle.iceState) {
+      this.miscData.iceState = this.pluginHandle.iceState;
+    }
     const defaultTimestamp = new Date().getTime();
     if (
       pc &&
@@ -375,6 +421,7 @@ export const MonitoringData = class {
     if (datas.length && this.onDataCallback && this.storedData.length) {
       this.onDataCallback(this.storedData[this.storedData.length - 1]);
     }
+    this.updateLocalQuality_(datas, dataTimestamp);
     this.updateScore();
 
     const backoff = Math.min(MAX_EXPONENTIAL_BACKOFF_MS, FIVE_SECONDS_IN_MS * Math.pow(2, this.fetchErrors));
@@ -534,23 +581,192 @@ export const MonitoringData = class {
       // log.debug('audio score 3min', values.audio.jitter.threeMin && values.audio.jitter.threeMin.mean.value, values.audio.packetsLost.threeMin && values.audio.packetsLost.threeMin.mean.value, values.audio.roundTripTime.threeMin && values.audio.roundTripTime.threeMin.mean.value);
       // log.debug('video score 1min', values.video.jitter.oneMin && values.video.jitter.oneMin.mean.value, values.video.packetsLost.oneMin && values.video.packetsLost.oneMin.mean.value, values.video.roundTripTime.oneMin && values.video.roundTripTime.oneMin.mean.value);
       // log.debug('video score 3min', values.video.jitter.threeMin && values.video.jitter.threeMin.mean.value, values.video.packetsLost.threeMin && values.video.packetsLost.threeMin.mean.value, values.video.roundTripTime.threeMin && values.video.roundTripTime.threeMin.mean.value);
-      if (this.onStatus) {
-        const firstTimestamp = this.scoreData[0][0].timestamp;
-        const formula = `Score ${values.score.view} = ${values.score.formula}`;
-        // log.debug('[monitoring] Connection', formula, values.score.value);
-        if (lastTimestamp - firstTimestamp >= MEDIUM_BUCKET) {
-          if (values.score.value < 10) {
-            this.onStatus(LINK_STATE_GOOD, formula);
-          } else if (values.score.value < 100) {
-            this.onStatus(LINK_STATE_MEDIUM, formula);
-          } else {
-            this.onStatus(LINK_STATE_WEAK, formula);
-          }
-        } else {
-          this.onStatus(LINK_STATE_INIT, formula);
+      // NOTE: link-state dispatch moved to updateLocalQuality_() which is
+      // computed directly from pc.getStats() and does not depend on the
+      // backend-provided metrics_whitelist.
+    }
+  }
+
+  // Extracts a single quality sample from a raw getStats() snapshot.
+  // Returns null if no usable data is present.
+  extractQualitySample_(datas, timestamp) {
+    const findReport = (reports, type) => (reports || []).find((r) => r && r.type === type) || null;
+    const sample = {
+      timestamp,
+      rtt: null,            // ms, averaged across audio+video remote-inbound
+      jitter: null,         // ms, averaged across audio+video remote-inbound
+      packetsLost: 0,       // cumulative, audio+video
+      packetsSent: 0,       // cumulative, audio+video
+      qualityLimit: null,   // "none" | "cpu" | "bandwidth" | "other"
+      hasData: false,
+    };
+    const rttValues = [];
+    const jitterValues = [];
+    for (const sectionName of ["audio", "video"]) {
+      const section = (datas || []).find((d) => d.name === sectionName);
+      if (!section) continue;
+      const remoteInbound = findReport(section.reports, "remote-inbound-rtp");
+      if (remoteInbound) {
+        sample.hasData = true;
+        if (typeof remoteInbound.roundTripTime === "number" && isFinite(remoteInbound.roundTripTime)) {
+          rttValues.push(remoteInbound.roundTripTime);
+        }
+        if (typeof remoteInbound.jitter === "number" && isFinite(remoteInbound.jitter)) {
+          jitterValues.push(remoteInbound.jitter);
+        }
+        if (typeof remoteInbound.packetsLost === "number" && isFinite(remoteInbound.packetsLost)) {
+          sample.packetsLost += Math.max(0, remoteInbound.packetsLost);
         }
       }
+      const outbound = findReport(section.reports, "outbound-rtp");
+      if (outbound && typeof outbound.packetsSent === "number" && isFinite(outbound.packetsSent)) {
+        sample.packetsSent += outbound.packetsSent;
+        sample.hasData = true;
+      }
+      if (sectionName === "video" && outbound && typeof outbound.qualityLimitationReason === "string") {
+        sample.qualityLimit = outbound.qualityLimitationReason;
+      }
     }
+    if (rttValues.length) {
+      sample.rtt = (rttValues.reduce((a, b) => a + b, 0) / rttValues.length) * 1000;
+    }
+    if (jitterValues.length) {
+      sample.jitter = (jitterValues.reduce((a, b) => a + b, 0) / jitterValues.length) * 1000;
+    }
+    return sample.hasData ? sample : null;
+  }
+
+  // Computes the current link quality and dispatches onStatus. Fully self-
+  // contained: works without any backend / metrics_whitelist.
+  updateLocalQuality_(datas, timestamp) {
+    if (!this.onStatus) return;
+
+    const sample = this.extractQualitySample_(datas, timestamp);
+    if (sample) {
+      this.qualitySamples.push(sample);
+      // Drop samples older than the long window.
+      this.qualitySamples = this.qualitySamples.filter(
+        (s) => timestamp - s.timestamp <= QUALITY_LONG_WINDOW_MS
+      );
+      if (!this.qualityFirstTimestamp) {
+        this.qualityFirstTimestamp = timestamp;
+      }
+    }
+
+    // Warmup: until we've accumulated enough data, stay in INIT.
+    if (!this.qualityFirstTimestamp || timestamp - this.qualityFirstTimestamp < QUALITY_WARMUP_MS) {
+      this.dispatchQualityStatus_(LINK_STATE_INIT, "warming up");
+      return;
+    }
+    if (this.qualitySamples.length < 2) {
+      this.dispatchQualityStatus_(LINK_STATE_INIT, "not enough samples");
+      return;
+    }
+
+    const samples = this.qualitySamples;
+    const shortSamples = samples.filter((s) => timestamp - s.timestamp <= QUALITY_SHORT_WINDOW_MS);
+    const longSamples = samples;
+
+    const meanOf = (arr, key) => {
+      const vals = arr.map((s) => s[key]).filter((v) => v != null && isFinite(v));
+      if (!vals.length) return null;
+      return vals.reduce((a, b) => a + b, 0) / vals.length;
+    };
+    const lossRateOf = (arr) => {
+      if (arr.length < 2) return null;
+      const first = arr[0];
+      const last = arr[arr.length - 1];
+      const sent = Math.max(0, last.packetsSent - first.packetsSent);
+      const lost = Math.max(0, last.packetsLost - first.packetsLost);
+      const total = sent + lost;
+      if (total === 0) return null;
+      return lost / total;
+    };
+
+    const longRtt = meanOf(longSamples, "rtt");
+    const longJitter = meanOf(longSamples, "jitter");
+    const longLoss = lossRateOf(longSamples);
+    const shortRtt = meanOf(shortSamples, "rtt");
+    const shortJitter = meanOf(shortSamples, "jitter");
+    const shortLoss = lossRateOf(shortSamples);
+
+    const tierFor = (v, mediumTh, weakTh) => {
+      if (v == null || !isFinite(v)) return TIER_GOOD;
+      if (v >= weakTh) return TIER_WEAK;
+      if (v >= mediumTh) return TIER_MEDIUM;
+      return TIER_GOOD;
+    };
+
+    const reasons = [];
+    const bumpTier = (current, next, reason) => {
+      if (next > current) {
+        reasons.length = 0;
+        reasons.push(reason);
+        return next;
+      }
+      if (next === current && next !== TIER_GOOD) {
+        reasons.push(reason);
+      }
+      return current;
+    };
+
+    let tier = TIER_GOOD;
+
+    // Absolute penalties — "my connection is currently bad".
+    let t = tierFor(longRtt, ABS_RTT_MEDIUM_MS, ABS_RTT_WEAK_MS);
+    if (t > TIER_GOOD) tier = bumpTier(tier, t, `rtt ${Math.round(longRtt)}ms`);
+    t = tierFor(longJitter, ABS_JITTER_MEDIUM_MS, ABS_JITTER_WEAK_MS);
+    if (t > TIER_GOOD) tier = bumpTier(tier, t, `jitter ${Math.round(longJitter)}ms`);
+    t = tierFor(longLoss, ABS_LOSS_MEDIUM, ABS_LOSS_WEAK);
+    if (t > TIER_GOOD) tier = bumpTier(tier, t, `loss ${(longLoss * 100).toFixed(1)}%`);
+
+    // Delta penalties — "my connection just got worse".
+    const dRtt = shortRtt != null && longRtt != null ? shortRtt - longRtt : null;
+    const dJitter = shortJitter != null && longJitter != null ? shortJitter - longJitter : null;
+    const dLoss = shortLoss != null && longLoss != null ? shortLoss - longLoss : null;
+    t = tierFor(dRtt, DELTA_RTT_MEDIUM_MS, DELTA_RTT_WEAK_MS);
+    if (t > TIER_GOOD) tier = bumpTier(tier, t, `Δrtt +${Math.round(dRtt)}ms`);
+    t = tierFor(dJitter, DELTA_JITTER_MEDIUM_MS, DELTA_JITTER_WEAK_MS);
+    if (t > TIER_GOOD) tier = bumpTier(tier, t, `Δjitter +${Math.round(dJitter)}ms`);
+    t = tierFor(dLoss, DELTA_LOSS_MEDIUM, DELTA_LOSS_WEAK);
+    if (t > TIER_GOOD) tier = bumpTier(tier, t, `Δloss +${(dLoss * 100).toFixed(1)}%`);
+
+    // Encoder quality limitation on video: "bandwidth" means the encoder is
+    // already throttling because of the uplink — strong network signal.
+    const bandwidthLimited = shortSamples.filter((s) => s.qualityLimit === "bandwidth").length;
+    if (bandwidthLimited > 0) {
+      const ratio = bandwidthLimited / shortSamples.length;
+      if (ratio >= 0.5) {
+        tier = bumpTier(tier, TIER_WEAK, `encoder bw-limited ${Math.round(ratio * 100)}%`);
+      } else {
+        tier = bumpTier(tier, TIER_MEDIUM, "encoder bw-limited");
+      }
+    }
+    // CPU-limited — not the network, just log it.
+    const lastSample = samples[samples.length - 1];
+    if (lastSample && lastSample.qualityLimit === "cpu") {
+      log.warn("[monitoring] encoder CPU-limited");
+    }
+
+    // ICE trouble dominates everything else.
+    const iceState = this.miscData && this.miscData.iceState;
+    if (iceState && !["checking", "completed", "connected", "new"].includes(iceState)) {
+      tier = bumpTier(tier, TIER_WEAK, `ice ${iceState}`);
+    }
+
+    const status =
+      tier === TIER_WEAK ? LINK_STATE_WEAK : tier === TIER_MEDIUM ? LINK_STATE_MEDIUM : LINK_STATE_GOOD;
+    const reason = reasons.length ? reasons.join(", ") : "ok";
+    this.dispatchQualityStatus_(status, reason);
+  }
+
+  dispatchQualityStatus_(status, reason) {
+    if (!this.onStatus) return;
+    if (this.lastQualityStatus !== status) {
+      log.debug(`[monitoring] link quality: ${this.lastQualityStatus || "(none)"} -> ${status} (${reason})`);
+      this.lastQualityStatus = status;
+    }
+    this.onStatus(status, reason);
   }
 
   update() {
