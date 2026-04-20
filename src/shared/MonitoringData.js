@@ -235,6 +235,42 @@ export const MonitoringData = class {
       },
       user
     );
+    this.installDebugHooks_();
+  }
+
+  // Exposes two helpers on `window` for diagnosing the local link scorer
+  // without going to chrome://webrtc-internals:
+  //   window.__linkQualityDebug()         -> snapshot of current scorer state
+  //   window.__forceLinkState("weak"|...) -> override the reported status
+  //     valid: "init" | "good" | "medium" | "weak" | null (null = release)
+  installDebugHooks_() {
+    if (typeof window === "undefined") return;
+    if (window.__linkQualityDebug && window.__linkQualityDebugOwner === this) return;
+    window.__linkQualityDebugOwner = this;
+    window.__linkQualityDebug = () => {
+      const last = this.qualitySamples[this.qualitySamples.length - 1] || null;
+      return {
+        samples: this.qualitySamples.length,
+        firstTs: this.qualityFirstTimestamp,
+        lastStatus: this.lastQualityStatus,
+        forced: this._forcedStatus || null,
+        iceState: (this.miscData && this.miscData.iceState) || null,
+        last,
+        all: this.qualitySamples,
+      };
+    };
+    window.__forceLinkState = (state) => {
+      const valid = [null, LINK_STATE_INIT, LINK_STATE_GOOD, LINK_STATE_MEDIUM, LINK_STATE_WEAK];
+      if (!valid.includes(state)) {
+        log.warn(`[monitoring] __forceLinkState: invalid value ${state}. Use one of ${JSON.stringify(valid)}`);
+        return;
+      }
+      this._forcedStatus = state;
+      if (state) {
+        this.dispatchQualityStatus_(state, "forced");
+      }
+      log.warn(`[monitoring] __forceLinkState = ${state}`);
+    };
   }
 
   restartMonitoring() {
@@ -641,6 +677,20 @@ export const MonitoringData = class {
   updateLocalQuality_(datas, timestamp) {
     if (!this.onStatus) return;
 
+    // Dev override via window.__forceLinkState(...). Still collect samples so
+    // that __linkQualityDebug() stays useful while the override is active.
+    if (this._forcedStatus) {
+      const sample = this.extractQualitySample_(datas, timestamp);
+      if (sample) {
+        this.qualitySamples.push(sample);
+        this.qualitySamples = this.qualitySamples.filter(
+          (s) => timestamp - s.timestamp <= QUALITY_LONG_WINDOW_MS
+        );
+      }
+      this.dispatchQualityStatus_(this._forcedStatus, "forced");
+      return;
+    }
+
     const sample = this.extractQualitySample_(datas, timestamp);
     if (sample) {
       this.qualitySamples.push(sample);
@@ -731,16 +781,24 @@ export const MonitoringData = class {
     t = tierFor(dLoss, DELTA_LOSS_MEDIUM, DELTA_LOSS_WEAK);
     if (t > TIER_GOOD) tier = bumpTier(tier, t, `Δloss +${(dLoss * 100).toFixed(1)}%`);
 
-    // Encoder quality limitation on video: "bandwidth" means the encoder is
-    // already throttling because of the uplink — strong network signal.
+    // Encoder quality limitation on video. "bandwidth" does NOT necessarily
+    // mean bad network — it also fires when the application caps the bitrate
+    // (RTCRtpSender.setParameters) or when BWE is probing back up slowly after
+    // a congestion event. So we use it only as an amplifier: if we already see
+    // real network deterioration (loss / RTT), and the encoder is persistently
+    // bandwidth-limited, bump the tier one step. Standalone "bandwidth" is
+    // just logged.
     const bandwidthLimited = shortSamples.filter((s) => s.qualityLimit === "bandwidth").length;
-    if (bandwidthLimited > 0) {
-      const ratio = bandwidthLimited / shortSamples.length;
-      if (ratio >= 0.5) {
-        tier = bumpTier(tier, TIER_WEAK, `encoder bw-limited ${Math.round(ratio * 100)}%`);
-      } else {
-        tier = bumpTier(tier, TIER_MEDIUM, "encoder bw-limited");
-      }
+    const bwRatio = shortSamples.length ? bandwidthLimited / shortSamples.length : 0;
+    const hasNetworkDegradation =
+      (longLoss != null && longLoss >= ABS_LOSS_MEDIUM) ||
+      (longRtt != null && longRtt >= ABS_RTT_MEDIUM_MS) ||
+      (dLoss != null && dLoss >= DELTA_LOSS_MEDIUM) ||
+      (dRtt != null && dRtt >= DELTA_RTT_MEDIUM_MS);
+    if (bwRatio >= 0.5 && hasNetworkDegradation && tier < TIER_WEAK) {
+      tier = bumpTier(tier, tier + 1, `encoder bw-limited ${Math.round(bwRatio * 100)}%`);
+    } else if (bwRatio >= 0.5) {
+      log.info(`[monitoring] encoder bandwidth-limited ${Math.round(bwRatio * 100)}% (no other degradation)`);
     }
     // CPU-limited — not the network, just log it.
     const lastSample = samples[samples.length - 1];
