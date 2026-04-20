@@ -337,11 +337,25 @@ export const MonitoringData = class {
       this.miscData.iceState = this.pluginHandle.iceState;
     }
     const defaultTimestamp = new Date().getTime();
-    if (
-      pc &&
-      this.localAudioTrack.constructor.name === "MediaStreamTrack" &&
-      (!this.localVideoTrack || this.localVideoTrack.constructor.name === "MediaStreamTrack")
-    ) {
+    // A track is usable for pc.getStats(track) only if it is alive AND still
+    // attached to a sender on this peer connection. If the camera was turned
+    // off the app may keep holding a dead MediaStreamTrack reference — asking
+    // getStats() for it throws InvalidAccessError.
+    const trackAttached = (track) => {
+      if (!track || track.constructor.name !== "MediaStreamTrack") return false;
+      if (track.readyState !== "live") return false;
+      if (pc && typeof pc.getSenders === "function") {
+        try {
+          return pc.getSenders().some((s) => s && s.track === track);
+        } catch (_e) {
+          return false;
+        }
+      }
+      return true;
+    };
+    const audioUsable = trackAttached(this.localAudioTrack);
+    const videoUsable = trackAttached(this.localVideoTrack);
+    if (pc && audioUsable) {
       const datas = [];
       const SKIP_REPORTS = ["certificate", "codec", "track", "local-candidate", "remote-candidate"];
       const getStatsPromises = [];
@@ -358,9 +372,11 @@ export const MonitoringData = class {
             }
           });
           datas.push(audioReports);
+        }).catch((e) => {
+          log.debug("[monitoring] getStats(audio) failed:", e && e.message);
         })
       );
-      if (this.localVideoTrack) {
+      if (videoUsable) {
         getStatsPromises.push(
           pc.getStats(this.localVideoTrack).then((stats) => {
             const videoReports = {name: "video", reports: [], timestamp: defaultTimestamp};
@@ -374,13 +390,15 @@ export const MonitoringData = class {
               }
             });
             datas.push(videoReports);
+          }).catch((e) => {
+            log.debug("[monitoring] getStats(video) failed:", e && e.message);
           })
         );
       }
 
       // Missing some important reports. Add them manually.
       const ids = [this.localAudioTrack.id];
-      if (this.localVideoTrack) {
+      if (videoUsable) {
         ids.push(this.localVideoTrack.id);
       }
       let mediaSourceIds = [];
@@ -422,6 +440,8 @@ export const MonitoringData = class {
               }
             });
           }
+        }).catch((e) => {
+          log.debug("[monitoring] getStats(null) failed:", e && e.message);
         })
       );
 

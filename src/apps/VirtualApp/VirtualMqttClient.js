@@ -1034,7 +1034,9 @@ class VirtualMqttClient extends Component {
     if (deviceId) {
       this.setAudioDevice(deviceId, !!videoroom);
     }
-    this.setState({cammuted: true, media});
+    // Clear the video track reference so that MonitoringData stops probing it
+    // with pc.getStats(track) after the track has been detached from the sender.
+    this.setState({cammuted: true, media, localVideoTrack: null});
     if (videoroom) videoroom.mute(true);
   };
 
