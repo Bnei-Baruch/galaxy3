@@ -96,6 +96,26 @@ class JanusStream {
   };
 
   _handleStreamReconnect = (streamName, reinitFn) => {
+    // A single network blip fires onStatus 2-3 times per plugin (10s recovery
+    // timeout, state=failed, iceRestart exhausted). Debounce per-stream so we
+    // only start ONE reinit cycle per incident.
+    this._streamReconnectState = this._streamReconnectState || {};
+    const state = this._streamReconnectState[streamName] || {};
+    if (state.inFlight) {
+      log.debug("[shidur] " + streamName + " already reconnecting, ignoring duplicate event");
+      return;
+    }
+    state.inFlight = true;
+    state.reinitFn = reinitFn;
+    this._streamReconnectState[streamName] = state;
+
+    this._incrementAndReinit(streamName);
+  };
+
+  _incrementAndReinit = (streamName) => {
+    const state = this._streamReconnectState && this._streamReconnectState[streamName];
+    if (!state) return;
+
     this.reconnectAttempts++;
     log.warn("[shidur] " + streamName + " failed, reconnect attempt: " + this.reconnectAttempts + "/30");
     if (this.reconnectAttempts === 1 && typeof this.onReconnecting === "function") {
@@ -103,13 +123,53 @@ class JanusStream {
     }
     if (this.reconnectAttempts >= 30) {
       log.error("[shidur] broadcast reconnect exhausted after 30 attempts");
+      Object.keys(this._streamReconnectState).forEach((k) => this._clearReconnectState(k));
       this.reconnectAttempts = 0;
       if (typeof this.onReconnectExhausted === "function") {
         this.onReconnectExhausted();
       }
-    } else if (this.janus) {
-      reinitFn();
+      return;
     }
+    this._tryStreamReinit(streamName);
+  };
+
+  _tryStreamReinit = (streamName) => {
+    const state = this._streamReconnectState && this._streamReconnectState[streamName];
+    if (!state || !state.inFlight) return;
+    if (!this.janus) {
+      this._clearReconnectState(streamName);
+      return;
+    }
+    // Hold off the reinit while MQTT is disconnected. Firing janus.attach now
+    // would silently time out after 20s and leave the stream dead with no
+    // retry, which is the root cause of the "overlay never turns off" bug.
+    if (!mqtt.mq || !mqtt.mq.connected) {
+      log.debug("[shidur] " + streamName + " MQTT not ready, waiting...");
+      state.waitTimer = setTimeout(() => this._tryStreamReinit(streamName), 2000);
+      return;
+    }
+    try {
+      state.reinitFn();
+    } catch (err) {
+      log.debug("[shidur] " + streamName + " reinit threw:", err && err.message);
+    }
+    // Safety net: if watch().then() doesn't call _markRecovered within 15s,
+    // the attach/watch silently failed (e.g., transaction timed out). Retry.
+    state.safetyTimer = setTimeout(() => {
+      const s = this._streamReconnectState && this._streamReconnectState[streamName];
+      if (!s || !s.inFlight || !this.janus) return;
+      log.warn("[shidur] " + streamName + " reinit didn't recover in 15s, retrying");
+      this._incrementAndReinit(streamName);
+    }, 15000);
+  };
+
+  _clearReconnectState = (streamName) => {
+    if (!this._streamReconnectState) return;
+    const state = this._streamReconnectState[streamName];
+    if (!state) return;
+    if (state.waitTimer) { clearTimeout(state.waitTimer); state.waitTimer = null; }
+    if (state.safetyTimer) { clearTimeout(state.safetyTimer); state.safetyTimer = null; }
+    state.inFlight = false;
   };
 
   initJanus = (str, cb) => {
@@ -157,13 +217,25 @@ class JanusStream {
     janus.init().then((data) => {
       log.debug("[shidur] init: ", data);
       this.janus = janus;
-      if (this.reconnectAttempts > 0 && typeof this.onReconnectSuccess === "function") {
-        this.onReconnectSuccess();
-      }
-      this.reconnectAttempts = 0;
       if (typeof cb === "function") cb();
     }).catch((err) => log.debug("[shidur] janus init failed (will be retried via onStatus):", err && err.message));
   }
+
+  // Called from each stream's watch().then() when the MediaStream is actually
+  // up. Clears that stream's reconnect state and, if no stream is still
+  // trying to recover, turns the overlay off.
+  _markRecovered = (streamName) => {
+    if (streamName) this._clearReconnectState(streamName);
+
+    const stillReconnecting = this._streamReconnectState &&
+      Object.values(this._streamReconnectState).some((s) => s && s.inFlight);
+    if (!stillReconnecting && this.reconnectAttempts > 0) {
+      if (typeof this.onReconnectSuccess === "function") {
+        this.onReconnectSuccess();
+      }
+      this.reconnectAttempts = 0;
+    }
+  };
 
   initVideoStream = () => {
     if (this.videos === NO_VIDEO_OPTION_VALUE) return;
@@ -176,9 +248,7 @@ class JanusStream {
       this.videoJanusStream.watch(this.videos).then((stream) => {
         this.videoMediaStream = stream;
         this.attachVideoStream_(this.videoElement, /* reattach= */ false);
-        if (this.reconnectAttempts > 0 && typeof this.onReconnectSuccess === "function") {
-          this.onReconnectSuccess();
-        }
+        this._markRecovered("video");
       }).catch((err) => log.debug("[shidur] video watch failed:", err && err.message));
     }).catch((err) => log.debug("[shidur] video attach failed:", err && err.message));
   };
@@ -193,6 +263,7 @@ class JanusStream {
       this.audioJanusStream.watch(this.audios).then((stream) => {
         this.audioMediaStream = stream;
         this.attachAudioStream_(this.audioElement, /* reattach= */ false);
+        this._markRecovered("audio");
       }).catch((err) => log.debug("[shidur] audio watch failed:", err && err.message));
     }).catch((err) => log.debug("[shidur] audio attach failed:", err && err.message));
   };
@@ -207,6 +278,7 @@ class JanusStream {
       this.trlAudioJanusStream.watch(streamId).then((stream) => {
         this.trlAudioMediaStream = stream;
         this.attachTrlAudioStream_(this.trlAudioElement, /* reattach= */ false);
+        this._markRecovered("translation");
       }).catch((err) => log.debug("[shidur] translation watch failed:", err && err.message));
     }).catch((err) => log.debug("[shidur] translation attach failed:", err && err.message));
   };
@@ -228,6 +300,7 @@ class JanusStream {
         log.debug("[shidur] attach quad", data);
         this.videoQuadStream.watch(102).then((stream) => {
           callback(stream);
+          this._markRecovered("quad");
         }).catch((err) => log.debug("[shidur] quad watch failed:", err && err.message));
       }).catch((err) => log.debug("[shidur] quad attach failed:", err && err.message));
     });

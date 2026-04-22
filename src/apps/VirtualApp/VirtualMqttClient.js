@@ -452,18 +452,8 @@ class VirtualMqttClient extends Component {
       captureException(new Error("conference reconnect"), {attempt: this.conferenceReconnectAttempts});
     }
     this.setState({reconnecting: true});
-    if(!mqtt.mq?.connected) {
-      log.error("[client] mqtt is not connected, waiting 5 sec");
-      setTimeout(() => {
-        this.reinitClient();
-      }, 5000);
-      return;
-    }
-    if (this.conferenceReconnectAttempts <= 30) {
-      setTimeout(() => {
-        this.initClient(true);
-      }, 5000);
-    } else {
+
+    if (this.conferenceReconnectAttempts > 30) {
       const failedAfter = this.conferenceReconnectAttempts;
       this.conferenceReconnectAttempts = 0;
       this.setState({reconnecting: false});
@@ -472,7 +462,32 @@ class VirtualMqttClient extends Component {
         captureException(new Error("conference reconnect failed"), {attempts: failedAfter});
         alert(this.props.t("oldClient.networkSettingsChanged"));
       });
+      return;
     }
+
+    // Wait for MQTT to be available before calling initClient — otherwise
+    // fetchGxyServer / janus.attach will time out silently.
+    // The wait itself must not burn attempts (was a bug: every 5s recursion
+    // bumped the counter and could exhaust all 30 retries just waiting).
+    this._scheduleInitClient(0);
+  };
+
+  _scheduleInitClient = (waitedMs) => {
+    if (mqtt.mq?.connected) {
+      setTimeout(() => {
+        this.initClient(true);
+      }, 2000);
+      return;
+    }
+    if (waitedMs >= 60000) {
+      log.error("[client] MQTT didn't reconnect in 60s, trying initClient anyway");
+      setTimeout(() => {
+        this.initClient(true);
+      }, 2000);
+      return;
+    }
+    log.debug("[client] MQTT not connected yet, waiting...");
+    setTimeout(() => this._scheduleInitClient(waitedMs + 1000), 1000);
   };
 
     iceFailed = (data) => {
@@ -486,6 +501,20 @@ class VirtualMqttClient extends Component {
         });
       }
     };
+
+  // Any critical failure during an active reconnect (attach/join/publish) must
+  // not be silently swallowed, otherwise the client lands in a half-connected
+  // state (e.g. subscriber ok but publisher lost) and the user never notices.
+  // Roll the whole reinit forward via reinitClient — the attempts counter
+  // caps at 30 and triggers the user-visible alert on exhaustion.
+  _handleReconnectStepFailure = (where, err) => {
+    if (!this.state.reconnecting) return false;
+    log.warn("[client] " + where + " failed during reconnect, retrying reinit:", err && err.message);
+    this.exitRoom(true, () => {
+      this.reinitClient();
+    });
+    return true;
+  };
 
   initJanus = (user) => {
     setSentryTag(user.janus)
@@ -523,12 +552,18 @@ class VirtualMqttClient extends Component {
       janus.attach(videoroom).then((data) => {
         log.info("[client] Publisher Handle: ", data);
         this.joinRoom(false, janus, videoroom, user);
-      }).catch((err) => log.warn("[client] Publisher attach failed:", err && err.message));
+      }).catch((err) => {
+        log.warn("[client] Publisher attach failed:", err && err.message);
+        this._handleReconnectStepFailure("Publisher attach", err);
+      });
 
       janus.attach(subscriber).then((data) => {
         this.setState({subscriber});
         log.info("[client] Subscriber Handle: ", data);
-      }).catch((err) => log.warn("[client] Subscriber attach failed:", err && err.message));
+      }).catch((err) => {
+        log.warn("[client] Subscriber attach failed:", err && err.message);
+        this._handleReconnectStepFailure("Subscriber attach", err);
+      });
     })
       .catch((err) => {
         log.error("[client] Janus init", err);
@@ -693,34 +728,84 @@ class VirtualMqttClient extends Component {
         log.info("[client] Pulbishers list: ", data.publishers);
 
         this.makeSubscription(data.publishers);
+
+        // Safety watchdog: publish() resolves once the SDP answer is sent,
+        // but the publisher can still fail to actually start sending media
+        // (e.g. TURN not reachable). If ICE doesn't reach "connected" within
+        // 15s, treat it as a silent publisher loss and retry.
+        this._armPublisherWatchdog(videoroom);
       }).catch((err) => {
         log.error("[client] Publish error :", err);
-        this.exitRoom(false);
+        if (!this._handleReconnectStepFailure("Publish", err)) {
+          this.exitRoom(false);
+        }
       });
     }).catch((err) => {
       log.error("[client] Join error :", err);
-      this.exitRoom(false);
+      if (!this._handleReconnectStepFailure("Join", err)) {
+        this.exitRoom(false);
+      }
     });
+  };
+
+  _armPublisherWatchdog = (videoroom) => {
+    if (this._publisherWatchdog) {
+      clearTimeout(this._publisherWatchdog);
+      this._publisherWatchdog = null;
+    }
+    this._publisherWatchdog = setTimeout(() => {
+      this._publisherWatchdog = null;
+      const pc = videoroom && videoroom.pc;
+      const st = pc && pc.connectionState;
+      if (this.state.videoroom !== videoroom) return;
+      if (st === "connected") return;
+      log.warn("[client] publisher watchdog: pc state=" + st + " after 15s, triggering reconnect");
+      this.exitRoom(true, () => {
+        this.reinitClient();
+      });
+    }, 15000);
   };
 
   exitRoom = (reconnect, callback) => {
     this.setState({delay: true, exit_room: true});
     const {videoroom} = this.state;
 
-    if (videoroom) {
-      videoroom.leave().then((data) => {
-        log.info("[client] leave respond:", data);
-        this.resetClient(reconnect, callback);
-      }).catch(e => {
-        this.resetClient(reconnect, callback);
-      });
-    } else {
+    if (!videoroom) {
       this.resetClient(reconnect, callback);
+      return;
     }
+
+    // videoroom.leave() is best-effort cleanup. During an iceFailed / MQTT
+    // blip the ack can take up to 20s (janus-mqtt transaction timeout),
+    // which freezes the whole reconnect chain (reinitClient never fires,
+    // overlay never shows, publisher stays dead on the server). Race the
+    // leave against a short timeout: whichever wins, we keep moving.
+    let done = false;
+    const proceed = () => {
+      if (done) return;
+      done = true;
+      this.resetClient(reconnect, callback);
+    };
+    const fallbackMs = reconnect ? 3000 : 5000;
+    setTimeout(() => {
+      if (!done) log.warn("[client] leave timed out after " + fallbackMs + "ms, proceeding anyway");
+      proceed();
+    }, fallbackMs);
+    videoroom.leave().then((data) => {
+      log.info("[client] leave respond:", data);
+      proceed();
+    }).catch(() => {
+      proceed();
+    });
   };
 
   resetClient = (reconnect, callback) => {
     let {janus, room, shidur} = this.state;
+
+    if (this._publisherWatchdog) {
+      clearTimeout(this._publisherWatchdog);
+      this._publisherWatchdog = null;
+    }
 
     localStorage.setItem("question", false);
 
