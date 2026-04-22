@@ -162,7 +162,7 @@ class JanusStream {
       }
       this.reconnectAttempts = 0;
       if (typeof cb === "function") cb();
-    });
+    }).catch((err) => log.debug("[shidur] janus init failed (will be retried via onStatus):", err && err.message));
   }
 
   initVideoStream = () => {
@@ -179,8 +179,8 @@ class JanusStream {
         if (this.reconnectAttempts > 0 && typeof this.onReconnectSuccess === "function") {
           this.onReconnectSuccess();
         }
-      });
-    });
+      }).catch((err) => log.debug("[shidur] video watch failed:", err && err.message));
+    }).catch((err) => log.debug("[shidur] video attach failed:", err && err.message));
   };
 
   initAudioStream = () => {
@@ -193,8 +193,8 @@ class JanusStream {
       this.audioJanusStream.watch(this.audios).then((stream) => {
         this.audioMediaStream = stream;
         this.attachAudioStream_(this.audioElement, /* reattach= */ false);
-      });
-    });
+      }).catch((err) => log.debug("[shidur] audio watch failed:", err && err.message));
+    }).catch((err) => log.debug("[shidur] audio attach failed:", err && err.message));
   };
 
   initTranslationStream = (streamId) => {
@@ -207,8 +207,8 @@ class JanusStream {
       this.trlAudioJanusStream.watch(streamId).then((stream) => {
         this.trlAudioMediaStream = stream;
         this.attachTrlAudioStream_(this.trlAudioElement, /* reattach= */ false);
-      });
-    });
+      }).catch((err) => log.debug("[shidur] translation watch failed:", err && err.message));
+    }).catch((err) => log.debug("[shidur] translation attach failed:", err && err.message));
   };
 
   initQuadStream = (callback) => {
@@ -228,8 +228,8 @@ class JanusStream {
         log.debug("[shidur] attach quad", data);
         this.videoQuadStream.watch(102).then((stream) => {
           callback(stream);
-        });
-      });
+        }).catch((err) => log.debug("[shidur] quad watch failed:", err && err.message));
+      }).catch((err) => log.debug("[shidur] quad attach failed:", err && err.message));
     });
   };
 
@@ -263,25 +263,49 @@ class JanusStream {
   toggle(plugin) {
     if (plugin === "shidur") {
       if (this.janus) {
-        this.janus.detach(this.videoJanusStream);
+        this._safeDetach(this.videoJanusStream, "video");
         this.videoJanusStream = null;
-        this.janus.detach(this.audioJanusStream);
+        this._safeDetach(this.audioJanusStream, "audio");
         this.audioJanusStream = null;
-        this.janus.detach(this.trlAudioJanusStream);
+        this._safeDetach(this.trlAudioJanusStream, "translation");
         this.trlAudioJanusStream = null;
       }
     }
     if (plugin === "quad") {
       if (this.janus) {
-        this.janus.detach(this.videoQuadStream);
+        this._safeDetach(this.videoQuadStream, "quad");
         this.videoQuadStream = null;
       }
     }
   }
 
+  // Detach is fire-and-forget across this module; janus hangup may time out
+  // or fire on an already-cleaned-up plugin. Swallow rejections so they do
+  // not surface as unhandled promise rejections in Sentry.
+  _safeDetach = (plugin, label) => {
+    if (!this.janus || !plugin) return;
+    try {
+      const p = this.janus.detach(plugin);
+      if (p && typeof p.catch === "function") {
+        p.catch((err) => log.debug("[shidur] detach " + label + " failed:", err && err.message));
+      }
+    } catch (err) {
+      log.debug("[shidur] detach " + label + " threw:", err && err.message);
+    }
+  };
+
   destroy() {
     this.clean();
-    if (this.janus) this.janus.destroy();
+    if (this.janus) {
+      try {
+        const p = this.janus.destroy();
+        if (p && typeof p.catch === "function") {
+          p.catch((err) => log.debug("[shidur] janus destroy failed:", err && err.message));
+        }
+      } catch (err) {
+        log.debug("[shidur] janus destroy threw:", err && err.message);
+      }
+    }
     this.janus = null;
   }
 
@@ -306,7 +330,7 @@ class JanusStream {
 
       // Switch to -1 stream
       log.debug("[shidur] Switch audio stream: ", gxycol[col]);
-      this.audioJanusStream.switch(gxycol[col]);
+      this._safeSwitch(this.audioJanusStream, gxycol[col], "audio");
 
       const id = trllang[localStorage.getItem("vrt_langtext")];
       // Don't bring translation on toggle trl stream
@@ -314,7 +338,7 @@ class JanusStream {
         log.debug("[shidur] no id in local storage or client use togle stream");
       } else {
         log.debug("[shidur] get id from local storage:  ", localStorage.getItem("vrt_langtext"), id);
-        this.trlAudioJanusStream.switch(id);
+        this._safeSwitch(this.trlAudioJanusStream, id, "translation");
         this.talking = setInterval(this.ducerMixaudio, 200);
         log.debug("[shidur] Switch trl stream: ", localStorage.getItem("vrt_langtext"), id);
       }
@@ -328,7 +352,7 @@ class JanusStream {
       // Bring back source if was choosen before
       const id = Number(localStorage.getItem("vrt_lang")) || 2;
       log.debug("[shidur] get stream back id: ", localStorage.getItem("vrt_lang"), id);
-      this.audioJanusStream.switch(id);
+      this._safeSwitch(this.audioJanusStream, id, "audio");
       log.debug("[shidur] Switch audio stream back");
       this.trlAudioElement.muted = true;
       this.talking = null;
@@ -375,12 +399,12 @@ class JanusStream {
     if (this.janus) {
       if (videos === NO_VIDEO_OPTION_VALUE) {
         if (this.videoJanusStream !== null) {
-          this.janus.detach(this.videoJanusStream);
+          this._safeDetach(this.videoJanusStream, "video");
           this.videoJanusStream = null;
         }
       } else {
         if (this.videoJanusStream) {
-          this.videoJanusStream.switch(videos);
+          this._safeSwitch(this.videoJanusStream, videos, "video");
         } else {
           this.initVideoStream();
         }
@@ -395,11 +419,11 @@ class JanusStream {
       const audio_option = audiog_options2.find((option) => option.value === audios);
       const id = trllang[audio_option.eng_text];
       if(id) {
-        this.trlAudioJanusStream.switch(id);
+        this._safeSwitch(this.trlAudioJanusStream, id, "translation");
       }
     } else {
       if (this.audioJanusStream) {
-        this.audioJanusStream.switch(audios);
+        this._safeSwitch(this.audioJanusStream, audios, "audio");
       }
     }
     localStorage.setItem("vrt_lang", audios);
@@ -477,10 +501,25 @@ class JanusStream {
     this.videos = videos
     if (!this.janus)
       return
-    this.janus.detach(this.videoJanusStream);
+    this._safeDetach(this.videoJanusStream, "video");
     this.videoJanusStream = null;
     this.initVideoStream()
   }
+
+  // Same idea as _safeDetach: switch() returns a transaction promise that
+  // can reject (timeout / no janus). Swallow with a debug log instead of
+  // letting it bubble up as an unhandled rejection.
+  _safeSwitch = (plugin, id, label) => {
+    if (!plugin || typeof plugin.switch !== "function") return;
+    try {
+      const p = plugin.switch(id);
+      if (p && typeof p.catch === "function") {
+        p.catch((err) => log.debug("[shidur] switch " + label + " failed:", err && err.message));
+      }
+    } catch (err) {
+      log.debug("[shidur] switch " + label + " threw:", err && err.message);
+    }
+  };
 }
 
 const defaultJanusStream = new JanusStream();

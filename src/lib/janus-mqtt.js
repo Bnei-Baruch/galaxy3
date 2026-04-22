@@ -128,6 +128,13 @@ export class JanusMqtt {
 
   detach(plugin) {
     return new Promise((resolve, reject) => {
+      // Callers (e.g. streaming-utils.toggle) sometimes pass an already
+      // nulled-out plugin reference after a reconnect. Resolve quietly
+      // instead of throwing TypeError on plugin.janusHandleId.
+      if (!plugin || !plugin.janusHandleId) {
+        resolve()
+        return
+      }
       if (!this.pluginHandles[plugin.janusHandleId]) {
         const error = new Error('[janus] unknown plugin');
         reject(error)
@@ -257,7 +264,11 @@ export class JanusMqtt {
     Object.keys(this.transactions).forEach((transactionId) => {
       const transaction = this.transactions[transactionId]
       if (transaction.reject) {
-        transaction.reject()
+        // Reject with a real Error so unhandled rejections surface as a
+        // recognisable message ("[janus] transaction cancelled during
+        // cleanup") instead of the opaque "Non-Error promise rejection
+        // captured with value: undefined" that used to fill Sentry.
+        transaction.reject(new Error('[janus] transaction cancelled during cleanup'))
       }
     })
     this.transactions = {}

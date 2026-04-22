@@ -131,31 +131,38 @@ export class PublisherPlugin extends EventEmitter {
   };
 
   mute(video, stream) {
-    try {
-      let videoTransceiver = null;
-      let tr = this.pc.getTransceivers();
-      if(tr && tr.length > 0) {
-        for(let t of tr) {
-          if(t?.sender?.track?.kind === "video") {
-            videoTransceiver = t;
-            break;
-          }
+    if (!this.pc) {
+      log.warn("[publisher] mute: no peer connection");
+      return;
+    }
+    let videoTransceiver = null;
+    let tr = this.pc.getTransceivers();
+    if(tr && tr.length > 0) {
+      for(let t of tr) {
+        if(t?.sender?.track?.kind === "video") {
+          videoTransceiver = t;
+          break;
         }
       }
-
-      let d = video ? "inactive" : "sendonly"
-
-      if (videoTransceiver?.setDirection) {
-        videoTransceiver.setDirection(d);
-      } else {
-        videoTransceiver.direction = d;
-      }
-
-      if(!video) videoTransceiver.sender.replaceTrack(stream.getVideoTracks()[0])
-      if(stream) this.configure()
-    } catch (error) {
-      throw error;
     }
+    if (!videoTransceiver) {
+      log.warn("[publisher] mute: no video transceiver");
+      return;
+    }
+
+    let d = video ? "inactive" : "sendonly"
+
+    if (videoTransceiver.setDirection) {
+      videoTransceiver.setDirection(d);
+    } else {
+      videoTransceiver.direction = d;
+    }
+
+    if(!video && videoTransceiver.sender && stream) {
+      try { videoTransceiver.sender.replaceTrack(stream.getVideoTracks()[0]) }
+      catch (err) { log.warn("[publisher] replaceTrack(video) failed:", err && err.message); }
+    }
+    if(stream) this.configure()
   }
 
   setBitrate(bitrate) {
@@ -176,71 +183,80 @@ export class PublisherPlugin extends EventEmitter {
   }
 
   audio(stream) {
-    try {
-      let audioTransceiver = null;
-      let tr = this.pc.getTransceivers();
-      if(tr && tr.length > 0) {
-        for(let t of tr) {
-          if(t?.sender?.track?.kind === "audio") {
-            audioTransceiver = t;
-            break;
-          }
+    if (!this.pc) {
+      log.warn("[publisher] audio: no peer connection");
+      return;
+    }
+    let audioTransceiver = null;
+    let tr = this.pc.getTransceivers();
+    if(tr && tr.length > 0) {
+      for(let t of tr) {
+        if(t?.sender?.track?.kind === "audio") {
+          audioTransceiver = t;
+          break;
         }
       }
-
-      if (audioTransceiver?.setDirection) {
-        audioTransceiver.setDirection("sendonly");
-      } else {
-        audioTransceiver.direction = "sendonly";
-      }
-
-      audioTransceiver.sender.replaceTrack(stream.getAudioTracks()[0])
-      this.configure()
-    } catch (error) {
-      throw error;
     }
+    if (!audioTransceiver) {
+      log.warn("[publisher] audio: no audio transceiver");
+      return;
+    }
+
+    if (audioTransceiver.setDirection) {
+      audioTransceiver.setDirection("sendonly");
+    } else {
+      audioTransceiver.direction = "sendonly";
+    }
+
+    if (audioTransceiver.sender && stream) {
+      try { audioTransceiver.sender.replaceTrack(stream.getAudioTracks()[0]) }
+      catch (err) { log.warn("[publisher] replaceTrack(audio) failed:", err && err.message); }
+    }
+    this.configure()
   }
 
   configure(restart) {
+    if (!this.pc) {
+      log.warn("[publisher] configure: no peer connection");
+      return;
+    }
     this.pc.createOffer().then((offer) => {
+      if (!this.pc) return;
       this.pc.setLocalDescription(offer).catch(error => {
-        log.error("[publisher] setLocalDescription: ", error)
+        log.warn("[publisher] setLocalDescription failed:", error && error.message);
       })
       const body = {request: 'configure', restart}
       return this.transaction('message', {body, jsep: offer}, 'event').then((param) => {
-        const {data, json} = param || {}
-        const jsep = json.jsep
+        const {json} = param || {}
+        const jsep = json && json.jsep
         log.info('[publisher] Configure respond: ', param)
-        this.pc.setRemoteDescription(jsep).then(e => log.info(e)).catch(error => {
-          log.error(error)
-        })
-      }).catch(error => {
-        throw error;
-      })
-    }).catch(error => {
-      throw error;
-    })
+        if (this.pc && jsep) {
+          this.pc.setRemoteDescription(jsep).then(e => log.info(e)).catch(error => {
+            log.warn("[publisher] setRemoteDescription failed:", error && error.message);
+          })
+        }
+      }).catch((error) => log.debug("[publisher] configure transaction failed:", error && error.message))
+    }).catch((error) => log.debug("[publisher] createOffer failed:", error && error.message))
   }
 
   initPcEvents() {
     this.pc.onicecandidate = (e) => {
-      try {
-        let candidate = {completed: true}
-        if (!e.candidate || e.candidate.candidate.indexOf('endOfCandidates') > 0) {
-          log.debug("[publisher] End of candidates")
-        } else {
-          candidate = {
-            "candidate": e.candidate.candidate,
-            "sdpMid": e.candidate.sdpMid,
-            "sdpMLineIndex": e.candidate.sdpMLineIndex
-          };
-        }
+      let candidate = {completed: true}
+      if (!e.candidate || e.candidate.candidate.indexOf('endOfCandidates') > 0) {
+        log.debug("[publisher] End of candidates")
+      } else {
+        candidate = {
+          "candidate": e.candidate.candidate,
+          "sdpMid": e.candidate.sdpMid,
+          "sdpMLineIndex": e.candidate.sdpMLineIndex
+        };
+      }
 
-        if(candidate) {
-          return this.transaction('trickle', { candidate })
+      if(candidate) {
+        const p = this.transaction('trickle', { candidate });
+        if (p && typeof p.catch === "function") {
+          p.catch((err) => log.debug("[publisher] trickle failed:", err && err.message));
         }
-      } catch (error) {
-        throw error;
       }
     };
 
@@ -249,34 +265,30 @@ export class PublisherPlugin extends EventEmitter {
     };
 
     this.pc.onconnectionstatechange = (e) => {
-      try {
-        log.info("[publisher] ICE State: ", e.target.connectionState)
-        this.iceState = e.target.connectionState
+      log.info("[publisher] ICE State: ", e.target.connectionState)
+      this.iceState = e.target.connectionState
 
-        if(this.iceState === "disconnected") {
-          this.iceRestart()
-          this._iceRecoveryTimeout = setTimeout(() => {
-            if (this.iceState !== "connected") {
-              log.warn("[publisher] ICE not recovered in 10s, triggering reconnect");
-              this.iceFailed("publisher")
-            }
-          }, 10000);
-        }
+      if(this.iceState === "disconnected") {
+        this.iceRestart()
+        this._iceRecoveryTimeout = setTimeout(() => {
+          if (this.iceState !== "connected") {
+            log.warn("[publisher] ICE not recovered in 10s, triggering reconnect");
+            this.iceFailed("publisher")
+          }
+        }, 10000);
+      }
 
-        if(this.iceState === "connected" && this._iceRecoveryTimeout) {
+      if(this.iceState === "connected" && this._iceRecoveryTimeout) {
+        clearTimeout(this._iceRecoveryTimeout);
+        this._iceRecoveryTimeout = null;
+      }
+
+      if(this.iceState === "failed") {
+        if (this._iceRecoveryTimeout) {
           clearTimeout(this._iceRecoveryTimeout);
           this._iceRecoveryTimeout = null;
         }
-
-        if(this.iceState === "failed") {
-          if (this._iceRecoveryTimeout) {
-            clearTimeout(this._iceRecoveryTimeout);
-            this._iceRecoveryTimeout = null;
-          }
-          this.iceFailed("publisher")
-        }
-      } catch (error) {
-        throw error;
+        this.iceFailed("publisher")
       }
     };
   }
@@ -386,13 +398,18 @@ export class PublisherPlugin extends EventEmitter {
       this._iceRecoveryTimeout = null;
     }
     if(this.pc) {
-      this.pc.getTransceivers().forEach((transceiver) => {
-        if(transceiver) {
-          this.pc.removeTrack(transceiver.sender);
-          transceiver.stop();
-        }
-      });
-      this.pc.close()
+      // removeTrack/stop throw InvalidStateError if the peer connection
+      // (or transceiver) is already closed — common on reconnect/teardown.
+      try {
+        this.pc.getTransceivers().forEach((transceiver) => {
+          if (!transceiver) return;
+          try { if (transceiver.sender) this.pc.removeTrack(transceiver.sender); }
+          catch (_) { /* PC already closed */ }
+          try { transceiver.stop(); }
+          catch (_) { /* transceiver already stopped */ }
+        });
+      } catch (_) { /* getTransceivers on closed PC */ }
+      try { this.pc.close() } catch (_) { /* already closed */ }
       this.pc.onicecandidate = null;
       this.pc.ontrack = null;
       this.pc.oniceconnectionstatechange = null;

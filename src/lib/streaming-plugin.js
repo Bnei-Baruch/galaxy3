@@ -79,17 +79,22 @@ export class StreamingPlugin extends EventEmitter {
   }
 
   sdpExchange(jsep) {
+    if (!this.pc) return;
     this.pc.setRemoteDescription(jsep).catch(error => {
-      log.error('[streaming] SDP Exchange setRemoteDescription', error)
+      log.warn('[streaming] SDP Exchange setRemoteDescription:', error && error.message)
     });
     this.pc.createAnswer().then((desc) => {
+      if (!this.pc) return;
       desc.sdp = desc.sdp.replace(/a=fmtp:111 minptime=10;useinbandfec=1\r\n/g, 'a=fmtp:111 minptime=10;useinbandfec=1;stereo=1;sprop-stereo=1\r\n');
       this.pc.setLocalDescription(desc).catch(error => {
-        log.error('[streaming] SDP Exchange setLocalDescription', error)
+        log.warn('[streaming] SDP Exchange setLocalDescription:', error && error.message)
       });
-      this.start(desc)
+      const sp = this.start(desc);
+      if (sp && typeof sp.catch === "function") {
+        sp.catch((err) => log.debug('[streaming] start() failed:', err && err.message));
+      }
     }, error => {
-      log.error('[streaming] SDP Exchange createAnswer', error)
+      log.warn('[streaming] SDP Exchange createAnswer:', error && error.message)
     });
   }
 
@@ -103,8 +108,7 @@ export class StreamingPlugin extends EventEmitter {
     return this.transaction('message', message, 'event').then(({ data, json }) => {
       return { data, json }
     }).catch((error) => {
-      log.error('[streaming] StreamingJanusPlugin, cannot start stream', error)
-      throw error
+      log.warn('[streaming] cannot start stream:', error && error.message)
     })
   }
 
@@ -112,75 +116,64 @@ export class StreamingPlugin extends EventEmitter {
     const body = { request: 'switch', id }
 
     return this.transaction('message', { body }, 'event').catch((error) => {
-      log.error('[streaming] StreamingJanusPlugin, cannot switch stream', error)
-      throw error
+      log.warn('[streaming] cannot switch stream:', error && error.message)
     })
   }
 
   getVolume(mid, result) {
+    if (!this.pc) return;
+    let transceiver;
     try {
-      let transceiver = this.pc.getTransceivers().find(t => t.receiver.track.kind === "audio");
-      transceiver.receiver.getStats().then(stats =>  {
-        stats.forEach(res => {
-          if(!res || res.kind !== "audio")
-            return;
-          result(res.audioLevel ? res.audioLevel : 0);
-        });
-      }).catch(error => {
+      transceiver = this.pc.getTransceivers().find(t => t?.receiver?.track?.kind === "audio");
+    } catch (_) { return; }
+    if (!transceiver || !transceiver.receiver) return;
+    transceiver.receiver.getStats().then(stats => {
+      stats.forEach(res => {
+        if(!res || res.kind !== "audio") return;
+        result(res.audioLevel ? res.audioLevel : 0);
       });
-    } catch (error) {
-      throw error;
-    }
+    }).catch(() => { /* getStats not available / track gone */ });
   }
 
   initPcEvents(resolve) {
     this.pc.onicecandidate = (e) => {
-      try {
-        return this.transaction('trickle', { candidate: e.candidate })
-      } catch (error) {
-        throw error;
+      const p = this.transaction('trickle', { candidate: e.candidate });
+      if (p && typeof p.catch === "function") {
+        p.catch((err) => log.debug("[streaming] trickle failed:", err && err.message));
       }
     };
 
     this.pc.onconnectionstatechange = (e) => {
-      try {
-        log.info("[streaming] ICE State: ", e.target.connectionState)
-        this.iceState = e.target.connectionState
-        if(this.iceState === "disconnected") {
-          this.iceRestart()
-          this._iceRecoveryTimeout = setTimeout(() => {
-            if (this.iceState !== "connected") {
-              log.warn("[streaming] ICE not recovered in 10s, triggering reconnect");
-              this.onStatus(this.iceState)
-            }
-          }, 10000);
-        }
+      log.info("[streaming] ICE State: ", e.target.connectionState)
+      this.iceState = e.target.connectionState
+      if(this.iceState === "disconnected") {
+        this.iceRestart()
+        this._iceRecoveryTimeout = setTimeout(() => {
+          if (this.iceState !== "connected") {
+            log.warn("[streaming] ICE not recovered in 10s, triggering reconnect");
+            if (typeof this.onStatus === "function") this.onStatus(this.iceState)
+          }
+        }, 10000);
+      }
 
-        if(this.iceState === "connected" && this._iceRecoveryTimeout) {
+      if(this.iceState === "connected" && this._iceRecoveryTimeout) {
+        clearTimeout(this._iceRecoveryTimeout);
+        this._iceRecoveryTimeout = null;
+      }
+
+      if(this.iceState === "failed") {
+        if (this._iceRecoveryTimeout) {
           clearTimeout(this._iceRecoveryTimeout);
           this._iceRecoveryTimeout = null;
         }
-
-        if(this.iceState === "failed") {
-          if (this._iceRecoveryTimeout) {
-            clearTimeout(this._iceRecoveryTimeout);
-            this._iceRecoveryTimeout = null;
-          }
-          this.onStatus(this.iceState)
-        }
-      } catch (error) {
-        throw error;
+        if (typeof this.onStatus === "function") this.onStatus(this.iceState)
       }
     };
 
     this.pc.ontrack = (e) => {
-      try {
-        log.info("[streaming] Got track: ", e)
-        let stream = new MediaStream([e.track]);
-        resolve(stream);
-      } catch (error) {
-        throw error;
-      }
+      log.info("[streaming] Got track: ", e)
+      let stream = new MediaStream([e.track]);
+      resolve(stream);
     };
   }
 
@@ -193,15 +186,14 @@ export class StreamingPlugin extends EventEmitter {
           clearInterval(chk);
         } else if (mqtt.mq.connected) {
           log.debug("[streaming] - Trigger ICE Restart - ");
-          try {
-            this.watch(this.streamId, true);
-          } catch (error) {
-            throw error;
+          const p = this.watch(this.streamId, true);
+          if (p && typeof p.catch === "function") {
+            p.catch((err) => log.debug("[streaming] watch(restart) failed:", err && err.message));
           }
           clearInterval(chk);
         } else if (count >= 10) {
           clearInterval(chk);
-          this.onStatus(this.iceState)
+          if (typeof this.onStatus === "function") this.onStatus(this.iceState)
         } else {
           log.debug("[streaming] ICE Restart try: " + count)
         }
@@ -218,11 +210,7 @@ export class StreamingPlugin extends EventEmitter {
   }
 
   onmessage (data) {
-    try {
-      log.info('[streaming] onmessage: ', data)
-    } catch (error) {
-      throw error;
-    }
+    log.info('[streaming] onmessage: ', data)
   }
 
   oncleanup () {
@@ -260,12 +248,11 @@ export class StreamingPlugin extends EventEmitter {
       clearTimeout(this._iceRecoveryTimeout);
       this._iceRecoveryTimeout = null;
     }
-    try {
-      this.pc.close()
-      this.removeAllListeners()
-      this.janus = null
-    } catch (error) {
-      throw error;
+    if (this.pc) {
+      try { this.pc.close() } catch (_) { /* already closed */ }
+      this.pc = null;
     }
+    this.removeAllListeners()
+    this.janus = null
   }
 }
