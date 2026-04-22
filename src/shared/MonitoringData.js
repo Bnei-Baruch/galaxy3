@@ -818,7 +818,7 @@ export const MonitoringData = class {
     if (bwRatio >= 0.5 && hasNetworkDegradation && tier < TIER_WEAK) {
       tier = bumpTier(tier, tier + 1, `encoder bw-limited ${Math.round(bwRatio * 100)}%`);
     } else if (bwRatio >= 0.5) {
-      log.info(`[monitoring] encoder bandwidth-limited ${Math.round(bwRatio * 100)}% (no other degradation)`);
+      log.debug(`[monitoring] encoder bandwidth-limited ${Math.round(bwRatio * 100)}% (no other degradation)`);
     }
     // CPU-limited — not the network, just log it.
     const lastSample = samples[samples.length - 1];
