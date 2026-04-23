@@ -231,9 +231,9 @@ class VirtualStreaming extends Component {
             <span style={{fontWeight: 700, fontSize: "1.5em", lineHeight: 1.3}}>
               {t("oldClient.reconnectingTitle")}
             </span>
-            <span style={{fontSize: "1.2em", opacity: 0.85, lineHeight: 1.3}}>
+            {/* <span style={{fontSize: "1.2em", opacity: 0.85, lineHeight: 1.3}}>
               {t("oldClient.reconnectingHint")}
-            </span>
+            </span> */}
           </div>
         )}
         <div className="video__overlay">

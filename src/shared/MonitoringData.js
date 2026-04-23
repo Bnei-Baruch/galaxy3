@@ -818,7 +818,7 @@ export const MonitoringData = class {
     if (bwRatio >= 0.5 && hasNetworkDegradation && tier < TIER_WEAK) {
       tier = bumpTier(tier, tier + 1, `encoder bw-limited ${Math.round(bwRatio * 100)}%`);
     } else if (bwRatio >= 0.5) {
-      log.info(`[monitoring] encoder bandwidth-limited ${Math.round(bwRatio * 100)}% (no other degradation)`);
+      log.debug(`[monitoring] encoder bandwidth-limited ${Math.round(bwRatio * 100)}% (no other degradation)`);
     }
     // CPU-limited — not the network, just log it.
     const lastSample = samples[samples.length - 1];
@@ -863,35 +863,35 @@ export const MonitoringData = class {
       user: this.user,
       data: sentData,
     };
-    log.debug("[monitoring] Spec", this.spec);
-    log.debug("[monitoring] Update", data);
-    // Update backend.
-    fetch(`${MONITORING_BACKEND}/update`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Content-Encoding": "gzip",
-      },
-      body: pako.gzip(JSON.stringify(data)),
-    })
-      .then((response) => {
-        if (response.ok) {
-          this.fetchErrors = 0;
-          return response.json();
-        } else {
-          throw new Error(`[monitoring] Fetch error: ${response.status}`);
-        }
-      })
-      .then((data) => {
-        if (data && data.spec) {
-          this.updateSpec(data.spec);
-        }
-        this.lastUpdateTimestamp = lastTimestamp;
-        log.debug("[monitoring] Update success.");
-      })
-      .catch((error) => {
-        log.error("[monitoring] Update monitoring error:", error);
-        this.fetchErrors++;
-      });
+    // log.debug("[monitoring] Spec", this.spec);
+    // log.debug("[monitoring] Update", data);
+    // // Update backend.
+    // fetch(`${MONITORING_BACKEND}/update`, {
+    //   method: "POST",
+    //   headers: {
+    //     "Content-Type": "application/json",
+    //     "Content-Encoding": "gzip",
+    //   },
+    //   body: pako.gzip(JSON.stringify(data)),
+    // })
+    //   .then((response) => {
+    //     if (response.ok) {
+    //       this.fetchErrors = 0;
+    //       return response.json();
+    //     } else {
+    //       throw new Error(`[monitoring] Fetch error: ${response.status}`);
+    //     }
+    //   })
+    //   .then((data) => {
+    //     if (data && data.spec) {
+    //       this.updateSpec(data.spec);
+    //     }
+    //     this.lastUpdateTimestamp = lastTimestamp;
+    //     log.debug("[monitoring] Update success.");
+    //   })
+    //   .catch((error) => {
+    //     log.error("[monitoring] Update monitoring error:", error);
+    //     this.fetchErrors++;
+    //   });
   }
 };
