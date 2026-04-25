@@ -155,6 +155,7 @@ class VirtualMqttClient extends Component {
       showCountryDialog: false,
     };
 
+    this.pendingStreams = {};
     this.hideBarsTimer = null;
     this.conferenceReconnectAttempts = 0;
     this.handleAppFullScreenChange = this.handleAppFullScreenChange.bind(this);
@@ -203,7 +204,34 @@ class VirtualMqttClient extends Component {
         this.setState({connectionStatus});
       });
     }
+
+    this.attachPendingStreams();
   }
+
+  attachPendingStreams = () => {
+    for (const feed of Object.keys(this.pendingStreams)) {
+      const pending = this.pendingStreams[feed];
+      if (pending.video) {
+        const ref = this.refs["remoteVideo" + feed];
+        if (ref) {
+          log.info("[client] Attaching pending video stream for feed " + feed);
+          ref.srcObject = pending.video;
+          delete pending.video;
+        }
+      }
+      if (pending.audio) {
+        const ref = this.refs["remoteAudio" + feed];
+        if (ref) {
+          log.info("[client] Attaching pending audio stream for feed " + feed);
+          ref.srcObject = pending.audio;
+          delete pending.audio;
+        }
+      }
+      if (!pending.video && !pending.audio) {
+        delete this.pendingStreams[feed];
+      }
+    }
+  };
 
   handleAppFullScreenChange() {
     const appFullScreen = isFullScreen();
@@ -830,6 +858,8 @@ class VirtualMqttClient extends Component {
 
     if (janus) janus.destroy();
 
+    this.pendingStreams = {};
+
     this.setState({
       muted: false,
       question: false,
@@ -970,11 +1000,23 @@ class VirtualMqttClient extends Component {
       if (track.kind === "audio") {
         log.debug("[client] Created remote audio stream:", stream);
         let remoteaudio = this.refs["remoteAudio" + feed];
-        if (remoteaudio) remoteaudio.srcObject = stream;
+        if (remoteaudio) {
+          remoteaudio.srcObject = stream;
+        } else {
+          log.warn("[client] Audio ref not ready for feed " + feed + ", storing for later");
+          if (!this.pendingStreams[feed]) this.pendingStreams[feed] = {};
+          this.pendingStreams[feed].audio = stream;
+        }
       } else if (track.kind === "video") {
         log.debug("[client] Created remote video stream:", stream);
         const remotevideo = this.refs["remoteVideo" + feed];
-        if (remotevideo) remotevideo.srcObject = stream;
+        if (remotevideo) {
+          remotevideo.srcObject = stream;
+        } else {
+          log.warn("[client] Video ref not ready for feed " + feed + ", storing for later");
+          if (!this.pendingStreams[feed]) this.pendingStreams[feed] = {};
+          this.pendingStreams[feed].video = stream;
+        }
       }
     }
   };
