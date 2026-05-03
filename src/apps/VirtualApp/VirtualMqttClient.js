@@ -39,7 +39,7 @@ import VirtualStreaming from "./VirtualStreaming";
 import JanusStream from "../../shared/streaming-utils";
 import {kc} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
-import {captureException, captureMessage, markNetworkIssue, sentryDebugAction, setSentryGeo, setSentryTag, updateSentryUser} from "../../shared/sentry";
+import {captureException, captureMessage, sentryDebugAction, setSentryGeo, setSentryTag, updateSentryUser} from "../../shared/sentry";
 import {isFullScreen, toggleFullScreen} from "./FullScreenHelper";
 import {AppBar, Badge, Box, Button as ButtonMD, ButtonGroup, CircularProgress, Grid, IconButton, useTheme} from "@mui/material";
 import {ChevronLeft, ChevronRight, PlayCircleOutline} from "@mui/icons-material";
@@ -349,7 +349,6 @@ class VirtualMqttClient extends Component {
     mqtt.init(user, (reconnected, error) => {
       if (error) {
         log.info("[client] MQTT disconnected");
-        markNetworkIssue();
         captureMessage("disconnected", {});
         this.setState({mqttOn: false});
         window.location.reload();
@@ -443,9 +442,6 @@ class VirtualMqttClient extends Component {
   reinitClient = () => {
     this.conferenceReconnectAttempts++;
     log.warn("[client] conference reconnect attempt: " + this.conferenceReconnectAttempts + "/30");
-    // Mark the whole retry window as "network issue" so the cascade of
-    // WebRTC teardown errors during destroy/reinit is filtered in sentry.js.
-    markNetworkIssue(5 * 60 * 1000);
     // Send only one Sentry event per incident (first attempt); subsequent
     // retries stay visible in breadcrumbs via the log.warn above.
     if (this.conferenceReconnectAttempts === 1) {
@@ -493,7 +489,6 @@ class VirtualMqttClient extends Component {
     iceFailed = (data) => {
       const {exit_room} = this.state;
       if(!exit_room && (data === "publisher" || data === "subscriber")) {
-        markNetworkIssue();
         captureException(new Error("ice failed"), {source: data});
         log.warn("[client] iceFailed for: ", data, " - attempting silent reconnect");
         this.exitRoom(true, () => {
@@ -689,6 +684,7 @@ class VirtualMqttClient extends Component {
 
     videoroom.join(selected_room, d, user).then((data) => {
       log.info("[client] Joined respond :", data);
+      captureMessage("join room", {room: selected_room, reconnect: !!reconnect, id: data && data.id}, "info");
 
       // Feeds count with user role
       let feeds_count = userFeeds(data.publishers).length;
