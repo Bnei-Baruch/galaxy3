@@ -60,7 +60,7 @@ module.exports = {
   devtool: "source-map",
   entry: path.resolve(__dirname, './src/index.js'),
   output: {
-    path: path.resolve(__dirname, 'build', process.env.REACT_APP_GALAXY_APP || 'virtual'),
+    path: path.resolve(__dirname, 'build'),
     filename: 'static/js/[name].[chunkhash:8].js',
     chunkFilename: 'static/js/[name].[chunkhash:8].chunk.js',
     clean: true,
