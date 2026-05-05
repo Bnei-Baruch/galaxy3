@@ -50,17 +50,15 @@ To build a specific application for production, use the corresponding build scri
 
 ## Build Artifacts
 
-Once the build process completes successfully, all production-ready artifacts will be generated in the **`build/`** directory at the root of the project, inside a subfolder named after the application. 
+Once the build process completes successfully, all production-ready artifacts will be generated in the **`build/`** directory at the root of the project. The `build/` folder is overwritten on every build (the `clean: true` option in webpack output is enabled), so only the most recently built application is present at any given time.
 
-For example, if you run `yarn build:admin`, the files will be output to `build/admin/`. If you run `yarn build:virtual`, they will be output to `build/virtual/`.
-
-Each application folder (e.g., `build/virtual/`) will contain:
+The `build/` directory contains:
 - `index.html` (The main HTML file)
 - `static/js/` (Bundled JavaScript files)
 - `static/css/` (Bundled CSS files)
 - `static/media/` (Images, fonts, and other static assets)
 
-This means you can safely run multiple build commands in a row (e.g., `yarn build:virtual` followed by `yarn build:admin`) without them overwriting each other.
+If you need to build several applications side by side (without overwriting), build them one at a time and copy the output elsewhere between runs.
 
 You can serve the contents of the `build/` directory using any static file server (like Nginx, Apache, or `serve`).
 
