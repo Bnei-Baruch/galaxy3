@@ -40,7 +40,29 @@ jobs:
         env:
           REACT_APP_STUDY_MATERIALS_API_URL: ${{ secrets.REACT_APP_STUDY_MATERIALS_API_URL }}
           REACT_APP_STUDY_MATERIALS_WIDGET_URL: ${{ secrets.REACT_APP_STUDY_MATERIALS_WIDGET_URL }}
-      
+
+      - name: Extract release version
+        id: release
+        run: |
+          VERSION=$(grep -oE '[0-9]+\.[0-9]+\.[0-9]+' src/apps/VirtualApp/Version.js | head -1)
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Release version: $VERSION"
+
+      - name: Upload sourcemaps to Sentry
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
+          SENTRY_URL_PREFIX: ${{ vars.SENTRY_URL_PREFIX }}
+        run: |
+          yarn sentry-cli releases new "$RELEASE_VERSION"
+          yarn sentry-cli sourcemaps inject ./build/static/js
+          yarn sentry-cli releases files "$RELEASE_VERSION" upload-sourcemaps ./build/static/js \
+            --url-prefix "$SENTRY_URL_PREFIX" \
+            --rewrite
+          yarn sentry-cli releases finalize "$RELEASE_VERSION"
+
       - name: Deploy to ${{ github.event.inputs.environment }}
         env:
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
