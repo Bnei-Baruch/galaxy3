@@ -64,13 +64,36 @@ You can serve the contents of the `build/` directory using any static file serve
 
 ## Environment Configuration
 
-The application relies on environment variables for configuration (e.g., URLs for MQTT, Janus, Keycloak auth, API backends). 
-All React environment variables must be prefixed with `REACT_APP_`.
+The application relies on environment variables for configuration (e.g., URLs for MQTT, Janus, Keycloak auth, API backends). All React environment variables must be prefixed with `REACT_APP_`.
 
-You can create different `.env` files based on your environment needs:
-- `.env` (Default, lowest priority)
-- `.env.development` (Loaded when running `yarn start`)
-- `.env.production` (Loaded when running `yarn build`)
-- `.env.staging` (Loaded if you set `REACT_APP_ENV=dev`)
+### Default behavior
 
-Alternatively, you can just maintain a single `.env` file in the root directory and comment/uncomment variables as needed.
+By default, both `yarn start` and `yarn build` load **only `.env`** from the project root. No automatic per-mode files (no implicit `.env.development` / `.env.production`).
+
+### Loading an additional overlay file
+
+To layer another file on top of `.env`, set `REACT_APP_ENV` to its suffix. The file `.env.<suffix>` is then loaded and its keys override those from `.env`.
+
+```bash
+# Use .env + .env.local
+REACT_APP_ENV=local yarn start
+
+# Use .env + .env.dev
+REACT_APP_ENV=dev yarn build
+
+# Use .env + .env.prod
+REACT_APP_ENV=prod yarn build:virtual
+
+# Use .env + .env.rus (or any other custom suffix you create)
+REACT_APP_ENV=rus yarn start
+```
+
+If `REACT_APP_ENV` is set but the corresponding file is missing, webpack prints a warning and continues with just `.env`.
+
+### Priority order (lowest to highest)
+
+1. `.env`
+2. `.env.<REACT_APP_ENV>` (if `REACT_APP_ENV` is set and the file exists)
+3. `REACT_APP_*` variables from the shell environment (e.g. `REACT_APP_FOO=bar yarn build`)
+
+Higher-priority sources override the same keys from lower-priority ones.

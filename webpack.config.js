@@ -7,21 +7,15 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin')
 const WorkerPlugin = require('worker-plugin');
 
-// Determine the current environment (e.g., 'development', 'production', 'staging')
-// We check REACT_APP_ENV first, then NODE_ENV, and default to 'development'
-const currentEnv = process.env.REACT_APP_ENV || process.env.NODE_ENV || 'development';
+// Always load `.env` as the base. A specific overlay (e.g. `.env.local`,
+// `.env.prod`, `.env.rus`) is loaded ONLY when explicitly requested via
+// the REACT_APP_ENV variable, e.g.: `REACT_APP_ENV=rus yarn build`.
+const envOverlay = process.env.REACT_APP_ENV;
 
-// Files to load in order of lowest to highest priority
-const envFiles = [
-  '.env',
-  '.env.local',
-  `.env.${currentEnv}`,
-  `.env.${currentEnv}.local`,
-].filter(Boolean);
+const envFiles = ['.env', envOverlay && `.env.${envOverlay}`].filter(Boolean);
 
 let parsedEnv = {};
 
-// Load each file if it exists, merging its parsed contents
 envFiles.forEach(envFile => {
   const envPath = path.resolve(__dirname, envFile);
   if (fs.existsSync(envPath)) {
@@ -29,6 +23,8 @@ envFiles.forEach(envFile => {
     if (parsed) {
       parsedEnv = { ...parsedEnv, ...parsed };
     }
+  } else if (envFile !== '.env') {
+    console.warn(`[webpack] REACT_APP_ENV="${envOverlay}" set, but ${envFile} not found`);
   }
 });
 
