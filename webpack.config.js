@@ -48,9 +48,6 @@ const envKeys = Object.keys(mergedEnv)
     return prev;
   }, {});
 
-// Always define NODE_ENV
-envKeys['process.env.NODE_ENV'] = JSON.stringify(process.env.NODE_ENV || 'development');
-
 module.exports = {
   devServer: {
     port: process.env.PORT || '3000',
