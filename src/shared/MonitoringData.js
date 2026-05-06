@@ -440,6 +440,50 @@ export const MonitoringData = class {
               }
             });
           }
+
+          // Collect transport / ICE pair / codec info into a synthetic section so
+          // that extractQualitySample_ can read it. These report types are not
+          // present in per-track getStats(audioTrack/videoTrack) results because
+          // SKIP_REPORTS filters them out, hence we extract them from getStats(null).
+          const transportReports = [];
+          let selectedPairId = null;
+          let pickedPair = null;
+          const candidatesById = {};
+          stats.forEach((r) => {
+            if (!r) return;
+            if (r.type === "transport" && r.selectedCandidatePairId) {
+              selectedPairId = r.selectedCandidatePairId;
+            }
+            if (r.type === "local-candidate" || r.type === "remote-candidate") {
+              candidatesById[r.id] = r;
+            }
+          });
+          stats.forEach((r) => {
+            if (!r || r.type !== "candidate-pair") return;
+            if (selectedPairId && r.id === selectedPairId) {
+              pickedPair = r;
+            } else if (!pickedPair && (r.selected === true || r.nominated === true)) {
+              pickedPair = r;
+            }
+          });
+          if (pickedPair) {
+            transportReports.push({type: "candidate-pair", ...pickedPair});
+            const local = candidatesById[pickedPair.localCandidateId];
+            if (local) transportReports.push({type: "local-candidate", ...local});
+          }
+          // Per-track codec reports (audio/opus, video/H264, ...). Adding to the
+          // appropriate section so extractQualitySample_ can pick them up.
+          stats.forEach((r) => {
+            if (!r || r.type !== "codec") return;
+            const kind = r.kind || (r.mimeType && r.mimeType.split("/")[0]);
+            const target = datas.find((d) => d.name === kind);
+            if (target && !target.reports.some((x) => x && x.type === "codec")) {
+              target.reports.push(r);
+            }
+          });
+          if (transportReports.length) {
+            datas.push({name: "transport", reports: transportReports, timestamp: defaultTimestamp});
+          }
         }).catch((e) => {
           log.debug("[monitoring] getStats(null) failed:", e && e.message);
         })
@@ -653,11 +697,30 @@ export const MonitoringData = class {
       jitter: null,         // ms, averaged across audio+video remote-inbound
       packetsLost: 0,       // cumulative, audio+video
       packetsSent: 0,       // cumulative, audio+video
+      bytesSent: 0,         // cumulative, audio+video — for bitrate bucketing
       qualityLimit: null,   // "none" | "cpu" | "bandwidth" | "other"
+      iceCandidate: null,   // "host" | "srflx" | "prflx" | "relay" of selected local candidate
+      relayProtocol: null,  // "udp" | "tcp" | "tls" — only when iceCandidate === "relay"
+      audioCodec: null,     // "opus" | "g722" | ...
+      videoCodec: null,     // "H264" | "VP8" | "VP9" | "AV1" | ...
       hasData: false,
     };
     const rttValues = [];
     const jitterValues = [];
+
+    // Transport / ICE pair info is filled in monitor_ from getStats(null) into a
+    // synthetic "transport" section; pull it here.
+    const transportSection = (datas || []).find((d) => d.name === "transport");
+    if (transportSection) {
+      const local = findReport(transportSection.reports, "local-candidate");
+      if (local) {
+        if (local.candidateType) sample.iceCandidate = local.candidateType;
+        if (local.candidateType === "relay") {
+          sample.relayProtocol = local.relayProtocol || local.protocol || null;
+        }
+      }
+    }
+
     for (const sectionName of ["audio", "video"]) {
       const section = (datas || []).find((d) => d.name === sectionName);
       if (!section) continue;
@@ -679,8 +742,18 @@ export const MonitoringData = class {
         sample.packetsSent += outbound.packetsSent;
         sample.hasData = true;
       }
+      if (outbound && typeof outbound.bytesSent === "number" && isFinite(outbound.bytesSent)) {
+        sample.bytesSent += outbound.bytesSent;
+      }
       if (sectionName === "video" && outbound && typeof outbound.qualityLimitationReason === "string") {
         sample.qualityLimit = outbound.qualityLimitationReason;
+      }
+      // Codec mime — extract the right-hand side ("audio/opus" -> "opus", "video/H264" -> "H264")
+      const codecReport = findReport(section.reports, "codec");
+      if (codecReport && typeof codecReport.mimeType === "string") {
+        const codecName = codecReport.mimeType.split("/").pop();
+        if (sectionName === "audio" && !sample.audioCodec) sample.audioCodec = codecName;
+        if (sectionName === "video" && !sample.videoCodec) sample.videoCodec = codecName;
       }
     }
     if (rttValues.length) {
@@ -844,7 +917,85 @@ export const MonitoringData = class {
       log.debug(`[monitoring] link quality: ${this.lastQualityStatus || "(none)"} -> ${status} (${reason})`);
       this.lastQualityStatus = status;
     }
+    this.lastQualityReason = reason;
     this.onStatus(status, reason);
+  }
+
+  // Snapshot of the connection state used by Sentry to classify network events
+  // (ice_failed, conference_reconnect, ...) — see captureNetworkEvent in
+  // src/shared/sentry.js. The category field is the main signal that lets us
+  // tell "noise from a flaky link" apart from "the link was fine, something
+  // else broke".
+  getLinkSnapshot(windowMs = 30 * 1000) {
+    const now = Date.now();
+    const samples = (this.qualitySamples || []).filter(
+      (s) => s && now - s.timestamp <= windowMs
+    );
+    const last = samples[samples.length - 1] || null;
+    const first = samples[0] || null;
+
+    const meanOf = (key) => {
+      const v = samples.map((s) => s[key]).filter((x) => x != null && isFinite(x));
+      return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null;
+    };
+    const lossPct = (() => {
+      if (!first || !last || samples.length < 2) return null;
+      const sent = Math.max(0, (last.packetsSent || 0) - (first.packetsSent || 0));
+      const lost = Math.max(0, (last.packetsLost || 0) - (first.packetsLost || 0));
+      const total = sent + lost;
+      return total === 0 ? null : (lost / total) * 100;
+    })();
+    const bitrateBps = (() => {
+      if (!first || !last || samples.length < 2) return null;
+      const dt = (last.timestamp - first.timestamp) / 1000;
+      if (dt <= 0) return null;
+      const dBytes = Math.max(0, (last.bytesSent || 0) - (first.bytesSent || 0));
+      return dBytes <= 0 ? null : (dBytes * 8) / dt;
+    })();
+
+    const rttMs = meanOf("rtt");
+    const jitterMs = meanOf("jitter");
+
+    let category = "unknown";
+    if (this.lastQualityStatus === LINK_STATE_INIT || samples.length < 2) {
+      category = "cold_start";
+    } else if (
+      this.lastQualityStatus === LINK_STATE_WEAK ||
+      this.lastQualityStatus === LINK_STATE_MEDIUM
+    ) {
+      category = "weak_link";
+    } else {
+      // Was nominally good, but maybe samples already started degrading.
+      const badSamples = samples.filter(
+        (s) =>
+          (s.rtt != null && s.rtt > 200) ||
+          (s.jitter != null && s.jitter > 30) ||
+          (lossPct != null && lossPct > 1)
+      ).length;
+      if (badSamples / samples.length >= 0.5) {
+        category = "weak_link";
+      } else {
+        category = "sudden_drop";
+      }
+    }
+
+    return {
+      linkState: this.lastQualityStatus || "unknown",
+      iceState: (this.miscData && this.miscData.iceState) || "unknown",
+      category,
+      samples: samples.length,
+      windowMs,
+      rttMs: rttMs == null ? null : Math.round(rttMs),
+      jitterMs: jitterMs == null ? null : Math.round(jitterMs),
+      lossPct: lossPct == null ? null : Number(lossPct.toFixed(2)),
+      qualityLimit: last ? last.qualityLimit : null,
+      iceCandidate: last ? last.iceCandidate : null,
+      relayProtocol: last ? last.relayProtocol : null,
+      audioCodec: last ? last.audioCodec : null,
+      videoCodec: last ? last.videoCodec : null,
+      bitrateBps: bitrateBps == null ? null : Math.round(bitrateBps),
+      reason: this.lastQualityReason || null,
+    };
   }
 
   update() {

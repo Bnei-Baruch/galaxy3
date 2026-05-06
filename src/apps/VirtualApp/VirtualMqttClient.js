@@ -39,7 +39,15 @@ import VirtualStreaming from "./VirtualStreaming";
 import JanusStream from "../../shared/streaming-utils";
 import {kc} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
-import {captureException, captureMessage, sentryDebugAction, setSentryGeo, setSentryTag, updateSentryUser} from "../../shared/sentry";
+import * as Sentry from "@sentry/react";
+import {
+  captureNetworkEvent,
+  sentryDebugAction,
+  setLinkSnapshotProvider,
+  setSentryGeo,
+  setSentryTag,
+  updateSentryUser,
+} from "../../shared/sentry";
 import {isFullScreen, toggleFullScreen} from "./FullScreenHelper";
 import {AppBar, Badge, Box, Button as ButtonMD, ButtonGroup, CircularProgress, Grid, IconButton, useTheme} from "@mui/material";
 import {ChevronLeft, ChevronRight, PlayCircleOutline} from "@mui/icons-material";
@@ -89,6 +97,9 @@ const sortAndFilterFeeds = (feeds) =>
 
 const userFeeds = (feeds) => feeds.filter((feed) => feed.display.role === userRolesEnum.user);
 const monitoringData = new MonitoringData();
+// Wire MonitoringData -> Sentry so captureNetworkEvent can pull a connection
+// snapshot (rtt/jitter/loss/category/iceCandidate/...) at the moment of failure.
+setLinkSnapshotProvider(() => monitoringData.getLinkSnapshot());
 
 
 class VirtualMqttClient extends Component {
@@ -157,6 +168,11 @@ class VirtualMqttClient extends Component {
 
     this.hideBarsTimer = null;
     this.conferenceReconnectAttempts = 0;
+    // Lifetime counter (across all reconnect cycles in this page session).
+    // Reset only on full page reload; a single user's many flaps in one
+    // session is a strong signal we ship to Sentry as a tag bucket.
+    this.reconnectsInSession = 0;
+    this.joinedAt = 0;
     this.handleAppFullScreenChange = this.handleAppFullScreenChange.bind(this);
     this.handleUserActivityForBars = this.handleUserActivityForBars.bind(this);
   }
@@ -199,6 +215,7 @@ class VirtualMqttClient extends Component {
         const prev = this.state.connectionStatus;
         if (prev !== connectionStatus) {
           log.warn(`[connection] status changed: ${prev || "(none)"} -> ${connectionStatus}. ${formula || ""}`);
+          Sentry.setTag("net.linkState", connectionStatus || "unknown");
         }
         this.setState({connectionStatus});
       });
@@ -349,7 +366,11 @@ class VirtualMqttClient extends Component {
     mqtt.init(user, (reconnected, error) => {
       if (error) {
         log.info("[client] MQTT disconnected");
-        captureMessage("disconnected", {});
+        captureNetworkEvent("disconnected", "mqtt", {
+          reconnectsInSession: this.reconnectsInSession,
+          joinedAt: this.joinedAt,
+          role: this.state.user && this.state.user.role,
+        });
         this.setState({mqttOn: false});
         window.location.reload();
         alert("- Lost Connection to Arvut System -");
@@ -445,7 +466,19 @@ class VirtualMqttClient extends Component {
     // Send only one Sentry event per incident (first attempt); subsequent
     // retries stay visible in breadcrumbs via the log.warn above.
     if (this.conferenceReconnectAttempts === 1) {
-      captureException(new Error("conference reconnect"), {attempt: this.conferenceReconnectAttempts});
+      this.reconnectsInSession += 1;
+      captureNetworkEvent("conference_reconnect", "mqtt", {
+        attempt: this.conferenceReconnectAttempts,
+        reconnectsInSession: this.reconnectsInSession,
+        room: this.state.selected_room,
+        joinedAt: this.joinedAt,
+        role: this.state.user && this.state.user.role,
+        isGroup: this.state.isGroup,
+        shidur: this.state.shidur,
+        numVU: this.state.numberOfVirtualUsers,
+        feeds: (this.state.feeds || []).length,
+        hasVideo: !!this.state.localVideoTrack,
+      });
     }
     this.setState({reconnecting: true});
 
@@ -455,7 +488,23 @@ class VirtualMqttClient extends Component {
       this.setState({reconnecting: false});
       this.exitRoom(false, () => {
         log.error("[client] conference reconnect failed after 30 attempts");
-        captureException(new Error("conference reconnect failed"), {attempts: failedAfter});
+        captureNetworkEvent(
+          "conference_reconnect_failed",
+          "mqtt",
+          {
+            attempt: failedAfter,
+            reconnectsInSession: this.reconnectsInSession,
+            room: this.state.selected_room,
+            joinedAt: this.joinedAt,
+            role: this.state.user && this.state.user.role,
+            isGroup: this.state.isGroup,
+            shidur: this.state.shidur,
+            numVU: this.state.numberOfVirtualUsers,
+            feeds: (this.state.feeds || []).length,
+            hasVideo: !!this.state.localVideoTrack,
+          },
+          "error"
+        );
         alert(this.props.t("oldClient.networkSettingsChanged"));
       });
       return;
@@ -489,7 +538,17 @@ class VirtualMqttClient extends Component {
     iceFailed = (data) => {
       const {exit_room} = this.state;
       if(!exit_room && (data === "publisher" || data === "subscriber")) {
-        captureException(new Error("ice failed"), {source: data});
+        captureNetworkEvent("ice_failed", data, {
+          reconnectsInSession: this.reconnectsInSession,
+          room: this.state.selected_room,
+          joinedAt: this.joinedAt,
+          role: this.state.user && this.state.user.role,
+          isGroup: this.state.isGroup,
+          shidur: this.state.shidur,
+          numVU: this.state.numberOfVirtualUsers,
+          feeds: (this.state.feeds || []).length,
+          hasVideo: !!this.state.localVideoTrack,
+        });
         log.warn("[client] iceFailed for: ", data, " - attempting silent reconnect");
         this.exitRoom(true, () => {
           this.reinitClient();
@@ -662,6 +721,7 @@ class VirtualMqttClient extends Component {
     user.janus = room.janus;
     this.setState({selected_room, user});
     updateSentryUser(user);
+    Sentry.setTag("gxy.room", String(selected_room));
   };
 
   joinRoom = (reconnect, janus, videoroom, user) => {
@@ -684,7 +744,10 @@ class VirtualMqttClient extends Component {
 
     videoroom.join(selected_room, d, user).then((data) => {
       log.info("[client] Joined respond :", data);
-      captureMessage("join room", {room: selected_room, reconnect: !!reconnect, id: data && data.id}, "info");
+      // Mark the moment we are inside the room — used by network telemetry
+      // events to compute gxy.uptimeBucket (lt5s / 5_30s / 30s_2m / ...).
+      this.joinedAt = Date.now();
+      Sentry.setTag("gxy.role", (user && user.role) || "unknown");
 
       // Feeds count with user role
       let feeds_count = userFeeds(data.publishers).length;
@@ -704,7 +767,14 @@ class VirtualMqttClient extends Component {
 
         const vst = json.streams.find((v) => v.type === "video" && v.h264_profile);
         if (vst && vst?.h264_profile !== "42e01f") {
-          captureMessage("h264_profile", vst);
+          captureNetworkEvent("h264_profile", "publisher", {
+            room: this.state.selected_room,
+            joinedAt: this.joinedAt,
+            role: user && user.role,
+            isGroup: this.state.isGroup,
+            h264_profile: vst.h264_profile,
+            mid: vst.mid,
+          }, "info");
         }
 
         this.conferenceReconnectAttempts = 0;
