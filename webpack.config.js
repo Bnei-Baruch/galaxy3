@@ -16,10 +16,14 @@ const envFiles = ['.env', envOverlay && `.env.${envOverlay}`].filter(Boolean);
 
 let parsedEnv = {};
 
+// Use `dotenv.parse` (not `dotenv.config`) to avoid the side effect of
+// writing into process.env. Otherwise the base `.env` populates process.env,
+// and later when we merge in REACT_APP_* from process.env those base values
+// override the overlay file (e.g. .env.rus) we just loaded.
 envFiles.forEach(envFile => {
   const envPath = path.resolve(__dirname, envFile);
   if (fs.existsSync(envPath)) {
-    const parsed = dotenv.config({ path: envPath }).parsed;
+    const parsed = dotenv.parse(fs.readFileSync(envPath));
     if (parsed) {
       parsedEnv = { ...parsedEnv, ...parsed };
     }
