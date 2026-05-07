@@ -261,27 +261,35 @@ export class JanusMqtt {
   }
 
   _cleanupTransactions () {
+    // Cleanup must always reach the end. A throw from any individual reject
+    // handler or mqtt teardown step would otherwise leave zombies behind
+    // (un-cleared transactions map, dangling MQTT listeners). Wrap every
+    // step so the function is best-effort and never partially completes.
     Object.keys(this.transactions).forEach((transactionId) => {
       const transaction = this.transactions[transactionId]
-      if (transaction.reject) {
-        // Reject with a real Error so unhandled rejections surface as a
-        // recognisable message ("[janus] transaction cancelled during
-        // cleanup") instead of the opaque "Non-Error promise rejection
-        // captured with value: undefined" that used to fill Sentry.
-        transaction.reject(new Error('[janus] transaction cancelled during cleanup'))
-      }
+      try {
+        if (transaction && typeof transaction.reject === 'function') {
+          // Synthetic Error — `name` and `cancelled` flag let callers
+          // distinguish "expected teardown" from a real Janus error and
+          // let Sentry filter it via ignoreErrors. Not a bug by itself.
+          const err = new Error('[janus] transaction cancelled during cleanup')
+          err.name = 'JanusCleanupCancelled'
+          err.cancelled = true
+          transaction.reject(err)
+        }
+      } catch (_e) { /* never let one bad reject break the whole cleanup */ }
     })
     this.transactions = {}
     this.sessionId = null
     this.isConnected = false
 
-    mqtt.exit(this.rxTopic + "/" + this.userId);
-    mqtt.exit(this.rxTopic);
-    mqtt.exit(this.stTopic);
+    try { mqtt.exit(this.rxTopic + "/" + this.userId) } catch (_e) {}
+    try { mqtt.exit(this.rxTopic) } catch (_e) {}
+    try { mqtt.exit(this.stTopic) } catch (_e) {}
 
-    mqtt.mq.removeListener(this.srv, this.onMessage);
-    if(this.user.mit) mqtt.mq.removeListener(this.user.mit, this.onMessage);
-    mqtt.mq.removeListener(this.sessionId, this.onMessage);
+    try { mqtt.mq.removeListener(this.srv, this.onMessage) } catch (_e) {}
+    try { if (this.user.mit) mqtt.mq.removeListener(this.user.mit, this.onMessage) } catch (_e) {}
+    try { mqtt.mq.removeListener(this.sessionId, this.onMessage) } catch (_e) {}
   }
 
   onMessage(message, tD) {

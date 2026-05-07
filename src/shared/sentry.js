@@ -202,6 +202,11 @@ export const initSentry = () => {
       /Method not found/,
       // Stale build cached on the client (bumps on next reload).
       /Can't find variable: logMutedMessage/,
+      // Synthetic Error from JanusMqtt._cleanupTransactions — by
+      // definition a non-actionable side-effect of session teardown
+      // (pending plugin transactions get rejected when the session
+      // is destroyed). Filter out so the issue feed stays meaningful.
+      /\[janus\] transaction cancelled during cleanup/,
     ],
     denyUrls: [
       /chrome-extension:\/\//i,

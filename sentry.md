@@ -205,8 +205,34 @@ Implemented in `src/shared/sentry.js`:
 
 Plus `Sentry.init` exclusions:
 
-- `ignoreErrors`: `ResizeObserver loop ...`, `InvalidAccessError: There is no sender or receiver for the track`, `Non-Error promise rejection captured`, `Method not found`, `Can't find variable: logMutedMessage` (stale build).
+- `ignoreErrors`: `ResizeObserver loop ...`, `InvalidAccessError: There is no sender or receiver for the track`, `Non-Error promise rejection captured`, `Method not found`, `Can't find variable: logMutedMessage` (stale build), `[janus] transaction cancelled during cleanup` (synthetic teardown signal — see below).
 - `denyUrls`: `chrome-extension://`, `moz-extension://`, `telegram-web-app`.
+
+### `[janus] transaction cancelled during cleanup`
+
+Synthetic `Error` thrown by `JanusMqtt._cleanupTransactions()` in
+`src/lib/janus-mqtt.js` when a session is being destroyed and there are
+still in-flight plugin transactions in `this.transactions` (publish,
+subscribe, configure, keepalive, ...). It is **not a bug** — it is the
+expected way pending promises get released so callers don't hang
+forever. Triggered from the three teardown paths: `init().disconnect`,
+`destroy()` connected branch, `destroy()` not-connected branch.
+
+The `Error` is tagged with `name: "JanusCleanupCancelled"` and
+`cancelled: true` so callers that wrap plugin transactions can early-
+return without treating it as a real failure:
+
+```js
+.catch((err) => {
+  if (err && err.cancelled) return;
+  // ...real error handling
+})
+```
+
+`_cleanupTransactions` itself wraps every step in `try/catch` to
+guarantee it always reaches the end (cleared transactions map, removed
+MQTT listeners) regardless of any individual reject handler or MQTT
+exit failure.
 
 `beforeBreadcrumb` drops `console.log`-level breadcrumbs to keep payloads
 small.
