@@ -81,21 +81,21 @@ import {CountrySelectionDialog, SKIP_COUNTRY_DIALOG_KEY} from "./components/Coun
 
 const sortAndFilterFeeds = (feeds) =>
   feeds
-    .filter((feed) => !feed.display.role.match(/^(ghost|guest)$/))
+    .filter((feed) => !feed.metadata.role.match(/^(ghost|guest)$/))
     .sort((a, b) => {
       // Groups should go first before non-groups.
       // When both are groups or both non-groups use timestamp
       // to order.
-      if (!!a.display.is_group && !b.display.is_group) {
+      if (!!a.metadata.is_group && !b.metadata.is_group) {
         return -1;
       }
-      if (!a.display.is_group && !!b.display.is_group) {
+      if (!a.metadata.is_group && !!b.metadata.is_group) {
         return 1;
       }
-      return a.display.timestamp - b.display.timestamp;
+      return a.metadata.timestamp - b.metadata.timestamp;
     });
 
-const userFeeds = (feeds) => feeds.filter((feed) => feed.display.role === userRolesEnum.user);
+const userFeeds = (feeds) => feeds.filter((feed) => feed.metadata.role === userRolesEnum.user);
 const monitoringData = new MonitoringData();
 // Wire MonitoringData -> Sentry so captureNetworkEvent can pull a connection
 // snapshot (rtt/jitter/loss/category/iceCandidate/...) at the moment of failure.
@@ -734,6 +734,8 @@ class VirtualMqttClient extends Component {
     user.timestamp = Date.now();
     user.session = janus.sessionId;
     user.handle = videoroom.janusHandleId;
+    user.is_group = isGroup;
+    user.is_desktop = true;
 
     this.setState({janus, videoroom, user, room: selected_room});
 
@@ -919,13 +921,29 @@ class VirtualMqttClient extends Component {
 
   makeSubscription = (newFeeds) => {
     log.info("[client] makeSubscription", newFeeds);
-    const subscription = [];
-    const {feeds: prevFeeds, muteOtherCams} = this.state;
+    const {feeds: prevFeeds, mids, muteOtherCams} = this.state;
     const prevFeedsMap = new Map(prevFeeds.map((f) => [f.id, f]));
+    const subscription = [];
+
+    // Authoritative answer to "are we already subscribed to (feed, mid)?":
+    // the subscriber-PC state from Janus' "updated" events, not our cached
+    // publishers list. Skips re-subscribing to the same (feed_id, feed_mid)
+    // and correctly re-subscribes when MID changes for the same feed.
+    const subscribed = new Set();
+    for (const s of mids) {
+      if (s && s.active && s.feed_id != null && s.feed_mid != null) {
+        subscribed.add(s.feed_id + "|" + s.feed_mid);
+      }
+    }
 
     newFeeds.forEach((feed) => {
       const {id, streams} = feed;
-      feed.display = JSON.parse(feed.display);
+      // Publisher now sends the same lightweight payload in `metadata` as in
+      // the legacy `display` JSON string. Fall back to parsing `display` for
+      // peers still running the old version during a rolling deploy.
+      if (!feed.metadata) {
+        feed.metadata = typeof feed.display === "string" ? JSON.parse(feed.display) : feed.display;
+      }
       const vst = streams.find((v) => v.type === "video" && v.h264_profile);
       if (vst) {
         feed.video = vst.h264_profile === "42e01f";
@@ -936,24 +954,29 @@ class VirtualMqttClient extends Component {
       feed.data = !!streams.find((d) => d.type === "data");
       feed.cammute = !feed.video;
 
-      const prevFeed = prevFeedsMap.get(feed.id);
-      const prevVideo = !!prevFeed && prevFeed.streams?.find((v) => v.type === "video" && v.codec === "h264");
-      const prevAudio = !!prevFeed && prevFeed.streams?.find((a) => a.type === "audio" && a.codec === "opus");
-
       streams.forEach((stream) => {
-        let hasVideo = !muteOtherCams && stream.type === "video" && stream.codec === "h264" && !prevVideo;
-        const hasAudio = stream.type === "audio" && stream.codec === "opus" && !prevAudio;
-        if (stream?.h264_profile && stream?.h264_profile !== "42e01f") {
-          hasVideo = false;
+        if (subscribed.has(id + "|" + stream.mid)) return;
+
+        let want = false;
+        if (stream.type === "video") {
+          if (muteOtherCams) return;
+          if (stream.codec !== "h264") return;
+          if (stream.h264_profile && stream.h264_profile !== "42e01f") return;
+          want = true;
+        } else if (stream.type === "audio") {
+          want = stream.codec === "opus";
+        } else if (stream.type === "data") {
+          want = true;
         }
 
-        if (hasVideo || hasAudio || stream.type === "data") {
-          prevFeedsMap.set(feed.id, feed);
+        if (want) {
+          prevFeedsMap.set(id, feed);
           subscription.push({feed: id, mid: stream.mid});
         }
       });
     });
-    const feeds = Array.from(prevFeedsMap, ([k, v]) => v);
+
+    const feeds = Array.from(prevFeedsMap.values());
     this.setState({feeds: sortAndFilterFeeds(feeds)});
     if (subscription.length > 0) {
       this.subscribeTo(subscription);
@@ -1018,14 +1041,32 @@ class VirtualMqttClient extends Component {
   };
 
   onUpdateStreams = (streams) => {
-    const {mids} = this.state;
     log.debug("[client] Updated streams :", streams);
-    for (let i in streams) {
-      let mindex = streams[i]["mid"];
-      //let feed_id = streams[i]["feed_id"];
-      mids[mindex] = streams[i];
+    // Janus sends the FULL current state on every "updated" event, so we
+    // rebuild the map instead of merging. Otherwise freed slots
+    // (active:false) keep masquerading as live subscriptions in state.
+    const next = [];
+    if (Array.isArray(streams)) {
+      for (const s of streams) {
+        if (s && s.mid != null) next[s.mid] = s;
+      }
     }
-    this.setState({mids});
+    const prev = this.state.mids || [];
+    let changed = next.length !== prev.length;
+    if (!changed) {
+      for (let i = 0; i < next.length; i++) {
+        const a = next[i], b = prev[i];
+        if (!a !== !b) { changed = true; break; }
+        if (a && b && (
+          a.feed_id !== b.feed_id ||
+          a.feed_mid !== b.feed_mid ||
+          a.type !== b.type ||
+          a.active !== b.active ||
+          a.ready !== b.ready
+        )) { changed = true; break; }
+      }
+    }
+    if (changed) this.setState({mids: next});
   };
 
   onRemoteTrack = (track, stream, on) => {
@@ -1391,7 +1432,7 @@ class VirtualMqttClient extends Component {
   }
 
   renderMedia = (feed, width, height, layout) => {
-    const {id, talking, question, cammute, display: {display: userName, is_group: isGroup}} = feed;
+    const {id, talking, question, cammute, metadata: {display: userName, is_group: isGroup}} = feed;
     const {muteOtherCams} = this.state;
     const muteCamera = cammute || muteOtherCams;
 
@@ -1945,15 +1986,15 @@ class VirtualMqttClient extends Component {
       const {question, id} = feed;
       otherFeedHasQuestion = otherFeedHasQuestion || (question && id !== myid);
 
-      if (!localPushed && ((!feed.display.is_group && isGroup) ||
-          (feed.display.is_group === isGroup && feed.display.timestamp >= user.timestamp))) {
+      if (!localPushed && ((!feed.metadata.is_group && isGroup) ||
+          (feed.metadata.is_group === isGroup && feed.metadata.timestamp >= user.timestamp))) {
         localPushed = true;
         for (let i = 0; i < parseInt(numberOfVirtualUsers, 10); i++) {
           result.push(this.renderLocalMedia(width, height, i, isGroup));
         }
       }
 
-      if (feed.display.is_group) {
+      if (feed.metadata.is_group) {
         groupsNum += 1;
       }
 
