@@ -217,7 +217,7 @@ class ShidurAppMqtt extends Component {
     api
       .fetchActiveRooms()
       .then((data) => {
-        const users_count = data.map((r) => r.num_users).reduce((su, cur) => su + cur, 0);
+        const users_count = data.map((r) => r.cam_users).reduce((su, cur) => su + cur, 0);
         const isRegoinFilter = Object.values(region_filter).find(v => v)
         let rooms = data;
 
