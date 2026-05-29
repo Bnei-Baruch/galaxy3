@@ -87,55 +87,71 @@ class PreviewPanelMqtt extends Component {
 
   attachPreview = (g) => {
     if (!g || !g.users) return;
-    const list = g.users.filter((u) => u.role === "user" && u.camera && u.rfid);
-    if (list.length === 0) {
-      log.error("- No feeds to show -");
-    }
-    log.info("[preview] feeds: ", list);
-    this.setState({room: g.room}, () => {
-      const subscription = [];
-      for (const user of list) {
-        const feed = user.rfid;
-        let mid = "0";
-        if (user?.extra?.streams) {
-          const mids = user.extra.streams;
-          if (mids.length === 1 && mids[0].type === "audio") continue;
-          if (mids.length === 1 && mids[0].type === "video" && mids[0]?.h264_profile && mids[0]?.h264_profile !== "42e01f") continue;
-          mid = mids[0].type === "audio" ? "1" : "0";
-        }
-        subscription.push({feed, mid});
-      }
-      if (subscription.length > 0) {
-        this.subscribeTo(subscription, g.janus);
-      }
-    });
-  };
-
-  subscribeTo = (subscription, inst) => {
     const {gateways} = this.props;
-    let janus = gateways[inst];
-    let {subscriber, room} = this.state
-
-    if(!janus) {
-      // setTimeout(() => {
-      //   log.info("["+inst+"] Not connected, waiting... ", janus)
-      //   this.subscribeTo(subscription, inst)
-      // }, 1000)
-      return
+    const janus = gateways && gateways[g.janus];
+    if (!janus) {
+      log.error("[preview] no janus gateway for: ", g.janus);
+      return;
     }
 
-    subscriber = new SubscriberPlugin();
+    const subscriber = new SubscriberPlugin();
     subscriber.onTrack = this.onRemoteTrack;
     subscriber.onUpdate = this.onUpdateStreams;
 
-    janus.attach(subscriber).then(data => {
-      this.setState({subscriber});
-      log.info("["+inst+"] Subscriber Handle: ", data)
-      subscriber.join(subscription, room).then(data => {
-        log.info("["+inst+"] Subscriber join: ", data)
-        this.onUpdateStreams(data.streams);
+    janus.attach(subscriber).then((sub) => {
+      this.setState({subscriber: sub, room: g.room});
+      log.info("[preview] Subscriber Handle: ", sub);
+      this.listParticipants(sub, g.room).then((participants) => {
+        const liveIds = new Set(
+          participants
+            .filter((p) => p.publisher)
+            .map((p) => p.id)
+        );
+        log.info("[preview] live publishers: ", liveIds);
+
+        const list = g.users.filter((u) =>
+          u.role === "user" && u.camera && u.rfid && liveIds.has(u.rfid)
+        );
+        if (list.length === 0) {
+          log.error("- No feeds to show -");
+          return;
+        }
+        log.info("[preview] feeds: ", list);
+
+        const subscription = [];
+        for (const user of list) {
+          const feed = user.rfid;
+          let mid = "0";
+          if (user?.extra?.streams) {
+            const mids = user.extra.streams;
+            if (mids.length === 1 && mids[0].type === "audio") continue;
+            if (mids.length === 1 && mids[0].type === "video" && mids[0]?.h264_profile && mids[0]?.h264_profile !== "42e01f") continue;
+            mid = mids[0].type === "audio" ? "1" : "0";
+          }
+          subscription.push({feed, mid});
+        }
+
+        if (subscription.length === 0) return;
+        return sub.join(subscription, g.room).then((data) => {
+          log.info("[preview] Subscriber join: ", data);
+          if (data && data.streams) this.onUpdateStreams(data.streams);
+        }).catch((err) => {
+          log.error("[preview] join error: ", err);
+        });
+      }).catch((err) => {
+        log.error("[preview] listparticipants error: ", err);
       });
-    })
+    }).catch((err) => {
+      log.error("[preview] attach error: ", err);
+    });
+  };
+
+  listParticipants = (subscriber, room) => {
+    const body = {request: "listparticipants", room};
+    return subscriber.transaction("message", {body}, "success").then((param) => {
+      const participants = (param && param.data && param.data.participants) || [];
+      return participants;
+    });
   };
 
   onUpdateStreams = (streams) => {
