@@ -1,5 +1,6 @@
 import React, {Component} from "react";
 import "./JanusHandle.scss";
+import classNames from "classnames";
 import {Button} from "semantic-ui-react";
 import api from "../../shared/Api";
 import {SubscriberPlugin} from "../../lib/subscriber-plugin";
@@ -13,6 +14,25 @@ class PreviewPanelMqtt extends Component {
     name: "",
     room: "",
   };
+
+  getShownCount = (mids) => {
+    const {pg} = this.props;
+    const real = mids.filter((m) => m && m.feed_id);
+    if (!pg || !pg.users) return real.length;
+    return real.filter((m) => pg.users.find((u) => u.rfid === m.feed_id && u.camera)).length;
+  }
+
+  hasGroup = () => {
+    const {pg} = this.props;
+    if (!pg || !pg.users) return false;
+    return pg.users.some((u) => u.camera && u.role === "user" && u.extra?.isGroup);
+  }
+
+  getLayoutCount = (mids) => {
+    const shown = this.getShownCount(mids);
+    const cap = this.hasGroup() ? 10 : 25;
+    return shown >= cap ? cap : shown;
+  }
 
   componentDidMount() {
     this.attachPreview(this.props.pg);
@@ -159,36 +179,86 @@ class PreviewPanelMqtt extends Component {
 
   render() {
     const {mids, delay} = this.state;
+    const {pg} = this.props;
     const width = "400";
     const height = "300";
     const autoPlay = true;
     const controls = false;
     const muted = true;
 
-    let program_feeds = mids.map((mid) => {
-      if (mid && mid.feed_id) {
-        let id = mid.feed_id;
-        return (
-          <div className="video" key={"prov" + id} ref={"provideo" + id} id={"provideo" + id}>
-            <video
-              key={id}
-              ref={"pv" + id}
-              id={"pv" + id}
-              width={width}
-              height={height}
-              autoPlay={autoPlay}
-              controls={controls}
-              muted={muted}
-              playsInline={true}
-            />
-          </div>
-        );
+    const realMids = mids.filter((m) => m && m.feed_id);
+
+    const groupUsers = pg && pg.users ? pg.users.filter((u) => u.camera && u.role === "user" && u.extra?.isGroup) : [];
+    const groupCount = Math.min(groupUsers.length, 2);
+    const hasAnyGroup = groupCount > 0;
+
+    const allowedGroupIds = groupUsers
+      .sort((a, b) => String(a.rfid).localeCompare(String(b.rfid)))
+      .slice(0, 2)
+      .map(u => u.rfid);
+
+    const sortedMids = [...realMids].sort((a, b) => {
+      const aUser = pg?.users?.find((u) => u.rfid === a.feed_id);
+      const bUser = pg?.users?.find((u) => u.rfid === b.feed_id);
+      const aIsGroup = aUser?.extra?.isGroup && allowedGroupIds.includes(a.feed_id);
+      const bIsGroup = bUser?.extra?.isGroup && allowedGroupIds.includes(b.feed_id);
+      if (aIsGroup && !bIsGroup) return -1;
+      if (!aIsGroup && bIsGroup) return 1;
+      return 0;
+    });
+
+    const visibleVideoCount = sortedMids.filter((mid) => {
+      return pg && pg.users && !!pg.users.find((u) => mid.feed_id === u.rfid && u.camera);
+    }).length;
+
+    let regularUserCount = 0;
+    const maxRegularUsers = 4;
+
+    const num_videos = this.getLayoutCount(mids);
+
+    let program_feeds = sortedMids.map((mid) => {
+      let camera = pg && pg.users && !!pg.users.find((u) => mid.feed_id === u.rfid && u.camera);
+      let id = mid.feed_id;
+      const user = pg?.users?.find((u) => u.rfid === id);
+      let isGroup = user?.extra?.isGroup && allowedGroupIds.includes(id);
+
+      if (hasAnyGroup && !isGroup && camera) {
+        regularUserCount++;
+        if (regularUserCount > maxRegularUsers) {
+          camera = false;
+        }
       }
-      return true;
+
+      let isAlone = isGroup && visibleVideoCount === 1;
+
+      return (
+        <div
+          className={classNames(camera ? "video" : "hidden", {
+            "video--group": isGroup,
+            "video--group--multiple": isGroup && groupCount > 1,
+            "video--alone": isAlone
+          })}
+          key={"prov" + id}
+          ref={"provideo" + id}
+          id={"provideo" + id}
+        >
+          <video
+            key={id}
+            ref={"pv" + id}
+            id={"pv" + id}
+            width={width}
+            height={height}
+            autoPlay={autoPlay}
+            controls={controls}
+            muted={muted}
+            playsInline={true}
+          />
+        </div>
+      );
     });
 
     return (
-      <div className={`vclient__main-wrapper no-of-videos-${mids.length} layout--equal broadcast--off`}>
+      <div className={`vclient__main-wrapper no-of-videos-${num_videos} layout--equal broadcast--off`}>
         <div className="videos-panel">
           <div className="videos">
             {this.props.next ? (
@@ -227,7 +297,7 @@ class PreviewPanelMqtt extends Component {
                 />
               </div>
             )}
-            <div className="videos__wrapper">{program_feeds}</div>
+            <div className={classNames("videos__wrapper", {"has-group": hasAnyGroup})}>{program_feeds}</div>
           </div>
         </div>
       </div>

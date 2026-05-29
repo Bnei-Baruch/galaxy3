@@ -16,7 +16,27 @@ class JanusHandleMqtt extends Component {
     room: "",
     myid: null,
     mystream: null,
+    num_videos: 0,
   };
+
+  getShownCount = (feeds) => {
+    const {g} = this.props;
+    if (!g || !g.users) return feeds.length;
+    const shown = feeds.filter((f) => g.users.find((u) => u.rfid === f.id && u.camera));
+    return shown.length;
+  }
+
+  hasGroup = () => {
+    const {g} = this.props;
+    if (!g || !g.users) return false;
+    return g.users.some((u) => u.camera && u.role === "user" && u.extra?.isGroup);
+  }
+
+  getLayoutCount = (feeds) => {
+    const shown = this.getShownCount(feeds);
+    const cap = this.hasGroup() ? 10 : 25;
+    return shown >= cap ? cap : shown;
+  }
 
   componentDidUpdate(prevProps) {
     let {g} = this.props;
@@ -29,6 +49,10 @@ class JanusHandleMqtt extends Component {
       } else {
         this.initVideoRoom(g.room, g.janus);
       }
+    }
+    if (g && g.users && JSON.stringify(g) !== JSON.stringify(prevProps.g)) {
+      const num_videos = this.getLayoutCount(this.state.feeds);
+      this.setState({num_videos});
     }
   }
 
@@ -113,7 +137,8 @@ class JanusHandleMqtt extends Component {
         }
       }
     }
-    this.setState({feeds});
+    const num_videos = this.getLayoutCount(feeds);
+    this.setState({feeds, num_videos});
     if (subscription.length > 0) {
       this.subscribeTo(room, subscription);
     }
@@ -146,7 +171,8 @@ class JanusHandleMqtt extends Component {
     const isExistFeed = feeds.find((f) => f.id === feed[0].id);
     if (!isExistFeed) {
       feeds.push(feed[0]);
-      this.setState({feeds});
+      const num_videos = this.getLayoutCount(feeds);
+      this.setState({feeds, num_videos});
     }
     if (subscription.length > 0) {
       this.subscribeTo(room, subscription);
@@ -235,7 +261,8 @@ class JanusHandleMqtt extends Component {
           subscriber.unsub(streams);
         }
 
-        this.setState({feeds});
+        const num_videos = this.getLayoutCount(feeds);
+        this.setState({feeds, num_videos});
         break;
       }
     }
@@ -271,23 +298,68 @@ class JanusHandleMqtt extends Component {
   }
 
   render() {
-    const {feeds} = this.state;
+    const {feeds, num_videos} = this.state;
+    const {g} = this.props;
     const width = "400";
     const height = "300";
     const autoPlay = true;
     const controls = false;
     const muted = true;
-    //const q = (<b style={{color: 'red', fontSize: '20px', fontFamily: 'Verdana', fontWeight: 'bold'}}>?</b>);
 
-    let program_feeds = feeds.map((feed) => {
-      //let camera = users[feed.display.id] && users[feed.display.id].camera !== false;
+    const groupUsers = g && g.users ? g.users.filter((u) => u.camera && u.role === "user" && u.extra?.isGroup) : [];
+    const groupCount = Math.min(groupUsers.length, 2);
+    const hasAnyGroup = groupCount > 0;
+
+    const allowedGroupIds = groupUsers
+      .sort((a, b) => String(a.rfid).localeCompare(String(b.rfid)))
+      .slice(0, 2)
+      .map(u => u.rfid);
+
+    const sortedFeeds = [...feeds].sort((a, b) => {
+      const aUser = g?.users?.find((u) => u.rfid === a.id);
+      const bUser = g?.users?.find((u) => u.rfid === b.id);
+      const aIsGroup = aUser?.extra?.isGroup && allowedGroupIds.includes(a.id);
+      const bIsGroup = bUser?.extra?.isGroup && allowedGroupIds.includes(b.id);
+      if (aIsGroup && !bIsGroup) return -1;
+      if (!aIsGroup && bIsGroup) return 1;
+      return 0;
+    });
+
+    const visibleVideoCount = sortedFeeds.filter((feed) => {
+      return g && g.users && !!g.users.find((u) => feed.id === u.rfid && u.camera);
+    }).length;
+
+    let regularUserCount = 0;
+    const maxRegularUsers = 4;
+
+    let program_feeds = sortedFeeds.map((feed) => {
+      let camera = g && g.users && !!g.users.find((u) => feed.id === u.rfid && u.camera);
       if (feed) {
         let id = feed.id;
         let talk = feed.talk;
-        //let question = users[feed.display.id] && users[feed.display.id].question;
-        //let st = users[feed.display.id] && users[feed.display.id].sound_test;
+        const user = g?.users?.find((u) => u.rfid === id);
+        let isGroup = user?.extra?.isGroup && allowedGroupIds.includes(id);
+
+        if (hasAnyGroup && !isGroup && camera) {
+          regularUserCount++;
+          if (regularUserCount > maxRegularUsers) {
+            camera = false;
+          }
+        }
+
+        let isAlone = isGroup && visibleVideoCount === 1;
+
         return (
-          <div className="video" key={"prov" + id} ref={"provideo" + id} id={"provideo" + id}>
+          <div
+            className={classNames(camera ? "video" : "hidden", {
+              "video--group": isGroup,
+              "video--group--multiple": isGroup && groupCount > 1,
+              "video--alone": isAlone
+            })}
+            key={"prov" + id}
+            ref={"provideo" + id}
+            id={"provideo" + id}
+          >
             <div className={classNames("video__overlay", {talk: talk})}>
               {/*{question ? <div className="question">*/}
               {/*    <svg viewBox="0 0 50 50">*/}
@@ -315,10 +387,10 @@ class JanusHandleMqtt extends Component {
     });
 
     return (
-      <div className={`vclient__main-wrapper no-of-videos-${feeds.length} layout--equal broadcast--off`}>
+      <div className={`vclient__main-wrapper no-of-videos-${num_videos} layout--equal broadcast--off`}>
         <div className="videos-panel">
           <div className="videos">
-            <div className="videos__wrapper">
+            <div className={classNames("videos__wrapper", {"has-group": hasAnyGroup})}>
               {program_feeds}
             </div>
           </div>
