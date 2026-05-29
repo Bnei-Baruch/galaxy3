@@ -271,11 +271,24 @@ class ShidurAppMqtt extends Component {
         if (preview_mode) {
 
           if (preusers_count !== "Off") {
-            // Groups with insufficient cameras count (not ready for broadcast)
-            pre_groups = rooms.filter((r) => !r.extra?.disabled && r.users.filter((r) => r.camera).length < preusers_count);
+            // A real "group" room must have an isGroup user with their camera ON;
+            // an isGroup user with a disabled camera should not bypass preusers_count.
+            const hasActiveGroup = (r) => r.users.some((u) => u.extra?.isGroup && u.camera);
 
-            // Groups ready for broadcast (enough cameras or marked as group)
-            let new_groups = rooms.filter((r) => !r.extra?.disabled && (r.users.filter((u) => u.camera).length >= preusers_count || r.users.find(g => g.extra?.isGroup)));
+            // Groups with insufficient cameras count (not ready for broadcast).
+            // Rooms that already have an active isGroup user are handled by new_groups,
+            // so we exclude them here to avoid showing the same room in both lists.
+            pre_groups = rooms.filter((r) =>
+              !r.extra?.disabled &&
+              r.users.filter((u) => u.camera).length < preusers_count &&
+              !hasActiveGroup(r)
+            );
+
+            // Groups ready for broadcast (enough cameras or marked as a real active group)
+            let new_groups = rooms.filter((r) =>
+              !r.extra?.disabled &&
+              (r.users.filter((u) => u.camera).length >= preusers_count || hasActiveGroup(r))
+            );
 
             // Update groups list while preserving order (new connections added to the end)
             let updated_groups = [];
