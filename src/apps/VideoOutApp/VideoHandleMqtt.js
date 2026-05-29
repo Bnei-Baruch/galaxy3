@@ -28,11 +28,20 @@ class VideoHandleMqtt extends Component {
     return shown.length;
   }
 
-  componentDidMount() {
-    let {g} = this.props;
-    let num_videos = g?.users?.filter((u) => u.camera && u.role === "user").length || 0;
-    if (num_videos > 25) num_videos = 25; // Cap at 25 like the original
+  hasGroup = () => {
+    const {g} = this.props;
+    if (!g || !g.users) return false;
+    return g.users.some((u) => u.camera && u.role === "user" && u.extra?.isGroup);
+  }
 
+  getLayoutCount = (feeds) => {
+    const shown = this.getShownCount(feeds);
+    const cap = this.hasGroup() ? 10 : 25;
+    return shown >= cap ? cap : shown;
+  }
+
+  componentDidMount() {
+    const num_videos = this.getLayoutCount(this.state.feeds);
     this.setState({num_videos});
   }
 
@@ -56,9 +65,7 @@ class VideoHandleMqtt extends Component {
       });
     }
     if (g && g.users && JSON.stringify(g) !== JSON.stringify(prevProps.g)) {
-      let num_videos = g.users.filter((u) => u.camera && u.role === "user").length;
-      if (num_videos > 25) num_videos = 25; // Cap at 25 like the original
-
+      const num_videos = this.getLayoutCount(this.state.feeds);
       this.setState({num_videos});
     }
   }
@@ -136,8 +143,7 @@ class VideoHandleMqtt extends Component {
         }
       }
     }
-    const shown = this.getShownCount(feeds);
-    const layoutCount = shown >= 10 ? 10 : shown;
+    const layoutCount = this.getLayoutCount(feeds);
     this.setState({feeds, num_videos: layoutCount});
     if (subscription.length > 0) {
       this.subscribeTo(room, subscription);
@@ -171,8 +177,7 @@ class VideoHandleMqtt extends Component {
     const isExistFeed = feeds.find((f) => f.id === feed[0].id);
     if (!isExistFeed) {
       feeds.push(feed[0]);
-      const shown = this.getShownCount(feeds);
-      const layoutCount = shown >= 10 ? 10 : shown;
+      const layoutCount = this.getLayoutCount(feeds);
       this.setState({feeds, num_videos: layoutCount});
       if (typeof this.props.onUserJoined === "function") {
         this.props.onUserJoined(feed[0]);
