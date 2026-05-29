@@ -2,7 +2,6 @@ import React, {Component} from "react";
 import "./JanusHandle.scss";
 import classNames from "classnames";
 import {Button} from "semantic-ui-react";
-import api from "../../shared/Api";
 import {SubscriberPlugin} from "../../lib/subscriber-plugin";
 import log from "loglevel";
 
@@ -87,42 +86,28 @@ class PreviewPanelMqtt extends Component {
   };
 
   attachPreview = (g) => {
-    if(!g) return
-    api.adminListParticipants({request: "listparticipants", room: g.room}, g.janus).then((data) => {
-      let list = data.response.participants.filter((p) => p.publisher && JSON.parse(p.display).role === "user");
-      if (list.length === 0) {
-        log.error("- No feeds to show -");
+    if (!g || !g.users) return;
+    const list = g.users.filter((u) => u.role === "user" && u.camera && u.rfid);
+    if (list.length === 0) {
+      log.error("- No feeds to show -");
+    }
+    log.info("[preview] feeds: ", list);
+    this.setState({room: g.room}, () => {
+      const subscription = [];
+      for (const user of list) {
+        const feed = user.rfid;
+        let mid = "0";
+        if (user?.extra?.streams) {
+          const mids = user.extra.streams;
+          if (mids.length === 1 && mids[0].type === "audio") continue;
+          if (mids.length === 1 && mids[0].type === "video" && mids[0]?.h264_profile && mids[0]?.h264_profile !== "42e01f") continue;
+          mid = mids[0].type === "audio" ? "1" : "0";
+        }
+        subscription.push({feed, mid});
       }
-      log.info("[preview] feeds: ", list)
-      this.setState({room: g.room}, () => {
-        let subscription = [];
-        //FIXME: If user not found in DB we can not know which mid is video from this request
-        // We skip these users
-        let mid = "1";
-        for (let i in list) {
-          let feed = list[i].id;
-          // Check if feed is in DB
-          let user = g.users && g.users.find((u) => u.rfid === feed);
-          // User not in DB - skip
-          if (!user) continue;
-          // Check which mid is video
-          if (user?.extra?.streams) {
-            let mids = user.extra.streams;
-            if (mids.length === 1 && mids[0].type === "audio")
-              continue; // User does not have video - skip
-            if (mids.length === 1 && mids[0].type === "video" && mids[0]?.h264_profile && mids[0]?.h264_profile !== "42e01f")
-              continue;
-            mid = mids[0].type === "audio" ? "1" : "0";
-          }
-          let subst = {feed, mid};
-          if (user && user.camera) {
-            subscription.push(subst);
-          }
-        }
-        if (subscription.length > 0) {
-          this.subscribeTo(subscription, g.janus);
-        }
-      });
+      if (subscription.length > 0) {
+        this.subscribeTo(subscription, g.janus);
+      }
     });
   };
 
