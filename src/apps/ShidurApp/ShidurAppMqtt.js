@@ -148,25 +148,61 @@ class ShidurAppMqtt extends Component {
   }
 
   initJanus = (gxy) => {
-    log.info("["+gxy+"] Janus init")
     const {user, gateways} = this.state;
-    if(gateways[gxy]) return
-    //const token = ConfigStore.globalConfig.gateways.rooms[gxy].token
-    gateways[gxy] = new JanusMqtt(user, gxy, gxy);
-    gateways[gxy].init().then(data => {
-      log.info("["+gxy+"] Janus init success", data);
-      this.setState({gateways});
-      gateways[gxy].onStatus = (srv, status) => {
-        if (status !== "online") {
-          log.error("["+srv+"] Janus: ", status);
-          setTimeout(() => {
-            this.initJanus(srv);
-          }, 10000)
-        }
+    const existing = gateways[gxy];
+
+    // Already connected — reuse.
+    if (existing && existing.isConnected) {
+      return Promise.resolve(existing);
+    }
+    // Init is in flight from another caller — wait for the same promise.
+    if (existing && existing.__initPromise) {
+      return existing.__initPromise;
+    }
+    // Stale dead instance left over from a previous offline — destroy
+    // it so the new init doesn't race with leftover MQTT subs / keepalive.
+    if (existing) {
+      try { existing.destroy(); } catch (_e) { /* best-effort */ }
+      delete gateways[gxy];
+    }
+
+    log.info("["+gxy+"] Janus init");
+    const janus = new JanusMqtt(user, gxy, gxy);
+    gateways[gxy] = janus;
+
+    janus.onStatus = (srv, status) => {
+      if (status === "online") return;
+      log.error("["+srv+"] Janus status: ", status);
+      const cur = this.state.gateways[srv];
+      if (cur === janus) {
+        try { cur.destroy(); } catch (_e) { /* best-effort */ }
+        delete this.state.gateways[srv];
       }
-    }).catch(err => {
-      log.error("["+gxy+"] Janus init", err);
-    })
+      setTimeout(() => {
+        this.initJanus(srv);
+      }, 10000);
+    };
+
+    // The promise we hand out NEVER rejects: callers that only care about
+    // "is this server up?" should not have to attach a .catch just to avoid
+    // unhandled rejections when one of many janus servers is down. The retry
+    // is scheduled internally; callers can poll initJanus again later.
+    janus.__initPromise = janus.init().then((data) => {
+      log.info("["+gxy+"] Janus init success", data);
+      janus.__initPromise = null;
+      this.setState({gateways: {...this.state.gateways}});
+      return janus;
+    }, (err) => {
+      log.error("["+gxy+"] Janus init error", err);
+      janus.__initPromise = null;
+      if (this.state.gateways[gxy] === janus) {
+        delete this.state.gateways[gxy];
+      }
+      setTimeout(() => this.initJanus(gxy), 10000);
+      return null;
+    });
+
+    return janus.__initPromise;
   };
 
   cleanSession = (uniq_list) => {

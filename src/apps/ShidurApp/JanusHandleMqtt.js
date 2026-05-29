@@ -60,34 +60,44 @@ class JanusHandleMqtt extends Component {
     this.exitVideoRoom(this.state.room, () => {});
   }
 
-  initJanus = (gxy, p) => {
-    log.info("["+gxy+"] Janus init")
-    this.props.initJanus(gxy)
-  };
-
   initVideoRoom = (room, inst) => {
     const {gateways, user, q, col} = this.props;
-    log.info(gateways)
-    let janus = gateways[inst];
-    if(!janus) {
-      this.initJanus(inst)
+    const mit = "col" + col + "_q" + (q+1) + "_" + inst;
+    log.info("["+mit+"] Init room: ", room, inst, ConfigStore.globalConfig);
+
+    const janus = gateways[inst];
+    if (janus?.isConnected) {
+      this.setState({mit, janus});
+      this.initVideoHandles(janus, room, user, mit);
+      return;
     }
-    const mit = "col" + col + "_q" + (q+1) + "_" + inst
 
-    log.info("["+mit+"] Init room: ", room, inst, ConfigStore.globalConfig)
-    log.info("["+mit+"] mit", mit)
-
-    if(janus?.isConnected !== true) {
+    // Not connected yet — ask the parent to init the gateway and wait for it.
+    const p = this.props.initJanus(inst);
+    if (p && typeof p.then === "function") {
+      p.then((ready) => {
+        // Room may have changed while we were waiting.
+        if (this.state.room && this.state.room !== room) return;
+        // Parent's initJanus resolves to null on failure (it retries internally).
+        // Reschedule locally so this component keeps trying without dying.
+        if (!ready || !ready.isConnected) {
+          log.warn("["+mit+"] gateway not ready, will retry");
+          setTimeout(() => this.initVideoRoom(room, inst), 5000);
+          return;
+        }
+        this.setState({mit, janus: ready});
+        this.initVideoHandles(ready, room, user, mit);
+      }).catch((err) => {
+        log.error("["+mit+"] initJanus rejected unexpectedly: ", err);
+        setTimeout(() => this.initVideoRoom(room, inst), 5000);
+      });
+    } else {
+      // Backwards-compat: parent's initJanus did not return a promise.
       setTimeout(() => {
-        log.info("["+mit+"] Not connected, waiting... ", janus)
-        this.initVideoRoom(room, inst)
-      }, 1000)
-      return
+        log.info("["+mit+"] Not connected, waiting... ", gateways[inst]);
+        this.initVideoRoom(room, inst);
+      }, 1000);
     }
-
-    this.setState({mit, janus});
-
-    this.initVideoHandles(janus, room, user, mit)
   }
 
   initVideoHandles = (janus, room, user, mit) => {
@@ -106,6 +116,8 @@ class JanusHandleMqtt extends Component {
       }).catch(err => {
         log.error("["+mit+"] Join error :", err);
       })
+    }).catch(err => {
+      log.error("["+mit+"] Publisher attach error :", err);
     })
   }
 
@@ -181,13 +193,26 @@ class JanusHandleMqtt extends Component {
 
   exitPlugins = (callback) => {
     const {subscriber, videoroom, janus, mit} = this.state;
+    const finalize = () => {
+      log.info("["+mit+"] plugin detached");
+      this.setState({feeds: [], mids: [], remoteFeed: false, videoroom: null, subscriber: null, janus: null});
+      if(typeof callback === "function") callback();
+    };
     if(janus) {
-      if(subscriber) janus.detach(subscriber)
-      janus.detach(videoroom).then(() => {
-        log.info("["+mit+"] plugin detached:");
-        this.setState({feeds: [], mids: [], remoteFeed: false, videoroom: null, subscriber: null, janus: null});
-        if(typeof callback === "function") callback();
-      })
+      // Best-effort detach: never let a dead/disconnected gateway block teardown.
+      const detachSub = subscriber
+        ? Promise.resolve(janus.detach(subscriber)).catch(err => {
+            log.error("["+mit+"] subscriber detach error:", err);
+          })
+        : Promise.resolve();
+      const detachPub = videoroom
+        ? Promise.resolve(janus.detach(videoroom)).catch(err => {
+            log.error("["+mit+"] publisher detach error:", err);
+          })
+        : Promise.resolve();
+      Promise.allSettled([detachSub, detachPub]).then(finalize);
+    } else {
+      finalize();
     }
   }
 
@@ -218,7 +243,10 @@ class JanusHandleMqtt extends Component {
     let {janus, creatingFeed, remoteFeed, subscriber, mit} = this.state
 
     if (remoteFeed && subscriber) {
-      subscriber.sub(subscription);
+      const p = subscriber.sub(subscription);
+      if (p && typeof p.catch === "function") {
+        p.catch(err => log.error("["+mit+"] subscriber.sub error:", err));
+      }
       return;
     }
 
@@ -226,6 +254,11 @@ class JanusHandleMqtt extends Component {
       setTimeout(() => {
         this.subscribeTo(subscription);
       }, 500);
+      return;
+    }
+
+    if (!janus || janus.isConnected !== true) {
+      log.warn("["+mit+"] subscribeTo: gateway not connected, skipping");
       return;
     }
 
@@ -238,9 +271,15 @@ class JanusHandleMqtt extends Component {
       log.info("["+mit+"] Subscriber Handle: ", data)
       subscriber.join(subscription, room).then(data => {
         log.info("["+mit+"] Subscriber join: ", data)
-        this.onUpdateStreams(data.streams);
+        if (data && data.streams) this.onUpdateStreams(data.streams);
         this.setState({remoteFeed: true, creatingFeed: false});
+      }).catch(err => {
+        log.error("["+mit+"] Subscriber join error:", err);
+        this.setState({creatingFeed: false});
       });
+    }).catch(err => {
+      log.error("["+mit+"] Subscriber attach error:", err);
+      this.setState({creatingFeed: false});
     })
   };
 
@@ -257,8 +296,11 @@ class JanusHandleMqtt extends Component {
         const streams = [{feed: id}]
 
         const {remoteFeed} = this.state;
-        if (remoteFeed !== null && streams.length > 0) {
-          subscriber.unsub(streams);
+        if (remoteFeed !== null && streams.length > 0 && subscriber) {
+          const p = subscriber.unsub(streams);
+          if (p && typeof p.catch === "function") {
+            p.catch(err => log.error("["+mit+"] subscriber.unsub error:", err));
+          }
         }
 
         const num_videos = this.getLayoutCount(feeds);

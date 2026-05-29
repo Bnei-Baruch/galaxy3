@@ -87,13 +87,28 @@ class PreviewPanelMqtt extends Component {
 
   attachPreview = (g) => {
     if (!g || !g.users) return;
-    const {gateways} = this.props;
-    const janus = gateways && gateways[g.janus];
-    if (!janus) {
-      log.error("[preview] no janus gateway for: ", g.janus);
-      return;
-    }
+    this.ensureGateway(g.janus).then((janus) => {
+      if (!janus) return;
+      this.doAttach(g, janus);
+    }).catch((err) => {
+      log.error("[preview] gateway not ready for: ", g.janus, err);
+    });
+  };
 
+  ensureGateway = (name) => {
+    const {gateways, initJanus} = this.props;
+    const existing = gateways && gateways[name];
+    if (existing && existing.isConnected) return Promise.resolve(existing);
+    if (typeof initJanus === "function") {
+      const p = initJanus(name);
+      if (p && typeof p.then === "function") return p;
+    }
+    return existing
+      ? Promise.resolve(existing)
+      : Promise.reject(new Error("no gateway: " + name));
+  };
+
+  doAttach = (g, janus) => {
     const subscriber = new SubscriberPlugin();
     subscriber.onTrack = this.onRemoteTrack;
     subscriber.onUpdate = this.onUpdateStreams;

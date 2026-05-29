@@ -40,9 +40,13 @@ class ToranToolsMqtt extends Component {
     }
   }
 
-  initJanus = (gxy, p) => {
-    log.info("["+gxy+"] Janus init")
-    this.props.initJanus(gxy)
+  initJanus = (gxy) => {
+    log.info("["+gxy+"] Janus init");
+    const p = this.props.initJanus(gxy);
+    if (p && typeof p.catch === "function") {
+      p.catch(err => log.error("["+gxy+"] initJanus failed:", err));
+    }
+    return p;
   };
 
   selectGroup = (group, i) => {
