@@ -204,14 +204,19 @@ class PreviewPanelMqtt extends Component {
 
     const realMids = mids.filter((m) => m && m.feed_id);
 
-    const groupUsers = pg && pg.users ? pg.users.filter((u) => u.camera && u.role === "user" && u.extra?.isGroup) : [];
-    const groupCount = Math.min(groupUsers.length, 2);
-    const hasAnyGroup = groupCount > 0;
-
-    const allowedGroupIds = groupUsers
+    // Group users from the room data. A group only switches the layout when it
+    // actually has a live feed on screen — a group flagged in the DB that isn't
+    // publishing must not shrink a lone regular client into the small group grid.
+    const groupUserIds = (pg && pg.users ? pg.users.filter((u) => u.camera && u.role === "user" && u.extra?.isGroup) : [])
       .sort((a, b) => String(a.rfid).localeCompare(String(b.rfid)))
       .slice(0, 2)
       .map(u => u.rfid);
+
+    const allowedGroupIds = realMids
+      .map((m) => m.feed_id)
+      .filter((fid) => groupUserIds.includes(fid));
+    const groupCount = Math.min(allowedGroupIds.length, 2);
+    const hasAnyGroup = groupCount > 0;
 
     const sortedMids = [...realMids].sort((a, b) => {
       const aUser = pg?.users?.find((u) => u.rfid === a.feed_id);

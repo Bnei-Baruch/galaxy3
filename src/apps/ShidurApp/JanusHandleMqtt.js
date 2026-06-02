@@ -22,7 +22,11 @@ class JanusHandleMqtt extends Component {
   getShownCount = (feeds) => {
     const {g} = this.props;
     if (!g || !g.users) return feeds.length;
-    const shown = feeds.filter((f) => g.users.find((u) => u.rfid === f.id && u.camera));
+    const shown = feeds.filter((f) => {
+      const u = g.users.find((usr) => usr.rfid === f.id);
+      // Publisher not in the program snapshot (joined while already on air) → visible.
+      return u ? !!u.camera : true;
+    });
     return shown.length;
   }
 
@@ -350,14 +354,19 @@ class JanusHandleMqtt extends Component {
     const controls = false;
     const muted = true;
 
-    const groupUsers = g && g.users ? g.users.filter((u) => u.camera && u.role === "user" && u.extra?.isGroup) : [];
-    const groupCount = Math.min(groupUsers.length, 2);
-    const hasAnyGroup = groupCount > 0;
-
-    const allowedGroupIds = groupUsers
+    // Group users from the room data. A group only switches the layout when it
+    // actually has a live feed on screen — a group flagged in the DB that isn't
+    // publishing must not shrink a lone regular client into the small group grid.
+    const groupUserIds = (g && g.users ? g.users.filter((u) => u.camera && u.role === "user" && u.extra?.isGroup) : [])
       .sort((a, b) => String(a.rfid).localeCompare(String(b.rfid)))
       .slice(0, 2)
       .map(u => u.rfid);
+
+    const allowedGroupIds = feeds
+      .map((f) => f.id)
+      .filter((id) => groupUserIds.includes(id));
+    const groupCount = Math.min(allowedGroupIds.length, 2);
+    const hasAnyGroup = groupCount > 0;
 
     const sortedFeeds = [...feeds].sort((a, b) => {
       const aUser = g?.users?.find((u) => u.rfid === a.id);
@@ -370,14 +379,18 @@ class JanusHandleMqtt extends Component {
     });
 
     const visibleVideoCount = sortedFeeds.filter((feed) => {
-      return g && g.users && !!g.users.find((u) => feed.id === u.rfid && u.camera);
+      const u = g && g.users ? g.users.find((usr) => feed.id === usr.rfid) : null;
+      return u ? !!u.camera : true;
     }).length;
 
     let regularUserCount = 0;
     const maxRegularUsers = 4;
 
     let program_feeds = sortedFeeds.map((feed) => {
-      let camera = g && g.users && !!g.users.find((u) => feed.id === u.rfid && u.camera);
+      const known = g && g.users ? g.users.find((u) => feed.id === u.rfid) : null;
+      // Publishers that joined while the room was already on air are not in the
+      // program snapshot (g.users); show them by default instead of hiding.
+      let camera = known ? !!known.camera : true;
       if (feed) {
         let id = feed.id;
         let talk = feed.talk;
