@@ -180,32 +180,11 @@ $vh: 9;
   flex-wrap: wrap-reverse;
   .video_full &{
     justify-content: center;
-
-    &.has-group {
-      .video--group {
-        width: 1458px !important;
-        height: 820px !important;
-
-        &:not(.video--group--multiple) {
-          flex: 0 0 100% !important;
-        }
-
-        &.video--group--multiple {
-          width: 948px !important;
-          height: 533px !important;
-          flex: 0 0 948px !important;
-          margin: 0 !important;
-        }
-      }
-
-      .video:not(.video--group) {
-        width: 177px !important;
-        height: 100px !important;
-        flex: 0 0 177px !important;
-      }
-    }
   }
 
+  // Group layout. Sizes are proportional (percentages of the room cell) so the
+  // grid fits both the small program quads and the fullscreen view, instead of
+  // the fixed SDI pixel sizes which overflowed and clipped regular users.
   &.has-group {
     flex-wrap: wrap !important;
     gap: 2px !important;
@@ -218,35 +197,36 @@ $vh: 9;
       height: auto !important;
     }
 
+    // Single group: full-width top row, takes most of the height.
     .video--group {
-      width: 729px;
-      height: 410px !important;
+      flex: 0 0 100% !important;
+      width: 100% !important;
+      height: 66% !important;
       margin-left: auto;
       margin-right: auto;
 
-      &:not(.video--group--multiple) {
-        flex: 0 0 100% !important;
-      }
-
+      // Two groups: share the top row side by side.
       &.video--group--multiple {
-        width: 473px !important;
-        height: 266px !important;
-        flex: 0 0 473px !important;
+        flex: 0 0 calc(50% - 2px) !important;
+        width: calc(50% - 2px) !important;
+        height: 50% !important;
         margin: 0;
       }
     }
 
+    // Group is the only visible video → fill the whole cell.
     .video--group.video--alone {
+      flex: 1 1 auto !important;
       width: 100% !important;
       height: 100% !important;
-      flex: 1 1 auto !important;
       margin: 0 !important;
     }
 
+    // Regular users (max 4 by JS) share one row below the group.
     .video:not(.video--group) {
-      width: 200px;
-      height: calc(200px * 9 / 16) !important;
-      flex: 0 0 200px !important;
+      flex: 0 0 calc(25% - 2px) !important;
+      width: calc(25% - 2px) !important;
+      height: 33% !important;
     }
   }
 }

@@ -50,8 +50,10 @@ class JanusHandleMqtt extends Component {
         this.initVideoRoom(g.room, g.janus);
       }
     }
-    if (g && g.users && JSON.stringify(g) !== JSON.stringify(prevProps.g)) {
-      const num_videos = this.getLayoutCount(this.state.feeds);
+    // Recompute grid size when feeds or the live user/camera list changed.
+    // Guard against loops by only updating when the value actually differs.
+    const num_videos = this.getLayoutCount(this.state.feeds);
+    if (num_videos !== this.state.num_videos) {
       this.setState({num_videos});
     }
   }
