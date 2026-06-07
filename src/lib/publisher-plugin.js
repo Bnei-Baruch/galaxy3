@@ -145,12 +145,13 @@ export class PublisherPlugin extends EventEmitter {
         }
       }
     }
+
     if (!videoTransceiver) {
       log.warn("[publisher] mute: no video transceiver");
       return;
     }
 
-    let d = video ? "inactive" : "sendonly"
+    let d = video ? "inactive" : "sendonly";
 
     if (videoTransceiver.setDirection) {
       videoTransceiver.setDirection(d);
@@ -162,6 +163,7 @@ export class PublisherPlugin extends EventEmitter {
       try { videoTransceiver.sender.replaceTrack(stream.getVideoTracks()[0]) }
       catch (err) { log.warn("[publisher] replaceTrack(video) failed:", err && err.message); }
     }
+
     if(stream) this.configure()
   }
 

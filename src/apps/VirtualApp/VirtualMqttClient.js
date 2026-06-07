@@ -689,6 +689,7 @@ class VirtualMqttClient extends Component {
         myvideo.srcObject = media.video.stream;
         this.setState({media, localVideoTrack: media.video.stream.getVideoTracks()[0]});
       }
+      return media;
     });
   };
 
@@ -1178,31 +1179,38 @@ class VirtualMqttClient extends Component {
     if (user.role === userRolesEnum.ghost) return;
     this.makeDelay();
 
-    if (videoroom) {
-      if (!cammuted) {
-        this.stopLocalMedia(videoroom);
-      } else {
-        this.startLocalMedia(videoroom);
-      }
+    const op = cammuted ? this.startLocalMedia(videoroom) : this.stopLocalMedia(videoroom);
 
-      user.camera = cammuted;
-      this.setState({user});
+    // Outside of a room there is nothing to report to the server.
+    if (!videoroom) return;
 
-      updateSentryUser(user);
-      updateGxyUser(user);
-      sendUserState(user);
-    } else {
-      if (!cammuted) {
-        this.stopLocalMedia();
-      } else {
-        this.startLocalMedia();
-      }
-    }
+    // Publish the ACTUAL resulting camera state (this.state.cammuted) instead of
+    // the button intent. start/stopLocalMedia are async and may fail (no device,
+    // permission denied, unsupported codec, ...), so reporting the intent could
+    // leave the server with camera:true while no video is published (and vice
+    // versa). Reading the real state after the operation settled keeps MQTT in sync.
+    Promise.resolve(op).then(() => {
+      this.publishCameraState();
+    });
+  };
+
+  // Send the real local camera status over MQTT, derived from this.state.cammuted
+  // (the single source of truth that gates the published video track), not from a
+  // button press. cammuted === true  -> camera is off -> user.camera = false.
+  publishCameraState = () => {
+    const {user, cammuted} = this.state;
+    const cameraOn = !cammuted;
+    if (user.camera === cameraOn) return;
+    user.camera = cameraOn;
+    this.setState({user});
+    updateSentryUser(user);
+    updateGxyUser(user);
+    sendUserState(user);
   };
 
   stopLocalMedia = (videoroom) => {
     const {media, cammuted} = this.state;
-    if (cammuted) return;
+    if (cammuted) return Promise.resolve();
     log.info("[client] Stop local video stream");
     media?.video?.stream?.getTracks().forEach((t) => t.stop());
     devices?.audio_stream?.getTracks().forEach((t) => t.stop());
@@ -1212,28 +1220,40 @@ class VirtualMqttClient extends Component {
     }
     // Clear the video track reference so that MonitoringData stops probing it
     // with pc.getStats(track) after the track has been detached from the sender.
-    this.setState({cammuted: true, media, localVideoTrack: null});
-    if (videoroom) {
-      try { videoroom.mute(true); }
-      catch (err) { log.warn("[client] videoroom.mute(true) failed:", err && err.message); }
-    }
+    return new Promise((resolve) => {
+      this.setState({cammuted: true, media, localVideoTrack: null}, () => {
+        if (videoroom) {
+          try { videoroom.mute(true); }
+          catch (err) { log.warn("[client] videoroom.mute(true) failed:", err && err.message); }
+        }
+        resolve();
+      });
+    });
   };
 
   startLocalMedia = (videoroom) => {
     const {media: {video: {devices, device} = {}}, cammuted,} = this.state;
-    if (!cammuted) return;
+    if (!cammuted) return Promise.resolve();
     log.info("[client] Bind local video stream");
     const deviceId = device || devices?.[0]?.deviceId;
-    if (deviceId) {
-      this.setVideoDevice(deviceId).then(() => {
-        const {stream} = this.state.media.video;
-        if (videoroom) {
-          try { videoroom.mute(false, stream); }
-          catch (err) { log.warn("[client] videoroom.mute(false) failed:", err && err.message); }
-        }
-        this.setState({cammuted: false});
-      }).catch((err) => log.warn("[client] setVideoDevice failed:", err && err.message));
+    if (!deviceId) {
+      log.warn("[client] No video device available to start local media");
+      return Promise.resolve();
     }
+    return this.setVideoDevice(deviceId).then((media) => {
+      const stream = media?.video?.stream;
+      const liveVideoTrack = stream?.getVideoTracks?.().some((t) => t.readyState === "live");
+      // The camera is only really "on" if we obtained a live video track.
+      if (!stream || !liveVideoTrack) {
+        log.warn("[client] startLocalMedia: no live video track acquired, keeping camera muted");
+        return;
+      }
+      if (videoroom) {
+        try { videoroom.mute(false, stream); }
+        catch (err) { log.warn("[client] videoroom.mute(false) failed:", err && err.message); }
+      }
+      return new Promise((resolve) => this.setState({cammuted: false}, resolve));
+    }).catch((err) => log.warn("[client] setVideoDevice failed:", err && err.message));
   };
 
   micMute = () => {
