@@ -17,6 +17,11 @@ export class PublisherPlugin extends EventEmitter {
     this.talkEvent = null
     this.iceState = null
     this.iceFailed = null
+    // Serialize renegotiations (configure): overlapping createOffer/setLocalDescription
+    // cycles race against each other. _configuring holds the in-flight promise.
+    this._configuring = null
+    this._configurePending = false
+    this._configureRestart = false
     this.pc = new RTCPeerConnection({
       iceServers: list
     })
@@ -164,7 +169,11 @@ export class PublisherPlugin extends EventEmitter {
       catch (err) { log.warn("[publisher] replaceTrack(video) failed:", err && err.message); }
     }
 
-    if(stream) this.configure()
+    // Always renegotiate so the direction change (inactive on mute / sendonly on
+    // unmute) reaches Janus, instead of relying on the audio re-acquisition path
+    // in stopLocalMedia to trigger configure(). configure() coalesces concurrent
+    // calls, so a parallel audio re-negotiation won't cause a glare.
+    this.configure()
   }
 
   setBitrate(bitrate) {
@@ -184,7 +193,7 @@ export class PublisherPlugin extends EventEmitter {
     })
   }
 
-  audio(stream) {
+  audio(stream, skipConfigure) {
     if (!this.pc) {
       log.warn("[publisher] audio: no peer connection");
       return;
@@ -214,15 +223,27 @@ export class PublisherPlugin extends EventEmitter {
       try { audioTransceiver.sender.replaceTrack(stream.getAudioTracks()[0]) }
       catch (err) { log.warn("[publisher] replaceTrack(audio) failed:", err && err.message); }
     }
-    this.configure()
+    // replaceTrack on a same-kind track needs no renegotiation. Skip configure()
+    // when the caller (camera mute) already triggers a single renegotiation via
+    // mute(), otherwise Janus would emit the publisher event twice.
+    if (!skipConfigure) this.configure()
   }
 
   configure(restart) {
     if (!this.pc) {
       log.warn("[publisher] configure: no peer connection");
-      return;
+      return Promise.resolve();
     }
-    this.pc.createOffer().then((offer) => {
+    // If a renegotiation is already in flight, don't start a second offer/answer
+    // cycle in parallel (it would hit "wrong state" / glare). Remember that another
+    // configure was requested and run it once the current one settles.
+    if (this._configuring) {
+      this._configurePending = true;
+      if (restart) this._configureRestart = true;
+      return this._configuring;
+    }
+
+    const run = this.pc.createOffer().then((offer) => {
       if (!this.pc) return;
       this.pc.setLocalDescription(offer).catch(error => {
         log.warn("[publisher] setLocalDescription failed:", error && error.message);
@@ -233,12 +254,23 @@ export class PublisherPlugin extends EventEmitter {
         const jsep = json && json.jsep
         log.info('[publisher] Configure respond: ', param)
         if (this.pc && jsep) {
-          this.pc.setRemoteDescription(jsep).then(e => log.info(e)).catch(error => {
+          return this.pc.setRemoteDescription(jsep).then(e => log.info(e)).catch(error => {
             log.warn("[publisher] setRemoteDescription failed:", error && error.message);
           })
         }
       }).catch((error) => log.debug("[publisher] configure transaction failed:", error && error.message))
     }).catch((error) => log.debug("[publisher] createOffer failed:", error && error.message))
+
+    this._configuring = Promise.resolve(run).finally(() => {
+      this._configuring = null;
+      if (this._configurePending) {
+        this._configurePending = false;
+        const r = this._configureRestart;
+        this._configureRestart = false;
+        this.configure(r);
+      }
+    });
+    return this._configuring;
   }
 
   initPcEvents() {

@@ -702,7 +702,9 @@ class VirtualMqttClient extends Component {
         log.debug("[client] setAudioDevice result: device:", media.audio.device, "videoroom:", !!videoroom, "enabled:", !muted);
         if (videoroom) {
           media.audio.stream.getAudioTracks()[0].enabled = !muted;
-          try { videoroom.audio(media.audio.stream); }
+          // During camera mute the renegotiation is handled by videoroom.mute();
+          // skip it here so Janus isn't re-offered (and the publisher event fired) twice.
+          try { videoroom.audio(media.audio.stream, cam_mute); }
           catch (err) { log.warn("[client] videoroom.audio failed:", err && err.message); }
         }
       }
