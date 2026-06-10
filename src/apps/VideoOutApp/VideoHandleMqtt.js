@@ -146,7 +146,7 @@ class VideoHandleMqtt extends Component {
 
   onJoinFeed = (feed) => {
     let {feeds, room, mit} = this.state;
-    log.info("["+mit+"] Feed enter: ", feeds);
+    log.info("["+mit+"] Feed enter: ", feed);
     let subscription = [];
     for (let f in feed) {
       let id = feed[f]["id"];
@@ -174,6 +174,9 @@ class VideoHandleMqtt extends Component {
       const shown = this.getShownCount(feeds);
       const layoutCount = shown >= 10 ? 10 : shown;
       this.setState({feeds, num_videos: layoutCount});
+      if (typeof this.props.onUserJoined === "function") {
+        this.props.onUserJoined(feed[0]);
+      }
     }
     if (subscription.length > 0) {
       this.subscribeTo(room, subscription);
@@ -274,7 +277,7 @@ class VideoHandleMqtt extends Component {
   handleTalking = (id, talking) => {
     const feeds = Object.assign([], this.state.feeds);
     for (let i = 0; i < feeds.length; i++) {
-      if (feeds[i] && feeds[i].id === id && feeds[i].display?.is_desktop) {
+      if (feeds[i] && feeds[i].id === id) {
         feeds[i].talking = talking;
       }
     }

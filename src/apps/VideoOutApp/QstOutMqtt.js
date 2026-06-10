@@ -54,6 +54,20 @@ class QstOutMqtt extends Component {
       });
   }
 
+  // Refresh qg.users when a new publisher joins the room so that newly
+  // connected users are not filtered out by stale g.users in VideoHandleMqtt.
+  refreshProgram = () => {
+    const {col, i, group} = this.state;
+    if (!group) return;
+    api.fetchProgram().then((qids) => {
+      const vquad = qids?.["q" + col]?.vquad?.[i];
+      if (!vquad) return;
+      this.setState({qids, qg: vquad});
+    }).catch((err) => {
+      log.error("[SDIOut] error refreshing program", err);
+    });
+  }
+
   initApp = () => {
     const {user} = this.state;
 
@@ -180,7 +194,7 @@ class QstOutMqtt extends Component {
                     <Fragment>
                       {/*{group && group.questions ? <div className="qst_fullscreentitle">?</div> : ""}*/}
                       <div className="fullscrvideo_title">{name}</div>
-                      <VideoHandleMqtt key={"q5"} g={qg} index={13} col={5} q={5} qst_group={true} user={user} gateways={gateways} {...this.state} />
+                      <VideoHandleMqtt key={"q5"} g={qg} index={13} col={5} q={5} qst_group={true} user={user} gateways={gateways} onUserJoined={this.refreshProgram} {...this.state} />
                     </Fragment>
                   ) : (
                     ""

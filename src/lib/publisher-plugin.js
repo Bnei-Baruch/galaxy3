@@ -3,7 +3,6 @@ import {EventEmitter} from "events";
 import log from "loglevel";
 import mqtt from "../shared/mqtt";
 import {STUN_SRV_GXY} from "../shared/env";
-import { captureException } from "../shared/sentry";
 
 export class PublisherPlugin extends EventEmitter {
   constructor (list = [{urls: STUN_SRV_GXY}]) {
@@ -18,6 +17,11 @@ export class PublisherPlugin extends EventEmitter {
     this.talkEvent = null
     this.iceState = null
     this.iceFailed = null
+    // Serialize renegotiations (configure): overlapping createOffer/setLocalDescription
+    // cycles race against each other. _configuring holds the in-flight promise.
+    this._configuring = null
+    this._configurePending = false
+    this._configureRestart = false
     this.pc = new RTCPeerConnection({
       iceServers: list
     })
@@ -32,7 +36,6 @@ export class PublisherPlugin extends EventEmitter {
 
     if (!this.janus) {
       const error = new Error('[publisher] JanusPlugin is not connected');
-      captureException(error, { message, additionalFields });
       return Promise.reject(error)
     }
     return this.janus.transaction(message, payload, replyType)
@@ -51,7 +54,6 @@ export class PublisherPlugin extends EventEmitter {
 
       }).catch((error) => {
         log.error('[publisher] error join room', error)
-        captureException(error, { context: 'PublisherPlugin.join', roomId, user });
         reject(error)
       })
     })
@@ -70,7 +72,6 @@ export class PublisherPlugin extends EventEmitter {
 
         }).catch((error) => {
           log.debug('[publisher] error leave room', error)
-          captureException(error, { context: 'PublisherPlugin.leave', roomId: this.roomId });
           reject(error)
         })
       })
@@ -123,47 +124,56 @@ export class PublisherPlugin extends EventEmitter {
             resolve(data)
             this.pc.setRemoteDescription(jsep)
           }).catch(error => {
-            captureException(error, { context: 'PublisherPlugin.publish.configure', video: !!video, audio: !!audio });
             reject(error)
           })
         }).catch(error => {
-          captureException(error, { context: 'PublisherPlugin.publish.createOffer' });
           reject(error)
         })
       } catch (error) {
-        captureException(error, { context: 'PublisherPlugin.publish', video: !!video, audio: !!audio });
         reject(error)
       }
     })
   };
 
   mute(video, stream) {
-    try {
-      let videoTransceiver = null;
-      let tr = this.pc.getTransceivers();
-      if(tr && tr.length > 0) {
-        for(let t of tr) {
-          if(t?.sender?.track?.kind === "video") {
-            videoTransceiver = t;
-            break;
-          }
+    if (!this.pc) {
+      log.warn("[publisher] mute: no peer connection");
+      return;
+    }
+    let videoTransceiver = null;
+    let tr = this.pc.getTransceivers();
+    if(tr && tr.length > 0) {
+      for(let t of tr) {
+        if(t?.sender?.track?.kind === "video") {
+          videoTransceiver = t;
+          break;
         }
       }
-
-      let d = video ? "inactive" : "sendonly"
-
-      if (videoTransceiver?.setDirection) {
-        videoTransceiver.setDirection(d);
-      } else {
-        videoTransceiver.direction = d;
-      }
-
-      if(!video) videoTransceiver.sender.replaceTrack(stream.getVideoTracks()[0])
-      if(stream) this.configure()
-    } catch (error) {
-      captureException(error, { context: 'PublisherPlugin.mute', video: !!video, hasStream: !!stream });
-      throw error;
     }
+
+    if (!videoTransceiver) {
+      log.warn("[publisher] mute: no video transceiver");
+      return;
+    }
+
+    let d = video ? "inactive" : "sendonly";
+
+    if (videoTransceiver.setDirection) {
+      videoTransceiver.setDirection(d);
+    } else {
+      videoTransceiver.direction = d;
+    }
+
+    if(!video && videoTransceiver.sender && stream) {
+      try { videoTransceiver.sender.replaceTrack(stream.getVideoTracks()[0]) }
+      catch (err) { log.warn("[publisher] replaceTrack(video) failed:", err && err.message); }
+    }
+
+    // Always renegotiate so the direction change (inactive on mute / sendonly on
+    // unmute) reaches Janus, instead of relying on the audio re-acquisition path
+    // in stopLocalMedia to trigger configure(). configure() coalesces concurrent
+    // calls, so a parallel audio re-negotiation won't cause a glare.
+    this.configure()
   }
 
   setBitrate(bitrate) {
@@ -178,84 +188,109 @@ export class PublisherPlugin extends EventEmitter {
 
       }).catch((error) => {
         log.debug('[publisher] error set bitrate', error)
-        captureException(error, { context: 'PublisherPlugin.setBitrate', bitrate });
         reject(error)
       })
     })
   }
 
-  audio(stream) {
-    try {
-      let audioTransceiver = null;
-      let tr = this.pc.getTransceivers();
-      if(tr && tr.length > 0) {
-        for(let t of tr) {
-          if(t?.sender?.track?.kind === "audio") {
-            audioTransceiver = t;
-            break;
-          }
+  audio(stream, skipConfigure) {
+    if (!this.pc) {
+      log.warn("[publisher] audio: no peer connection");
+      return;
+    }
+    let audioTransceiver = null;
+    let tr = this.pc.getTransceivers();
+    if(tr && tr.length > 0) {
+      for(let t of tr) {
+        if(t?.sender?.track?.kind === "audio") {
+          audioTransceiver = t;
+          break;
         }
       }
-
-      if (audioTransceiver?.setDirection) {
-        audioTransceiver.setDirection("sendonly");
-      } else {
-        audioTransceiver.direction = "sendonly";
-      }
-
-      audioTransceiver.sender.replaceTrack(stream.getAudioTracks()[0])
-      this.configure()
-    } catch (error) {
-      captureException(error, { context: 'PublisherPlugin.audio', hasStream: !!stream });
-      throw error;
     }
+    if (!audioTransceiver) {
+      log.warn("[publisher] audio: no audio transceiver");
+      return;
+    }
+
+    if (audioTransceiver.setDirection) {
+      audioTransceiver.setDirection("sendonly");
+    } else {
+      audioTransceiver.direction = "sendonly";
+    }
+
+    if (audioTransceiver.sender && stream) {
+      try { audioTransceiver.sender.replaceTrack(stream.getAudioTracks()[0]) }
+      catch (err) { log.warn("[publisher] replaceTrack(audio) failed:", err && err.message); }
+    }
+    // replaceTrack on a same-kind track needs no renegotiation. Skip configure()
+    // when the caller (camera mute) already triggers a single renegotiation via
+    // mute(), otherwise Janus would emit the publisher event twice.
+    if (!skipConfigure) this.configure()
   }
 
   configure(restart) {
-    this.pc.createOffer().then((offer) => {
+    if (!this.pc) {
+      log.warn("[publisher] configure: no peer connection");
+      return Promise.resolve();
+    }
+    // If a renegotiation is already in flight, don't start a second offer/answer
+    // cycle in parallel (it would hit "wrong state" / glare). Remember that another
+    // configure was requested and run it once the current one settles.
+    if (this._configuring) {
+      this._configurePending = true;
+      if (restart) this._configureRestart = true;
+      return this._configuring;
+    }
+
+    const run = this.pc.createOffer().then((offer) => {
+      if (!this.pc) return;
       this.pc.setLocalDescription(offer).catch(error => {
-        log.error("[publisher] setLocalDescription: ", error)
-        captureException(error, { context: 'PublisherPlugin.configure.setLocalDescription', restart });
+        log.warn("[publisher] setLocalDescription failed:", error && error.message);
       })
       const body = {request: 'configure', restart}
       return this.transaction('message', {body, jsep: offer}, 'event').then((param) => {
-        const {data, json} = param || {}
-        const jsep = json.jsep
+        const {json} = param || {}
+        const jsep = json && json.jsep
         log.info('[publisher] Configure respond: ', param)
-        this.pc.setRemoteDescription(jsep).then(e => log.info(e)).catch(error => {
-          log.error(error)
-          captureException(error, { context: 'PublisherPlugin.configure.setRemoteDescription', restart });
-        })
-      }).catch(error => {
-        captureException(error, { context: 'PublisherPlugin.configure', restart });
-        throw error;
-      })
-    }).catch(error => {
-      captureException(error, { context: 'PublisherPlugin.configure.createOffer', restart });
-      throw error;
-    })
+        if (this.pc && jsep) {
+          return this.pc.setRemoteDescription(jsep).then(e => log.info(e)).catch(error => {
+            log.warn("[publisher] setRemoteDescription failed:", error && error.message);
+          })
+        }
+      }).catch((error) => log.debug("[publisher] configure transaction failed:", error && error.message))
+    }).catch((error) => log.debug("[publisher] createOffer failed:", error && error.message))
+
+    this._configuring = Promise.resolve(run).finally(() => {
+      this._configuring = null;
+      if (this._configurePending) {
+        this._configurePending = false;
+        const r = this._configureRestart;
+        this._configureRestart = false;
+        this.configure(r);
+      }
+    });
+    return this._configuring;
   }
 
   initPcEvents() {
     this.pc.onicecandidate = (e) => {
-      try {
-        let candidate = {completed: true}
-        if (!e.candidate || e.candidate.candidate.indexOf('endOfCandidates') > 0) {
-          log.debug("[publisher] End of candidates")
-        } else {
-          candidate = {
-            "candidate": e.candidate.candidate,
-            "sdpMid": e.candidate.sdpMid,
-            "sdpMLineIndex": e.candidate.sdpMLineIndex
-          };
-        }
+      let candidate = {completed: true}
+      if (!e.candidate || e.candidate.candidate.indexOf('endOfCandidates') > 0) {
+        log.debug("[publisher] End of candidates")
+      } else {
+        candidate = {
+          "candidate": e.candidate.candidate,
+          "sdpMid": e.candidate.sdpMid,
+          "sdpMLineIndex": e.candidate.sdpMLineIndex
+        };
+      }
 
-        if(candidate) {
-          return this.transaction('trickle', { candidate })
+      if(candidate) {
+        const p = this.transaction('trickle', { candidate });
+        if (p && typeof p.catch === "function") {
+          p.catch((err) => log.debug("[publisher] trickle failed:", err && err.message));
         }
-      } catch (error) {
-        captureException(error, { context: 'PublisherPlugin.initPcEvents.onicecandidate' });
-        throw error;
       }
     };
 
@@ -264,22 +299,30 @@ export class PublisherPlugin extends EventEmitter {
     };
 
     this.pc.onconnectionstatechange = (e) => {
-      try {
-        log.info("[publisher] ICE State: ", e.target.connectionState)
-        this.iceState = e.target.connectionState
+      log.info("[publisher] ICE State: ", e.target.connectionState)
+      this.iceState = e.target.connectionState
 
-        if(this.iceState === "disconnected") {
-          this.iceRestart()
-        }
+      if(this.iceState === "disconnected") {
+        this.iceRestart()
+        this._iceRecoveryTimeout = setTimeout(() => {
+          if (this.iceState !== "connected") {
+            log.warn("[publisher] ICE not recovered in 10s, triggering reconnect");
+            this.iceFailed("publisher")
+          }
+        }, 10000);
+      }
 
-      // ICE restart does not help here, peer connection will be down
-        if(this.iceState === "failed") {
-          const error = new Error('ICE connection failed');
-          captureException(error, { context: 'PublisherPlugin.initPcEvents.onconnectionstatechange', iceState: this.iceState });
+      if(this.iceState === "connected" && this._iceRecoveryTimeout) {
+        clearTimeout(this._iceRecoveryTimeout);
+        this._iceRecoveryTimeout = null;
+      }
+
+      if(this.iceState === "failed") {
+        if (this._iceRecoveryTimeout) {
+          clearTimeout(this._iceRecoveryTimeout);
+          this._iceRecoveryTimeout = null;
         }
-      } catch (error) {
-        captureException(error, { context: 'PublisherPlugin.initPcEvents.onconnectionstatechange', iceState: this.iceState });
-        throw error;
+        this.iceFailed("publisher")
       }
     };
   }
@@ -315,8 +358,6 @@ export class PublisherPlugin extends EventEmitter {
   }
 
   error (cause) {
-    const error = new Error('[publisher] Plugin error');
-    captureException(error, { cause });
   }
 
   onmessage(data) {
@@ -386,14 +427,23 @@ export class PublisherPlugin extends EventEmitter {
   }
 
   detach() {
+    if (this._iceRecoveryTimeout) {
+      clearTimeout(this._iceRecoveryTimeout);
+      this._iceRecoveryTimeout = null;
+    }
     if(this.pc) {
-      this.pc.getTransceivers().forEach((transceiver) => {
-        if(transceiver) {
-          this.pc.removeTrack(transceiver.sender);
-          transceiver.stop();
-        }
-      });
-      this.pc.close()
+      // removeTrack/stop throw InvalidStateError if the peer connection
+      // (or transceiver) is already closed — common on reconnect/teardown.
+      try {
+        this.pc.getTransceivers().forEach((transceiver) => {
+          if (!transceiver) return;
+          try { if (transceiver.sender) this.pc.removeTrack(transceiver.sender); }
+          catch (_) { /* PC already closed */ }
+          try { transceiver.stop(); }
+          catch (_) { /* transceiver already stopped */ }
+        });
+      } catch (_) { /* getTransceivers on closed PC */ }
+      try { this.pc.close() } catch (_) { /* already closed */ }
       this.pc.onicecandidate = null;
       this.pc.ontrack = null;
       this.pc.oniceconnectionstatechange = null;

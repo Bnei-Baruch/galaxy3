@@ -6,7 +6,6 @@ import api from "../../shared/Api";
 import {API_BACKEND_PASSWORD, API_BACKEND_USERNAME} from "../../shared/env";
 import GxyJanus from "../../shared/janus-utils";
 import UsersQuad from "./UsersQuad";
-import {captureException} from "../../shared/sentry";
 
 class WebOutHttp extends Component {
   state = {
@@ -86,7 +85,6 @@ class WebOutHttp extends Component {
       .catch((err) => {
         console.error("[SDIOut] error initializing app", err);
         this.setState({appInitError: err});
-        captureException(err, {source: "SDIOut"});
       });
   };
 

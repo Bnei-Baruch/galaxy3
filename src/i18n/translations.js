@@ -13,6 +13,12 @@ export const resources = {
         recording: "Recording...",
         playing: "Playing...",
         networkSettingsChanged: "Lost connection to the server!",
+        reconnectingTitle: "Reconnecting...",
+        reconnectingHint: "Please wait, do not close or refresh the page",
+        connectionInit: "Measuring connection quality...",
+        connectionGood: "Good connection",
+        connectionMedium: "Medium connection",
+        connectionWeak: "Weak connection",
         serverStoppedReceiveOurMedia: "The server stopped receiving your video! Pls check your camera.",
         serverStoppedReceiveOurAudio: "The server stopped receiving your audio! Pls check your mic.",
         maxUsersInRoom: "Max number of users in this room was reached",
@@ -248,6 +254,14 @@ export const resources = {
           title: "Live Stream",
           body: "To watch a live stream, check out the broadcast area in the Virtual Home dashboard.",
           goto: "Go to Broadcast"
+        },
+        country_selection: {
+          title: "Select Your Country",
+          description: "Please validate your country is correctly set.",
+          dont_show_again: "Don't show this again",
+          close: "Close",
+          remind_later: "Remind Me Later",
+          go_to_profile: "Go to Profile"
         }
       },
       registration: {
@@ -293,6 +307,12 @@ export const resources = {
         recording: "Grabando ...",
         playing: "Funcionando ...",
         networkSettingsChanged: "¡La configuración de red ha cambiado!",
+        reconnectingTitle: "Reconectando...",
+        reconnectingHint: "Por favor espera, no cierres ni actualices la página",
+        connectionInit: "Midiendo la calidad de la conexión...",
+        connectionGood: "Buena conexión",
+        connectionMedium: "Conexión regular",
+        connectionWeak: "Conexión débil",
         serverStoppedReceiveOurMedia:
           "¡El servidor ha dejado de recibir nuestro video! Revise su dispositivo de video. ",
         serverStoppedReceiveOurAudio: "¡El servidor se ha dejado de recibir nuestro audio! Revise su micrófono.",
@@ -523,6 +543,14 @@ export const resources = {
           title: "Transmisión",
           body: "Para ver una transmisión en vivo, consulte el área de transmisión en el panel de control de Virtual Home.",
           goto: "Ir a transmisión"
+        },
+        country_selection: {
+          title: "Selecciona tu país",
+          description: "Por favor valida que tu país esté configurado correctamente.",
+          dont_show_again: "No mostrar esto de nuevo",
+          close: "Cerrar",
+          remind_later: "Recordármelo más tarde",
+          go_to_profile: "Ir al perfil"
         }
       },
       registration: {
@@ -574,6 +602,12 @@ export const resources = {
         recording: "מקליט... ",
         playing: "מתנגן...",
         networkSettingsChanged: "הגדרות האינטרנט השתנו, אנא בצע חיבור מחדש",
+        reconnectingTitle: "מתחבר מחדש...",
+        reconnectingHint: "אנא המתן, אל תסגור או תרענן את הדף",
+        connectionInit: "בודק את איכות החיבור...",
+        connectionGood: "חיבור טוב",
+        connectionMedium: "חיבור בינוני",
+        connectionWeak: "חיבור חלש",
         serverStoppedReceiveOurMedia: "השרת הפסיק לקבל את הוידאו שלך! אנא בדוק את מקור הוידאו שלך.",
         serverStoppedReceiveOurAudio: "השרת הפסיק לקבל את האודיו שלך! אנא בדוק את מקור האודיו שלך.",
         maxUsersInRoom: "הגענו למספר החיבורים המקסימלי בחדר 16",
@@ -805,6 +839,14 @@ export const resources = {
           title: "שידור חי",
           body: "לצפייה בשידור חי נא לגשת לדף השידור בבית הוירטואלי.",
           goto: "שידור חי"
+        },
+        country_selection: {
+          title: "בחר/י את המדינה שלך",
+          description: "נא לאמת שהמדינה שלך מוגדרת נכון.",
+          dont_show_again: "אל תציג/י זאת שוב",
+          close: "סגור",
+          remind_later: "הזכר/י לי מאוחר יותר",
+          go_to_profile: "עבור לפרופיל"
         }
       },
       registration: {
@@ -847,6 +889,12 @@ export const resources = {
         recording: "Запись...",
         playing: "Воспроизведение...",
         networkSettingsChanged: "Потеряна связь с сервером!",
+        reconnectingTitle: "Переподключение...",
+        reconnectingHint: "Пожалуйста, подождите, не закрывайте и не обновляйте страницу",
+        connectionInit: "Оценка качества связи...",
+        connectionGood: "Хорошее качество связи",
+        connectionMedium: "Среднее качество связи",
+        connectionWeak: "Слабое качество связи",
         serverStoppedReceiveOurMedia: "Сервер перестал получать ваше видео! Пожалуйста, проверьте вашу камеру.",
         serverStoppedReceiveOurAudio: "Сервер перестал получать ваше аудио! Пожалуйста, проверьте ваш микрофон.",
         maxUsersInRoom: "Достигнуто максимальное количество пользователей в этой комнате",
@@ -1080,6 +1128,14 @@ export const resources = {
           title: "Трансляции",
           body: "Чтобы посмотреть прямую трансляцию, перейдите в область трансляции на панели управления Виртуального Дома.",
           goto: "Перейти к трансляции"
+        },
+        country_selection: {
+          title: "Выберите вашу страну",
+          description: "Пожалуйста, проверьте правильность указания вашей страны.",
+          dont_show_again: "Больше не показывать",
+          close: "Закрыть",
+          remind_later: "Напомнить позже",
+          go_to_profile: "Перейти в профиль"
         }
       },
       registration: {

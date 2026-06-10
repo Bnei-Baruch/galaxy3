@@ -1,16 +1,52 @@
 const path = require('path');
 const webpack = require('webpack');
+const fs = require('fs');
 const dotenv = require('dotenv');
 const HtmlWebPackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin')
 const WorkerPlugin = require('worker-plugin');
-const env = dotenv.config().parsed;
 
-const envKeys = Object.keys(env).reduce((prev, next) => {
-  prev[`process.env.${next}`] = JSON.stringify(env[next]);
-  return prev;
-}, {});
+// Always load `.env` as the base. A specific overlay (e.g. `.env.local`,
+// `.env.prod`, `.env.rus`) is loaded ONLY when explicitly requested via
+// the REACT_APP_ENV variable, e.g.: `REACT_APP_ENV=rus yarn build`.
+const envOverlay = process.env.REACT_APP_ENV;
+
+const envFiles = ['.env', envOverlay && `.env.${envOverlay}`].filter(Boolean);
+
+let parsedEnv = {};
+
+// Use `dotenv.parse` (not `dotenv.config`) to avoid the side effect of
+// writing into process.env. Otherwise the base `.env` populates process.env,
+// and later when we merge in REACT_APP_* from process.env those base values
+// override the overlay file (e.g. .env.rus) we just loaded.
+envFiles.forEach(envFile => {
+  const envPath = path.resolve(__dirname, envFile);
+  if (fs.existsSync(envPath)) {
+    const parsed = dotenv.parse(fs.readFileSync(envPath));
+    if (parsed) {
+      parsedEnv = { ...parsedEnv, ...parsed };
+    }
+  } else if (envFile !== '.env') {
+    console.warn(`[webpack] REACT_APP_ENV="${envOverlay}" set, but ${envFile} not found`);
+  }
+});
+
+const processEnv = Object.keys(process.env)
+  .filter(key => key.startsWith('REACT_APP_'))
+  .reduce((acc, key) => {
+    acc[key] = process.env[key];
+    return acc;
+  }, {});
+
+const mergedEnv = { ...parsedEnv, ...processEnv };
+
+const envKeys = Object.keys(mergedEnv)
+  .filter(key => key.startsWith('REACT_APP_'))
+  .reduce((prev, next) => {
+    prev[`process.env.${next}`] = JSON.stringify(mergedEnv[next]);
+    return prev;
+  }, {});
 
 module.exports = {
   devServer: {
@@ -43,9 +79,6 @@ module.exports = {
         test: /\.(js|jsx)$/,
         exclude: /node_modules/,
         use: [
-          {
-            loader: require.resolve('thread-loader')
-          },
           {
             loader: 'babel-loader',
             options: {

@@ -6,7 +6,7 @@ import GxyJanus from "./janus-utils";
 import log from "loglevel";
 
 const mqttTimeout = 30 // Seconds
-const mqttKeepalive = 10 // Seconds
+const mqttKeepalive = 2 // Seconds
 
 class MqttMsg {
   constructor() {
@@ -17,7 +17,28 @@ class MqttMsg {
     this.room = null;
     this.token = null;
     this.reconnect_count = 0;
+    this.clientId = null;
+    // Refcount topic subscriptions so that when two components subscribe
+    // to the same topic (e.g. OLD and NEW JanusMqtt instances for the
+    // same server during reconnect) one calling exit() does not kill
+    // the other's subscription. Without this, destroy of an old Janus
+    // session unsubscribes 'janus/<srv>/from-janus' and the freshly
+    // created session silently stops receiving messages.
+    this.subRefs = new Map();
   }
+
+  _incSubRef = (topic) => {
+    const count = (this.subRefs.get(topic) || 0) + 1;
+    this.subRefs.set(topic, count);
+    return count;
+  };
+
+  _decSubRef = (topic) => {
+    const count = (this.subRefs.get(topic) || 0) - 1;
+    if (count <= 0) this.subRefs.delete(topic);
+    else this.subRefs.set(topic, count);
+    return Math.max(count, 0);
+  };
 
   init = (user, callback) => {
     this.user = user;
@@ -25,10 +46,11 @@ class MqttMsg {
     const service = isServiceID(user.id);
     const svc_token = GxyJanus?.globalConfig?.dynamic_config?.mqtt_auth;
     const token = service ? svc_token : this.token;
-    const id = service ? user.id : user.id + "-" + randomString(3);
+    this.clientId = user.id + "-" + randomString(3);
+    const id = service ? user.id : this.clientId;
 
     const transformUrl = (url, options, client) => {
-      client.options.clientId = service ? user.id : user.id + "-" + randomString(3);
+      client.options.clientId = service ? user.id : this.clientId;
       client.options.password = service ? svc_token : this.token;
       return url;
     };
@@ -66,21 +88,23 @@ class MqttMsg {
     this.mq.setMaxListeners(50)
 
     this.mq.on("connect", (data) => {
-      if (data && !this.isConnected) {
+      const reconnecting = this.reconnect_count > 0;
+      const prevCount = this.reconnect_count;
+      this.isConnected = true;
+      this.reconnect_count = 0;
+      if (!reconnecting) {
         log.info('[mqtt] Connected to server: ', data);
-        this.isConnected = true;
         if (typeof callback === "function") callback(false, false);
       } else {
-        log.info("[mqtt] Connected: ", data);
-        this.isConnected = true;
-        if (this.reconnect_count > RC) {
+        log.info("[mqtt] Reconnected after " + prevCount + " attempts: ", data);
+        if (prevCount > RC) {
           if (typeof callback === "function") callback(true, false);
         }
-        this.reconnect_count = 0;
       }
     });
 
     this.mq.on("close", () => {
+      this.isConnected = false;
       if (this.reconnect_count < RC + 2) {
         this.reconnect_count++;
         log.debug("[mqtt] reconnecting counter: " + this.reconnect_count)
@@ -96,6 +120,7 @@ class MqttMsg {
 
   join = (topic, chat) => {
     if (!this.mq) return;
+    this._incSubRef(topic);
     log.info("[mqtt] Subscribe to: ", topic);
     let options = chat ? {qos: 0, nl: false} : {qos: 1, nl: true};
     this.mq.subscribe(topic, {...options}, (err) => {
@@ -105,6 +130,7 @@ class MqttMsg {
 
   sub = (topic, qos) => {
     if (!this.mq) return;
+    this._incSubRef(topic);
     log.info("[mqtt] Subscribe to: ", topic);
     let options = {qos, nl: true};
     this.mq.subscribe(topic, {...options}, (err) => {
@@ -114,6 +140,11 @@ class MqttMsg {
 
   exit = (topic) => {
     if (!this.mq) return;
+    const remaining = this._decSubRef(topic);
+    if (remaining > 0) {
+      log.debug("[mqtt] Unsubscribe deferred (still " + remaining + " refs): " + topic);
+      return;
+    }
     let options = {};
     log.info("[mqtt] Unsubscribe from: ", topic);
     this.mq.unsubscribe(topic, {...options}, (err) => {

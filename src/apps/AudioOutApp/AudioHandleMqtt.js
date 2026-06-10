@@ -5,6 +5,7 @@ import {JanusMqtt} from "../../lib/janus-mqtt";
 import {PublisherPlugin} from "../../lib/publisher-plugin";
 import {SubscriberPlugin} from "../../lib/subscriber-plugin";
 import ConfigStore from "../../shared/ConfigStore";
+import mqtt from "../../shared/mqtt";
 
 class AudioHandleMqtt extends Component {
   state = {
@@ -22,7 +23,7 @@ class AudioHandleMqtt extends Component {
     const token = ConfigStore.globalConfig.gateways.rooms[inst].token
 
     log.info("[audio] Init  Janus");
-    let janus = new JanusMqtt(user, inst)
+    let janus = new JanusMqtt(user, inst, mqtt.clientId)
 
     janus.init(token).then(data => {
       log.info("[audio] init respond ", data);

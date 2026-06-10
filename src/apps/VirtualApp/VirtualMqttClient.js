@@ -39,9 +39,17 @@ import VirtualStreaming from "./VirtualStreaming";
 import JanusStream from "../../shared/streaming-utils";
 import {kc} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
-import {captureMessage, sentryDebugAction, setSentryGeo, setSentryTag, updateSentryUser} from "../../shared/sentry";
+import * as Sentry from "@sentry/react";
+import {
+  captureNetworkEvent,
+  sentryDebugAction,
+  setLinkSnapshotProvider,
+  setSentryGeo,
+  setSentryTag,
+  updateSentryUser,
+} from "../../shared/sentry";
 import {isFullScreen, toggleFullScreen} from "./FullScreenHelper";
-import {AppBar, Badge, Box, Button as ButtonMD, ButtonGroup, Grid, IconButton, useTheme} from "@mui/material";
+import {AppBar, Badge, Box, Button as ButtonMD, ButtonGroup, CircularProgress, Grid, IconButton, useTheme} from "@mui/material";
 import {ChevronLeft, ChevronRight, PlayCircleOutline} from "@mui/icons-material";
 import {grey} from "@mui/material/colors";
 import {AskQuestion, AudioMode, CloseBroadcast, Fullscreen, Layout, Mute, MuteVideo, Vote} from "./buttons";
@@ -69,6 +77,7 @@ import {BroadcastNotification} from "./components/BroadcastNotification";
 import GlobalOptions, {GlobalOptionsContext} from "./components/GlobalOptions/GlobalOptions";
 import ShowSelfBtn from "./buttons/ShowSelfBtn";
 import OnboardingDoor from "./components/OnboardingDoor.js";
+import {CountrySelectionDialog, SKIP_COUNTRY_DIALOG_KEY} from "./components/CountrySelectionDialog.js";
 
 const sortAndFilterFeeds = (feeds) =>
   feeds
@@ -88,6 +97,9 @@ const sortAndFilterFeeds = (feeds) =>
 
 const userFeeds = (feeds) => feeds.filter((feed) => feed.display.role === userRolesEnum.user);
 const monitoringData = new MonitoringData();
+// Wire MonitoringData -> Sentry so captureNetworkEvent can pull a connection
+// snapshot (rtt/jitter/loss/category/iceCandidate/...) at the moment of failure.
+setLinkSnapshotProvider(() => monitoringData.getLinkSnapshot());
 
 
 class VirtualMqttClient extends Component {
@@ -108,6 +120,7 @@ class VirtualMqttClient extends Component {
       janus: null,
       exit_room: true,
       show_notification: false,
+      reconnecting: false,
       feeds: [],
       rooms: [],
       room: "",
@@ -150,9 +163,16 @@ class VirtualMqttClient extends Component {
       appFullScreen: false,
       showBars: true,
       barsAnimatingOut: false,
+      showCountryDialog: false,
     };
 
     this.hideBarsTimer = null;
+    this.conferenceReconnectAttempts = 0;
+    // Lifetime counter (across all reconnect cycles in this page session).
+    // Reset only on full page reload; a single user's many flaps in one
+    // session is a strong signal we ship to Sentry as a tag bucket.
+    this.reconnectsInSession = 0;
+    this.joinedAt = 0;
     this.handleAppFullScreenChange = this.handleAppFullScreenChange.bind(this);
     this.handleUserActivityForBars = this.handleUserActivityForBars.bind(this);
   }
@@ -191,7 +211,12 @@ class VirtualMqttClient extends Component {
     const {videoroom, localVideoTrack, localAudioTrack, user} = this.state;
     if (videoroom !== prevState.videoroom || localVideoTrack !== prevState.localVideoTrack || localAudioTrack !== prevState.localAudioTrack || JSON.stringify(user) !== JSON.stringify(prevState.user)) {
       monitoringData.setConnection(videoroom, localAudioTrack, localVideoTrack, user, JanusStream);
-      monitoringData.setOnStatus((connectionStatus) => {
+      monitoringData.setOnStatus((connectionStatus, formula) => {
+        const prev = this.state.connectionStatus;
+        if (prev !== connectionStatus) {
+          log.warn(`[connection] status changed: ${prev || "(none)"} -> ${connectionStatus}. ${formula || ""}`);
+          Sentry.setTag("net.linkState", connectionStatus || "unknown");
+        }
         this.setState({connectionStatus});
       });
     }
@@ -247,17 +272,21 @@ class VirtualMqttClient extends Component {
     user.role = getUserRole();
     user.isClient = true;
     if (user.role !== null) {
-      // api.fetchVHInfo(user.id).then((data) => {
-      //   user.vhinfo = data;
-      // }).catch(err => {
-      //   log.error('Error fetching VH info data: ', err?.message);
-      //   user.vhinfo = {active: false, error: err?.message};
-      // }).finally(() => {
-      //   user.allowed = !!user.vhinfo.active && user.role === userRolesEnum.user;
-      //   this.initApp(user);
-      // });
-      user.allowed = user.role === userRolesEnum.user;
-      this.initApp(user);
+      api.fetchVHInfo(user.id).then((data) => {
+        user.vhinfo = data;
+      }).catch(err => {
+        log.error('Error fetching VH info data: ', err?.message);
+        user.vhinfo = {active: false, error: err?.message};
+      }).finally(() => {
+        user.allowed = !!user.vhinfo.active && user.role === userRolesEnum.user;
+        // Show country dialog to all allowed users
+        const skipDialog = sessionStorage.getItem(SKIP_COUNTRY_DIALOG_KEY) === "true" || localStorage.getItem(SKIP_COUNTRY_DIALOG_KEY) === "true";
+        const shouldShowDialog = user.allowed && !skipDialog;
+        if (shouldShowDialog) {
+          this.setState({showCountryDialog: true});
+        }
+        this.initApp(user);
+      });
     } else {
       alert("Access denied!");
       kc.logout();
@@ -274,6 +303,13 @@ class VirtualMqttClient extends Component {
     }
 
     JanusStream.setUser(user);
+    JanusStream.onReconnectExhausted = () => {
+      log.error("[client] broadcast reconnect exhausted after 30 attempts, exiting room");
+      this.setState({reconnecting: false});
+      this.exitRoom(false, () => {
+        alert(this.props.t("oldClient.networkSettingsChanged"));
+      });
+    };
     this.initMQTT(user);
 
     const {t} = this.props;
@@ -330,7 +366,11 @@ class VirtualMqttClient extends Component {
     mqtt.init(user, (reconnected, error) => {
       if (error) {
         log.info("[client] MQTT disconnected");
-        captureMessage("disconnected", {});
+        captureNetworkEvent("disconnected", "mqtt", {
+          reconnectsInSession: this.reconnectsInSession,
+          joinedAt: this.joinedAt,
+          role: this.state.user && this.state.user.role,
+        });
         this.setState({mqttOn: false});
         window.location.reload();
         alert("- Lost Connection to Arvut System -");
@@ -339,7 +379,7 @@ class VirtualMqttClient extends Component {
         log.info("[client] MQTT reconnected");
       } else {
         this.setState({mqttOn: true});
-
+        log.info("[client] MQTT connected", mqtt);
         mqtt.join("galaxy/users/notification");
         mqtt.join("galaxy/users/broadcast");
         mqtt.join("galaxy/users/" + user.id);
@@ -398,7 +438,10 @@ class VirtualMqttClient extends Component {
     });
   };
 
-  initClient = (reconnect, retry = 0) => {
+  initClient = (reconnect) => {
+    if (!reconnect) {
+      this.conferenceReconnectAttempts = 0;
+    }
     this.setState({delay: true});
     const {user, shidur} = this.state;
     if (this.state.janus) {
@@ -407,7 +450,7 @@ class VirtualMqttClient extends Component {
     api.fetchGxyServer(user).then((data) => {
       log.info("[client] Got Gxy Server: ", data);
       user.janus = data.janus;
-      this.initJanus(user, retry);
+      this.initJanus(user);
       JanusStream.setUser(user);
       if (!reconnect && shidur) {
         JanusStream.initStreaming();
@@ -417,50 +460,131 @@ class VirtualMqttClient extends Component {
     })
   };
 
-  reinitClient = (retry) => {
-    retry++;
-    log.error("[client] reinitializing try: ", retry);
-    if(!mqtt.isConnected) {
-      log.error("[client] mqtt is not connected, waiting 5 sec");
-      setTimeout(() => {
-        this.reinitClient(retry);
-      }, 5000);
-    }
-    if (retry < 10) {
-      setTimeout(() => {
-        this.initClient(true, retry);
-      }, 5000);
-    } else {
-      this.exitRoom(false, () => {
-        log.error("[client] reinitializing failed after: " + retry + " retries");
-        alert(this.props.t("oldClient.networkSettingsChanged"));
+  reinitClient = () => {
+    this.conferenceReconnectAttempts++;
+    log.warn("[client] conference reconnect attempt: " + this.conferenceReconnectAttempts + "/30");
+    // Send only one Sentry event per incident (first attempt); subsequent
+    // retries stay visible in breadcrumbs via the log.warn above.
+    if (this.conferenceReconnectAttempts === 1) {
+      this.reconnectsInSession += 1;
+      captureNetworkEvent("conference_reconnect", "mqtt", {
+        attempt: this.conferenceReconnectAttempts,
+        reconnectsInSession: this.reconnectsInSession,
+        room: this.state.selected_room,
+        joinedAt: this.joinedAt,
+        role: this.state.user && this.state.user.role,
+        isGroup: this.state.isGroup,
+        shidur: this.state.shidur,
+        numVU: this.state.numberOfVirtualUsers,
+        feeds: (this.state.feeds || []).length,
+        hasVideo: !!this.state.localVideoTrack,
       });
     }
+    this.setState({reconnecting: true});
+
+    if (this.conferenceReconnectAttempts > 30) {
+      const failedAfter = this.conferenceReconnectAttempts;
+      this.conferenceReconnectAttempts = 0;
+      this.setState({reconnecting: false});
+      this.exitRoom(false, () => {
+        log.error("[client] conference reconnect failed after 30 attempts");
+        captureNetworkEvent(
+          "conference_reconnect_failed",
+          "mqtt",
+          {
+            attempt: failedAfter,
+            reconnectsInSession: this.reconnectsInSession,
+            room: this.state.selected_room,
+            joinedAt: this.joinedAt,
+            role: this.state.user && this.state.user.role,
+            isGroup: this.state.isGroup,
+            shidur: this.state.shidur,
+            numVU: this.state.numberOfVirtualUsers,
+            feeds: (this.state.feeds || []).length,
+            hasVideo: !!this.state.localVideoTrack,
+          },
+          "error"
+        );
+        alert(this.props.t("oldClient.networkSettingsChanged"));
+      });
+      return;
+    }
+
+    // Wait for MQTT to be available before calling initClient — otherwise
+    // fetchGxyServer / janus.attach will time out silently.
+    // The wait itself must not burn attempts (was a bug: every 5s recursion
+    // bumped the counter and could exhaust all 30 retries just waiting).
+    this._scheduleInitClient(0);
+  };
+
+  _scheduleInitClient = (waitedMs) => {
+    if (mqtt.mq?.connected) {
+      setTimeout(() => {
+        this.initClient(true);
+      }, 2000);
+      return;
+    }
+    if (waitedMs >= 60000) {
+      log.error("[client] MQTT didn't reconnect in 60s, trying initClient anyway");
+      setTimeout(() => {
+        this.initClient(true);
+      }, 2000);
+      return;
+    }
+    log.debug("[client] MQTT not connected yet, waiting...");
+    setTimeout(() => this._scheduleInitClient(waitedMs + 1000), 1000);
   };
 
     iceFailed = (data) => {
       const {exit_room} = this.state;
-      if(!exit_room && data === "publisher") {
-        this.setState({show_notification: true});
-        this.exitRoom();
-        captureMessage("reconnect", {});
-        log.warn("[client] iceFailed for: ", data);
+      if(!exit_room && (data === "publisher" || data === "subscriber")) {
+        captureNetworkEvent("ice_failed", data, {
+          reconnectsInSession: this.reconnectsInSession,
+          room: this.state.selected_room,
+          joinedAt: this.joinedAt,
+          role: this.state.user && this.state.user.role,
+          isGroup: this.state.isGroup,
+          shidur: this.state.shidur,
+          numVU: this.state.numberOfVirtualUsers,
+          feeds: (this.state.feeds || []).length,
+          hasVideo: !!this.state.localVideoTrack,
+        });
+        log.warn("[client] iceFailed for: ", data, " - attempting silent reconnect");
+        this.exitRoom(true, () => {
+          this.reinitClient();
+        });
       }
     };
 
-  initJanus = (user, retry) => {
+  // Any critical failure during an active reconnect (attach/join/publish) must
+  // not be silently swallowed, otherwise the client lands in a half-connected
+  // state (e.g. subscriber ok but publisher lost) and the user never notices.
+  // Roll the whole reinit forward via reinitClient — the attempts counter
+  // caps at 30 and triggers the user-visible alert on exhaustion.
+  _handleReconnectStepFailure = (where, err) => {
+    if (!this.state.reconnecting) return false;
+    log.warn("[client] " + where + " failed during reconnect, retrying reinit:", err && err.message);
+    this.exitRoom(true, () => {
+      this.reinitClient();
+    });
+    return true;
+  };
+
+  initJanus = (user) => {
     setSentryTag(user.janus)
-    let janus = new JanusMqtt(user, user.janus);
+    let janus = new JanusMqtt(user, user.janus, mqtt.clientId);
     janus.onStatus = (srv, status) => {
       if (status === "offline") {
-        alert("Janus Server - " + srv + " - Offline");
-        window.location.reload();
+        log.warn("[client] Janus Server - " + srv + " - Offline, attempting silent reconnect");
+        this.exitRoom(true, () => {
+          this.reinitClient();
+        });
       }
 
       if (status === "error") {
         log.error("[client] Janus error, reconnecting...");
         this.exitRoom(true, () => {
-          this.reinitClient(retry);
+          this.reinitClient();
         });
       }
     };
@@ -482,17 +606,23 @@ class VirtualMqttClient extends Component {
       janus.attach(videoroom).then((data) => {
         log.info("[client] Publisher Handle: ", data);
         this.joinRoom(false, janus, videoroom, user);
+      }).catch((err) => {
+        log.warn("[client] Publisher attach failed:", err && err.message);
+        this._handleReconnectStepFailure("Publisher attach", err);
       });
 
       janus.attach(subscriber).then((data) => {
         this.setState({subscriber});
         log.info("[client] Subscriber Handle: ", data);
+      }).catch((err) => {
+        log.warn("[client] Subscriber attach failed:", err && err.message);
+        this._handleReconnectStepFailure("Subscriber attach", err);
       });
     })
       .catch((err) => {
         log.error("[client] Janus init", err);
         this.exitRoom(true, () => {
-          this.reinitClient(retry);
+          this.reinitClient();
         });
       });
   };
@@ -500,10 +630,14 @@ class VirtualMqttClient extends Component {
   initDevices = () => {
     const {t} = this.props;
 
-    devices.init((media) => {
+    devices.init((media, prevAudioDevice) => {
+      this.setState({media});
       setTimeout(() => {
         if (media.audio.device) {
-          this.setAudioDevice(media.audio.device);
+          if (media.audio.device !== prevAudioDevice) {
+            // Active device was removed and replaced — re-acquire stream
+            this.setAudioDevice(media.audio.device);
+          }
         } else {
           log.warn("[client] No left audio devices");
           //FIXME: remove it from pc?
@@ -535,7 +669,7 @@ class VirtualMqttClient extends Component {
       const localAudioTrack = audio?.stream ? audio.stream?.getAudioTracks()[0] : null;
 
       this.setState({media: data, localVideoTrack, localAudioTrack});
-    });
+    }).catch((err) => log.warn("[client] init devices failed:", err && err.message));
   };
 
   setVideoSize = (setting) => {
@@ -545,7 +679,7 @@ class VirtualMqttClient extends Component {
         myvideo.srcObject = media.video.stream;
         this.setState({media, localVideoTrack: media.video.stream.getVideoTracks()[0]});
       }
-    });
+    }).catch((err) => log.warn("[client] setVideoSize failed:", err && err.message));
   };
 
   setVideoDevice = (device) => {
@@ -555,20 +689,26 @@ class VirtualMqttClient extends Component {
         myvideo.srcObject = media.video.stream;
         this.setState({media, localVideoTrack: media.video.stream.getVideoTracks()[0]});
       }
+      return media;
     });
   };
 
   setAudioDevice = (device, cam_mute) => {
+    log.debug("[client] setAudioDevice:", device, "muted:", this.state.muted);
     devices.setAudioDevice(device, cam_mute).then((media) => {
       if (media.audio.device) {
         this.setState({media, localAudioTrack: media.audio.stream.getAudioTracks()[0]});
-        const {videoroom} = this.state;
+        const {videoroom, muted} = this.state;
+        log.debug("[client] setAudioDevice result: device:", media.audio.device, "videoroom:", !!videoroom, "enabled:", !muted);
         if (videoroom) {
-          media.audio.stream.getAudioTracks()[0].enabled = false;
-          videoroom.audio(media.audio.stream);
+          media.audio.stream.getAudioTracks()[0].enabled = !muted;
+          // During camera mute the renegotiation is handled by videoroom.mute();
+          // skip it here so Janus isn't re-offered (and the publisher event fired) twice.
+          try { videoroom.audio(media.audio.stream, cam_mute); }
+          catch (err) { log.warn("[client] videoroom.audio failed:", err && err.message); }
         }
       }
-    });
+    }).catch((err) => log.warn("[client] setAudioDevice failed:", err && err.message));
   };
 
   selectRoom = (selected_room) => {
@@ -584,6 +724,7 @@ class VirtualMqttClient extends Component {
     user.janus = room.janus;
     this.setState({selected_room, user});
     updateSentryUser(user);
+    Sentry.setTag("gxy.room", String(selected_room));
   };
 
   joinRoom = (reconnect, janus, videoroom, user) => {
@@ -606,6 +747,10 @@ class VirtualMqttClient extends Component {
 
     videoroom.join(selected_room, d, user).then((data) => {
       log.info("[client] Joined respond :", data);
+      // Mark the moment we are inside the room — used by network telemetry
+      // events to compute gxy.uptimeBucket (lt5s / 5_30s / 30s_2m / ...).
+      this.joinedAt = Date.now();
+      Sentry.setTag("gxy.role", (user && user.role) || "unknown");
 
       // Feeds count with user role
       let feeds_count = userFeeds(data.publishers).length;
@@ -625,48 +770,111 @@ class VirtualMqttClient extends Component {
 
         const vst = json.streams.find((v) => v.type === "video" && v.h264_profile);
         if (vst && vst?.h264_profile !== "42e01f") {
-          captureMessage("h264_profile", vst);
+          captureNetworkEvent("h264_profile", "publisher", {
+            room: this.state.selected_room,
+            joinedAt: this.joinedAt,
+            role: user && user.role,
+            isGroup: this.state.isGroup,
+            h264_profile: vst.h264_profile,
+            mid: vst.mid,
+          }, "info");
         }
 
-        this.setState({user, myid: id, delay: false, sourceLoading: false});
+        this.conferenceReconnectAttempts = 0;
+        this.setState({user, myid: id, delay: false, sourceLoading: false, reconnecting: false});
         updateSentryUser(user);
         updateGxyUser(user);
 
         mqtt.join("galaxy/room/" + selected_room);
         mqtt.join("galaxy/room/" + selected_room + "/chat", true);
-        if (isGroup) videoroom.setBitrate(600000);
+        if (isGroup) {
+          const bp = videoroom.setBitrate(600000);
+          if (bp && typeof bp.catch === "function") {
+            bp.catch((err) => log.debug("[client] setBitrate failed:", err && err.message));
+          }
+        }
 
         log.info("[client] Pulbishers list: ", data.publishers);
 
         this.makeSubscription(data.publishers);
+
+        // Safety watchdog: publish() resolves once the SDP answer is sent,
+        // but the publisher can still fail to actually start sending media
+        // (e.g. TURN not reachable). If ICE doesn't reach "connected" within
+        // 15s, treat it as a silent publisher loss and retry.
+        this._armPublisherWatchdog(videoroom);
       }).catch((err) => {
         log.error("[client] Publish error :", err);
-        this.exitRoom(false);
+        if (!this._handleReconnectStepFailure("Publish", err)) {
+          this.exitRoom(false);
+        }
       });
     }).catch((err) => {
       log.error("[client] Join error :", err);
-      this.exitRoom(false);
+      if (!this._handleReconnectStepFailure("Join", err)) {
+        this.exitRoom(false);
+      }
     });
+  };
+
+  _armPublisherWatchdog = (videoroom) => {
+    if (this._publisherWatchdog) {
+      clearTimeout(this._publisherWatchdog);
+      this._publisherWatchdog = null;
+    }
+    this._publisherWatchdog = setTimeout(() => {
+      this._publisherWatchdog = null;
+      const pc = videoroom && videoroom.pc;
+      const st = pc && pc.connectionState;
+      if (this.state.videoroom !== videoroom) return;
+      if (st === "connected") return;
+      log.warn("[client] publisher watchdog: pc state=" + st + " after 15s, triggering reconnect");
+      this.exitRoom(true, () => {
+        this.reinitClient();
+      });
+    }, 15000);
   };
 
   exitRoom = (reconnect, callback) => {
     this.setState({delay: true, exit_room: true});
     const {videoroom} = this.state;
 
-    if (videoroom) {
-      videoroom.leave().then((data) => {
-        log.info("[client] leave respond:", data);
-        this.resetClient(reconnect, callback);
-      }).catch(e => {
-        this.resetClient(reconnect, callback);
-      });
-    } else {
+    if (!videoroom) {
       this.resetClient(reconnect, callback);
+      return;
     }
+
+    // videoroom.leave() is best-effort cleanup. During an iceFailed / MQTT
+    // blip the ack can take up to 20s (janus-mqtt transaction timeout),
+    // which freezes the whole reconnect chain (reinitClient never fires,
+    // overlay never shows, publisher stays dead on the server). Race the
+    // leave against a short timeout: whichever wins, we keep moving.
+    let done = false;
+    const proceed = () => {
+      if (done) return;
+      done = true;
+      this.resetClient(reconnect, callback);
+    };
+    const fallbackMs = reconnect ? 3000 : 5000;
+    setTimeout(() => {
+      if (!done) log.warn("[client] leave timed out after " + fallbackMs + "ms, proceeding anyway");
+      proceed();
+    }, fallbackMs);
+    videoroom.leave().then((data) => {
+      log.info("[client] leave respond:", data);
+      proceed();
+    }).catch(() => {
+      proceed();
+    });
   };
 
   resetClient = (reconnect, callback) => {
     let {janus, room, shidur} = this.state;
+
+    if (this._publisherWatchdog) {
+      clearTimeout(this._publisherWatchdog);
+      this._publisherWatchdog = null;
+    }
 
     localStorage.setItem("question", false);
 
@@ -796,6 +1004,9 @@ class VirtualMqttClient extends Component {
       this.onUpdateStreams(data.streams);
 
       this.setState({remoteFeed: true, creatingFeed: false});
+    }).catch((err) => {
+      log.warn("[client] Subscriber join failed:", err && err.message);
+      this.setState({creatingFeed: false});
     });
   };
 
@@ -888,8 +1099,9 @@ class VirtualMqttClient extends Component {
     const {type, id, bitrate} = data;
 
     if (type === "client-reconnect" && user.id === id) {
+      this.conferenceReconnectAttempts = 0;
       this.exitRoom(true, () => {
-        this.reinitClient(0);
+        this.reinitClient();
       });
     } else if (type === "client-reload" && user.id === id) {
       window.location.reload();
@@ -913,7 +1125,12 @@ class VirtualMqttClient extends Component {
       const isGroup = bitrate !== 64000;
       user.extra.isGroup = isGroup;
       this.setState({isGroup, user});
-      if (videoroom) videoroom.setBitrate(bitrate);
+      if (videoroom) {
+        const bp = videoroom.setBitrate(bitrate);
+        if (bp && typeof bp.catch === "function") {
+          bp.catch((err) => log.debug("[client] setBitrate failed:", err && err.message));
+        }
+      }
     } else if (type === "audio-out") {
       this.handleAudioOut(data);
     } else if (type === "client-reload-all") {
@@ -964,31 +1181,38 @@ class VirtualMqttClient extends Component {
     if (user.role === userRolesEnum.ghost) return;
     this.makeDelay();
 
-    if (videoroom) {
-      if (!cammuted) {
-        this.stopLocalMedia(videoroom);
-      } else {
-        this.startLocalMedia(videoroom);
-      }
+    const op = cammuted ? this.startLocalMedia(videoroom) : this.stopLocalMedia(videoroom);
 
-      user.camera = cammuted;
-      this.setState({user});
+    // Outside of a room there is nothing to report to the server.
+    if (!videoroom) return;
 
-      updateSentryUser(user);
-      updateGxyUser(user);
-      sendUserState(user);
-    } else {
-      if (!cammuted) {
-        this.stopLocalMedia();
-      } else {
-        this.startLocalMedia();
-      }
-    }
+    // Publish the ACTUAL resulting camera state (this.state.cammuted) instead of
+    // the button intent. start/stopLocalMedia are async and may fail (no device,
+    // permission denied, unsupported codec, ...), so reporting the intent could
+    // leave the server with camera:true while no video is published (and vice
+    // versa). Reading the real state after the operation settled keeps MQTT in sync.
+    Promise.resolve(op).then(() => {
+      this.publishCameraState();
+    });
+  };
+
+  // Send the real local camera status over MQTT, derived from this.state.cammuted
+  // (the single source of truth that gates the published video track), not from a
+  // button press. cammuted === true  -> camera is off -> user.camera = false.
+  publishCameraState = () => {
+    const {user, cammuted} = this.state;
+    const cameraOn = !cammuted;
+    if (user.camera === cameraOn) return;
+    user.camera = cameraOn;
+    this.setState({user});
+    updateSentryUser(user);
+    updateGxyUser(user);
+    sendUserState(user);
   };
 
   stopLocalMedia = (videoroom) => {
     const {media, cammuted} = this.state;
-    if (cammuted) return;
+    if (cammuted) return Promise.resolve();
     log.info("[client] Stop local video stream");
     media?.video?.stream?.getTracks().forEach((t) => t.stop());
     devices?.audio_stream?.getTracks().forEach((t) => t.stop());
@@ -996,22 +1220,42 @@ class VirtualMqttClient extends Component {
     if (deviceId) {
       this.setAudioDevice(deviceId, !!videoroom);
     }
-    this.setState({cammuted: true, media});
-    if (videoroom) videoroom.mute(true);
+    // Clear the video track reference so that MonitoringData stops probing it
+    // with pc.getStats(track) after the track has been detached from the sender.
+    return new Promise((resolve) => {
+      this.setState({cammuted: true, media, localVideoTrack: null}, () => {
+        if (videoroom) {
+          try { videoroom.mute(true); }
+          catch (err) { log.warn("[client] videoroom.mute(true) failed:", err && err.message); }
+        }
+        resolve();
+      });
+    });
   };
 
   startLocalMedia = (videoroom) => {
     const {media: {video: {devices, device} = {}}, cammuted,} = this.state;
-    if (!cammuted) return;
+    if (!cammuted) return Promise.resolve();
     log.info("[client] Bind local video stream");
     const deviceId = device || devices?.[0]?.deviceId;
-    if (deviceId) {
-      this.setVideoDevice(deviceId).then(() => {
-        const {stream} = this.state.media.video;
-        if (videoroom) videoroom.mute(false, stream);
-        this.setState({cammuted: false});
-      });
+    if (!deviceId) {
+      log.warn("[client] No video device available to start local media");
+      return Promise.resolve();
     }
+    return this.setVideoDevice(deviceId).then((media) => {
+      const stream = media?.video?.stream;
+      const liveVideoTrack = stream?.getVideoTracks?.().some((t) => t.readyState === "live");
+      // The camera is only really "on" if we obtained a live video track.
+      if (!stream || !liveVideoTrack) {
+        log.warn("[client] startLocalMedia: no live video track acquired, keeping camera muted");
+        return;
+      }
+      if (videoroom) {
+        try { videoroom.mute(false, stream); }
+        catch (err) { log.warn("[client] videoroom.mute(false) failed:", err && err.message); }
+      }
+      return new Promise((resolve) => this.setState({cammuted: false}, resolve));
+    }).catch((err) => log.warn("[client] setVideoDevice failed:", err && err.message));
   };
 
   micMute = () => {
@@ -1019,6 +1263,7 @@ class VirtualMqttClient extends Component {
     if (stream) {
       if (muted) this.micVolume();
       stream.getAudioTracks()[0].enabled = muted;
+      devices.micMuted = !muted; // true when going muted, false when going unmuted
       muted ? devices.audio.context.resume() : devices.audio.context.suspend();
       this.setState({muted: !muted});
     }
@@ -1121,13 +1366,46 @@ class VirtualMqttClient extends Component {
     }
   };
 
+  connectionLabel = () => {
+    const {t} = this.props;
+    switch (this.state.connectionStatus) {
+      case LINK_STATE_GOOD:
+        return t("oldClient.connectionGood");
+      case LINK_STATE_MEDIUM:
+        return t("oldClient.connectionMedium");
+      case LINK_STATE_WEAK:
+        return t("oldClient.connectionWeak");
+      case LINK_STATE_INIT:
+      default:
+        return t("oldClient.connectionInit");
+    }
+  };
+
   renderLocalMedia = (width, height, index, isGroup) => {
-    const {user, cammuted, question, muted} = this.state;
+    const {user, cammuted, question, muted, reconnecting} = this.state;
     const userName = user ? user.username : "";
+    const {t} = this.props;
 
     return (
       <div className={classNames("video", {"hidden": this.context.hideSelf})} key={index}>
-        {this.renderVideoOverlay(!muted, question, cammuted, userName, isGroup)}
+        {this.renderVideoOverlay(!muted, question, cammuted, userName, isGroup, true)}
+
+        {reconnecting && (
+          <div style={{
+            position: "absolute", top: 0, left: 0, width: "100%", height: "100%",
+            background: "rgba(0,0,0,0.78)", zIndex: 2,
+            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+            gap: "10px", color: "#fff", textAlign: "center", padding: "8px",
+          }}>
+            <CircularProgress size={28} style={{color: "#ffb300"}} />
+            <span style={{fontWeight: 700, fontSize: "1.5em", lineHeight: 1.3}}>
+              {t("oldClient.reconnectingTitle")}
+            </span>
+            {/* <span style={{fontSize: "1.2em", opacity: 0.85, lineHeight: 1.3}}>
+              {t("oldClient.reconnectingHint")}
+            </span> */}
+          </div>
+        )}
 
         {this.renderVideo(cammuted, "localVideo", width, height)}
       </div>
@@ -1162,7 +1440,7 @@ class VirtualMqttClient extends Component {
     );
   };
 
-  renderVideoOverlay = (talking, question, muteCamera, userName, isGroup) => {
+  renderVideoOverlay = (talking, question, muteCamera, userName, isGroup, isLocal = false) => {
     const { hideUserDisplays } = this.state;
 
     return (
@@ -1193,6 +1471,17 @@ class VirtualMqttClient extends Component {
               mouseLeaveDelay={500}
               on="hover"
               trigger={<span className="title-name">{userName}</span>}/>
+          )}
+          {isLocal && (
+            <Popup
+              content={this.connectionLabel()}
+              mouseEnterDelay={200}
+              mouseLeaveDelay={500}
+              on="hover"
+              trigger={
+                <Icon style={{marginLeft: "0.3rem"}} name="signal" size="small" color={this.connectionColor()} />
+              }
+            />
           )}
         </div>
       </div>
@@ -1733,6 +2022,10 @@ class VirtualMqttClient extends Component {
       <Fragment>
         <PopUp show={show_notification} setClose={() => this.setState({show_notification: false})}/>
         <BroadcastNotification show={show_message} msg={broadcast_message} setClose={() => this.setState({show_message: false})} />
+        <CountrySelectionDialog
+          isOpen={this.state.showCountryDialog}
+          onClose={() => this.setState({showCountryDialog: false})}
+        />
         {user?.allowed && Boolean(room) && (
           <SettingsJoined
             userDisplay={user.display}

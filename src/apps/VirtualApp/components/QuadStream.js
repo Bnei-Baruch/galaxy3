@@ -48,10 +48,13 @@ class QuadStream extends Component {
     this.props.toggleAttach(true);
   }
 
-  componentDidUpdate(prevProps) {
+  componentDidUpdate(prevProps, prevState) {
     // Start hide timer when switching between attached/detached modes
     if (prevProps.attached !== this.props.attached) {
       this.showControlsTemporarily();
+    }
+    if (prevState.stream !== this.state.stream && this.videoElement) {
+      this.videoElement.srcObject = this.state.stream;
     }
   }
 

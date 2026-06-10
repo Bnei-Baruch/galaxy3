@@ -4,7 +4,6 @@ import "./ToranTools.scss";
 import PreviewPanelHttp from "./PreviewPanelHttp";
 import api from "../../shared/Api";
 import {RESET_VOTE} from "../../shared/env";
-import {captureException} from "../../shared/sentry";
 import mqtt from "../../shared/mqtt";
 import {short_regions} from "../../shared/consts";
 import log from "loglevel";
@@ -238,7 +237,6 @@ class ToranToolsHttp extends Component {
   resetRoomsStatistics = () => {
     api.adminResetRoomsStatistics().catch((err) => {
       console.error("[Shidur] [Toran] error resetting rooms statistics", err);
-      captureException(err, {source: "Shidur"});
       alert("Error resetting rooms statistics");
     });
   };
