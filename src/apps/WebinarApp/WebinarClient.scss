@@ -338,6 +338,48 @@
   display: none;
 }
 
+// Simplified webinar layout: broadcast/quad fills the area, self-view is a PiP.
+.webinar-layout {
+  position: relative;
+
+  .broadcast-panel {
+    display: block;
+    flex: 1 1 100%;
+    width: 100%;
+    height: 100%;
+  }
+
+  .broadcast__wrapper {
+    width: 100%;
+    height: 100%;
+  }
+}
+
+// Self-view picture-in-picture: small square pinned to the bottom-right corner.
+.self-pip {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  width: 180px;
+  height: 135px;
+  z-index: 30;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+  background: #000;
+
+  video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  @include portrait {
+    width: 120px;
+    height: 90px;
+  }
+}
+
 .chat-panel {
   flex: 0 0 400px;
   overflow: hidden;

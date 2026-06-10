@@ -1,4 +1,4 @@
-import React, {useContext, useEffect, useState} from "react";
+import React, {useContext, useState} from "react";
 import {useTranslation} from "react-i18next";
 
 import {
@@ -13,7 +13,6 @@ import {
   TextField,
   Typography
 } from "@mui/material";
-import Autocomplete from "@mui/material/Autocomplete";
 import {makeStyles} from "tss-react/mui";
 import {useTheme} from "@mui/material/styles";
 import MyMedia from "./MyMedia";
@@ -63,8 +62,6 @@ const useStyles = makeStyles()(() => ({
   icon: {fontSize: "2em", marginRight: "0.5rem"},
 }));
 
-const roomDescriptionById = new Map();
-
 const Settings = (props) => {
   const {classes} = useStyles();
   const [shidurMuted, setShidurMuted] = useState(JanusStream.audioElement.muted)
@@ -72,20 +69,15 @@ const Settings = (props) => {
   const {t, i18n: {language}} = useTranslation();
   const {palette: {background: {paper}}} = useTheme();
   const {isDark, toggleTheme} = useContext(ThemeContext);
-
   const {
     audio,
     video,
-    rooms,
-    isAudioMode,
     isGroup,
     initClient,
     selectedRoom,
-    selectRoom,
     setAudioDevice,
     setVideoDevice,
     settingsChange,
-    audioModeChange,
     handleGroupChange,
     videoLength,
     videoSettings,
@@ -99,12 +91,6 @@ const Settings = (props) => {
     toggleUsersDisplays,
     hideUserDisplays,
   } = props;
-
-  useEffect(() => {
-    for (const r of rooms) {
-      roomDescriptionById.set(r.room, r);
-    }
-  }, [rooms]);
 
   const handleMute = () => {
     JanusStream.audioElement.muted = !shidurMuted
@@ -170,47 +156,15 @@ const Settings = (props) => {
     );
   };
 
-  const renderRooms = () => {
-    if (roomDescriptionById.size === 0) return null;
-
-    return (
-      <Autocomplete
-        variant="outlined"
-        value={roomDescriptionById.get(selectedRoom)}
-        options={rooms}
-        getOptionLabel={(option) => option.description}
-        renderOption={(props, {description, num_users}) => (
-          <Grid container {...props}>
-            <Grid item xs={11} size={11}>
-              {description}
-            </Grid>
-            <Grid item xs={1} size={1}>
-              {num_users}
-            </Grid>
-          </Grid>
-        )}
-        onChange={handleRoomChange}
-        renderInput={(params) => <TextField {...params} variant="outlined" label={t("oldClient.selectRoom")}/>}
-      />
-    );
-  };
-
   const handleVideoChange = (e) => setVideoDevice(e.target.value);
 
   const handleSettingsChange = (e) => settingsChange(JSON.parse(e.target.value));
 
   const handleAudioChange = (e) => setAudioDevice(e.target.value);
 
-  const handleAudioModeChange = () => audioModeChange();
-
   const handleGroup = () => handleGroupChange();
 
   const handleUsersDisplays = () => toggleUsersDisplays()
-
-  const handleRoomChange = (e, op) => {
-    if (!op?.room) return;
-    selectRoom(op.room);
-  };
 
   const handleInitClient = () => {
     initClient(false);
@@ -308,13 +262,6 @@ const Settings = (props) => {
           />
 
           <FormControlLabel
-            label={<Typography color="textPrimary">{t("oldClient.audioMode")}</Typography>}
-            color="textPrimary"
-            control={
-              <Checkbox checked={!!isAudioMode} onChange={handleAudioModeChange} name="isAudioMode" color="primary"/>
-            }
-          />
-          <FormControlLabel
             label={<Typography color="textPrimary">{t("oldClient.darkTheme")}</Typography>}
             control={<Checkbox checked={isDark} onChange={toggleTheme} name="isDark" color="primary"/>}
           />
@@ -333,16 +280,13 @@ const Settings = (props) => {
           />
         </Grid>
 
-        <Grid item xs={6} size={6}>
-          {renderRooms()}
-        </Grid>
-        <Grid item xs={4} size={4}>
+        <Grid item xs={12} size={12}>
           <Button
             variant="contained"
             color="success"
             classes={{root: classes.submitRoot, disabled: classes.submitDisabled}}
             size="large"
-            disabled={roomDescriptionById.size === 0 || delay || !selectedRoom}
+            disabled={delay || !selectedRoom}
             onClick={handleInitClient}
           >
             <Typography color="white">{t("oldClient.joinRoom")}</Typography>

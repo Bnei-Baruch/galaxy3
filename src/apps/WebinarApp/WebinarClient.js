@@ -16,13 +16,7 @@ import "./VideoConteiner.scss";
 import "./CustomIcons.scss";
 import "eqcss";
 import WebinarChat from "./WebinarChat";
-import {
-  media_object,
-  NO_VIDEO_OPTION_VALUE,
-  sketchesByLang,
-  VIDEO_360P_OPTION_VALUE,
-  VIDEO_IS_AV1_360P_OPTION_VALUE
-} from "../../shared/consts";
+import {media_object, sketchesByLang} from "../../shared/consts";
 import {GEO_IP_INFO, PAY_USER_FEE} from "../../shared/env";
 import platform from "platform";
 import {TopMenu} from "./components/TopMenu";
@@ -52,10 +46,9 @@ import {isFullScreen, toggleFullScreen} from "./FullScreenHelper";
 import {AppBar, Badge, Box, Button as ButtonMD, ButtonGroup, CircularProgress, Grid, IconButton, useTheme} from "@mui/material";
 import {ChevronLeft, ChevronRight, PlayCircleOutline} from "@mui/icons-material";
 import {grey} from "@mui/material/colors";
-import {AskQuestion, AudioMode, CloseBroadcast, Fullscreen, Layout, Mute, MuteVideo, Vote} from "./buttons";
+import {AskQuestion, CloseBroadcast, Fullscreen, Mute, MuteVideo, Vote} from "./buttons";
 import Settings from "./settings/Settings";
 import SettingsJoined from "./settings/SettingsJoined";
-import StudyMaterialsWidget from "./components/StudyMaterialsWidget";
 import {initCrisp, Support} from "./components/Support";
 import SendQuestionContainer from "./components/SendQuestions/container";
 import {getUserRole, userRolesEnum} from "../../shared/enums";
@@ -68,7 +61,6 @@ import mqtt from "../../shared/mqtt";
 import devices from "../../lib/devices";
 import {JanusMqtt} from "../../lib/janus-mqtt";
 import {PublisherPlugin} from "../../lib/publisher-plugin";
-import {SubscriberPlugin} from "../../lib/subscriber-plugin";
 import log from "loglevel";
 import Donations from "./buttons/Donations";
 import version from './Version.js';
@@ -78,23 +70,6 @@ import GlobalOptions, {GlobalOptionsContext} from "./components/GlobalOptions/Gl
 import ShowSelfBtn from "./buttons/ShowSelfBtn";
 import OnboardingDoor from "./components/OnboardingDoor.js";
 
-const sortAndFilterFeeds = (feeds) =>
-  feeds
-    .filter((feed) => !feed.display.role.match(/^(ghost|guest)$/))
-    .sort((a, b) => {
-      // Groups should go first before non-groups.
-      // When both are groups or both non-groups use timestamp
-      // to order.
-      if (!!a.display.is_group && !b.display.is_group) {
-        return -1;
-      }
-      if (!a.display.is_group && !!b.display.is_group) {
-        return 1;
-      }
-      return a.display.timestamp - b.display.timestamp;
-    });
-
-const userFeeds = (feeds) => feeds.filter((feed) => feed.display.role === userRolesEnum.user);
 const monitoringData = new MonitoringData();
 // Wire MonitoringData -> Sentry so captureNetworkEvent can pull a connection
 // snapshot (rtt/jitter/loss/category/iceCandidate/...) at the moment of failure.
@@ -111,7 +86,6 @@ class WebinarClient extends Component {
       show_message: false,
       broadcast_message: {en: ""},
       chatMessagesCount: 0,
-      creatingFeed: false,
       delay: true,
       media: media_object,
       audio: null,
@@ -120,17 +94,13 @@ class WebinarClient extends Component {
       exit_room: true,
       show_notification: false,
       reconnecting: false,
-      feeds: [],
-      rooms: [],
       room: "",
       selected_room: localStorage.getItem("room") || "",
       videoroom: null,
-      remoteFeed: null,
       myid: null,
       mystream: null,
       localVideoTrack: null,
       localAudioTrack: null,
-      mids: [],
       muted: false,
       cammuted: false,
       shidur: true,
@@ -141,12 +111,10 @@ class WebinarClient extends Component {
       support: false,
       connectionStatus: "",
       numberOfVirtualUsers: localStorage.getItem("number_of_virtual_users") || "1",
-      currentLayout: localStorage.getItem("currentLayout") || "split",
       attachedSource: true,
       sourceLoading: true,
       appInitError: null,
       keepalive: null,
-      muteOtherCams: false,
       videos,
       isAv1,
       premodStatus: false,
@@ -330,24 +298,19 @@ class WebinarClient extends Component {
       this.setState({user});
       updateSentryUser(user);
 
-      api.fetchAvailableRooms({with_num_users: true}).then(data => {
-        const {rooms} = data;
-        this.setState({rooms});
+      // The room is assigned by the server; the user does not pick it manually.
+      api.fetchAssignedRoom(user.id).then((room) => {
         this.initDevices();
-        const {selected_room} = this.state;
-        if (selected_room !== "") {
-          const room = rooms.find((r) => r.room === selected_room);
-          if (room) {
-            user.room = selected_room;
-            user.janus = room.janus;
-            user.group = room.description;
-            this.setState({delay: false, user});
-            updateSentryUser(user);
-          } else {
-            this.setState({selected_room: "", delay: false});
-          }
+        if (room && room.room) {
+          user.room = room.room;
+          user.janus = room.janus;
+          user.group = room.description;
+          this.setState({selected_room: room.room, delay: false, user});
+          updateSentryUser(user);
+          Sentry.setTag("gxy.room", String(room.room));
         } else {
-          this.setState({delay: false});
+          log.error("[client] No room assigned by server");
+          this.setState({selected_room: "", delay: false});
         }
       }).catch((err) => {
         log.error("[client] error initializing app", err);
@@ -531,7 +494,7 @@ class WebinarClient extends Component {
 
     iceFailed = (data) => {
       const {exit_room} = this.state;
-      if(!exit_room && (data === "publisher" || data === "subscriber")) {
+      if(!exit_room && data === "publisher") {
         captureNetworkEvent("ice_failed", data, {
           reconnectsInSession: this.reconnectsInSession,
           room: this.state.selected_room,
@@ -584,15 +547,12 @@ class WebinarClient extends Component {
     };
 
     let videoroom = new PublisherPlugin();
-    videoroom.subTo = this.makeSubscription;
-    videoroom.unsubFrom = this.unsubscribeFrom;
-    videoroom.talkEvent = this.handleTalking;
+    // No remote subscriber in this app: other participants are not shown via WebRTC.
+    // PublisherPlugin invokes these unconditionally, so keep them as no-ops.
+    videoroom.subTo = () => {};
+    videoroom.unsubFrom = () => {};
+    videoroom.talkEvent = () => {};
     videoroom.iceFailed = this.iceFailed;
-
-    let subscriber = new SubscriberPlugin();
-    subscriber.onTrack = this.onRemoteTrack;
-    subscriber.onUpdate = this.onUpdateStreams;
-    subscriber.iceFailed = this.iceFailed;
 
     janus.init().then((data) => {
         log.info("[client] Janus init", data);
@@ -603,14 +563,6 @@ class WebinarClient extends Component {
       }).catch((err) => {
         log.warn("[client] Publisher attach failed:", err && err.message);
         this._handleReconnectStepFailure("Publisher attach", err);
-      });
-
-      janus.attach(subscriber).then((data) => {
-        this.setState({subscriber});
-        log.info("[client] Subscriber Handle: ", data);
-      }).catch((err) => {
-        log.warn("[client] Subscriber attach failed:", err && err.message);
-        this._handleReconnectStepFailure("Subscriber attach", err);
       });
     })
       .catch((err) => {
@@ -705,22 +657,6 @@ class WebinarClient extends Component {
     }).catch((err) => log.warn("[client] setAudioDevice failed:", err && err.message));
   };
 
-  selectRoom = (selected_room) => {
-    const {rooms, user} = this.state;
-    const room = rooms.find((r) => r.room === selected_room);
-    const name = room.description;
-    if (this.state.room === selected_room) {
-      return;
-    }
-    localStorage.setItem("room", selected_room);
-    user.room = selected_room;
-    user.group = name;
-    user.janus = room.janus;
-    this.setState({selected_room, user});
-    updateSentryUser(user);
-    Sentry.setTag("gxy.room", String(selected_room));
-  };
-
   joinRoom = (reconnect, janus, videoroom, user) => {
     this.setState({exit_room: false});
     let {selected_room, media, cammuted, isGroup} = this.state;
@@ -745,14 +681,6 @@ class WebinarClient extends Component {
       // events to compute gxy.uptimeBucket (lt5s / 5_30s / 30s_2m / ...).
       this.joinedAt = Date.now();
       Sentry.setTag("gxy.role", (user && user.role) || "unknown");
-
-      // Feeds count with user role
-      let feeds_count = userFeeds(data.publishers).length;
-      if (feeds_count > 25) {
-        alert(t("oldClient.maxUsersInRoom"));
-        this.exitRoom(false);
-        return;
-      }
 
       const {id, room} = data;
       user.rfid = data.id;
@@ -787,10 +715,6 @@ class WebinarClient extends Component {
             bp.catch((err) => log.debug("[client] setBitrate failed:", err && err.message));
           }
         }
-
-        log.info("[client] Pulbishers list: ", data.publishers);
-
-        this.makeSubscription(data.publishers);
 
         // Safety watchdog: publish() resolves once the SDP answer is sent,
         // but the publisher can still fail to actually start sending media
@@ -872,14 +796,6 @@ class WebinarClient extends Component {
 
     localStorage.setItem("question", false);
 
-    const params = {with_num_users: true};
-    api.fetchAvailableRooms(params).then(data => {
-      const {rooms} = data;
-      this.setState({rooms});
-    }).catch((err) => {
-      log.error("[client] Error exiting room", err);
-    });
-
     mqtt.exit("galaxy/room/" + room);
     mqtt.exit("galaxy/room/" + room + "/chat");
 
@@ -896,13 +812,9 @@ class WebinarClient extends Component {
     this.setState({
       muted: false,
       question: false,
-      feeds: [],
-      mids: [],
       localAudioTrack: null,
       localVideoTrack: null,
-      remoteFeed: null,
       videoroom: null,
-      subscriber: null,
       janus: null,
       delay: reconnect,
       room: reconnect ? room : "",
@@ -913,180 +825,6 @@ class WebinarClient extends Component {
 
     if (typeof callback === "function") callback();
   }
-
-  makeSubscription = (newFeeds) => {
-    log.info("[client] makeSubscription", newFeeds);
-    const subscription = [];
-    const {feeds: prevFeeds, muteOtherCams} = this.state;
-    const prevFeedsMap = new Map(prevFeeds.map((f) => [f.id, f]));
-
-    newFeeds.forEach((feed) => {
-      const {id, streams} = feed;
-      feed.display = JSON.parse(feed.display);
-      const vst = streams.find((v) => v.type === "video" && v.h264_profile);
-      if (vst) {
-        feed.video = vst.h264_profile === "42e01f";
-      } else {
-        feed.video = !!streams.find((v) => v.type === "video" && v.codec === "h264");
-      }
-      feed.audio = !!streams.find((a) => a.type === "audio" && a.codec === "opus");
-      feed.data = !!streams.find((d) => d.type === "data");
-      feed.cammute = !feed.video;
-
-      const prevFeed = prevFeedsMap.get(feed.id);
-      const prevVideo = !!prevFeed && prevFeed.streams?.find((v) => v.type === "video" && v.codec === "h264");
-      const prevAudio = !!prevFeed && prevFeed.streams?.find((a) => a.type === "audio" && a.codec === "opus");
-
-      streams.forEach((stream) => {
-        let hasVideo = !muteOtherCams && stream.type === "video" && stream.codec === "h264" && !prevVideo;
-        const hasAudio = stream.type === "audio" && stream.codec === "opus" && !prevAudio;
-        if (stream?.h264_profile && stream?.h264_profile !== "42e01f") {
-          hasVideo = false;
-        }
-
-        if (hasVideo || hasAudio || stream.type === "data") {
-          prevFeedsMap.set(feed.id, feed);
-          subscription.push({feed: id, mid: stream.mid});
-        }
-      });
-    });
-    const feeds = Array.from(prevFeedsMap, ([k, v]) => v);
-    this.setState({feeds: sortAndFilterFeeds(feeds)});
-    if (subscription.length > 0) {
-      this.subscribeTo(subscription);
-      // Send question event for new feed, by notifying all room.
-      // FIXME: Can this be done by notifying only the joined feed?
-      setTimeout(() => {
-        if (this.state.question || this.state.cammuted) {
-          sendUserState(this.state.user);
-        }
-      }, 3000);
-    }
-  };
-
-  makeSubscriptionAudioMode = () => {
-    const subscription = [];
-    const {feeds} = this.state;
-
-    feeds.forEach(({id, streams}) => {
-      streams
-        .filter((s) => s.type === "video" && s.codec === "h264")
-        .forEach((s) => subscription.push({feed: id, mid: s.mid}));
-    });
-
-    if (subscription.length > 0) this.subscribeTo(subscription);
-  };
-
-  subscribeTo = (subscription) => {
-    if (this.state.remoteFeed) {
-      this.state.subscriber.sub(subscription);
-      return;
-    }
-
-    if (this.state.creatingFeed) {
-      setTimeout(() => {
-        this.subscribeTo(subscription);
-      }, 500);
-      return;
-    }
-
-    this.setState({creatingFeed: true});
-
-    this.state.subscriber.join(subscription, this.state.room).then((data) => {
-      log.info("[client] Subscriber join: ", data);
-
-      this.onUpdateStreams(data.streams);
-
-      this.setState({remoteFeed: true, creatingFeed: false});
-    }).catch((err) => {
-      log.warn("[client] Subscriber join failed:", err && err.message);
-      this.setState({creatingFeed: false});
-    });
-  };
-
-  handleTalking = (id, talking) => {
-    const {feeds} = this.state;
-    for (let i = 0; i < feeds.length; i++) {
-      if (feeds[i] && feeds[i].id === id) {
-        feeds[i].talking = talking;
-      }
-    }
-    this.setState({feeds});
-  };
-
-  onUpdateStreams = (streams) => {
-    const {mids} = this.state;
-    log.debug("[client] Updated streams :", streams);
-    for (let i in streams) {
-      let mindex = streams[i]["mid"];
-      //let feed_id = streams[i]["feed_id"];
-      mids[mindex] = streams[i];
-    }
-    this.setState({mids});
-  };
-
-  onRemoteTrack = (track, stream, on) => {
-    let mid = track.id;
-    let feed = stream.id;
-    log.info("[client] >> This track is coming from feed " + feed + ":", mid, track);
-    if (on) {
-      if (track.kind === "audio") {
-        log.debug("[client] Created remote audio stream:", stream);
-        let remoteaudio = this.refs["remoteAudio" + feed];
-        if (remoteaudio) remoteaudio.srcObject = stream;
-      } else if (track.kind === "video") {
-        log.debug("[client] Created remote video stream:", stream);
-        const remotevideo = this.refs["remoteVideo" + feed];
-        if (remotevideo) remotevideo.srcObject = stream;
-      }
-    }
-  };
-
-  // Unsubscribe from feeds defined by |ids| (with all streams) and remove it when |onlyVideo| is false.
-  // If |onlyVideo| is true, will unsubscribe only from video stream of those specific feeds, keeping those feeds.
-  unsubscribeFrom = (ids, onlyVideo) => {
-    const {feeds} = this.state;
-    const idsSet = new Set(ids);
-    const streams = [];
-    feeds
-      .filter((feed) => idsSet.has(feed.id))
-      .forEach((feed) => {
-        if (onlyVideo) {
-          // Unsubscribe only from one video stream (not all publisher feed).
-          // Acutally expecting only one video stream, but writing more generic code.
-          feed.streams
-            .filter((stream) => stream.type === "video")
-            .map((stream) => ({feed: feed.id, mid: stream.mid}))
-            .forEach((stream) => streams.push(stream));
-        } else {
-          // Unsubscribe the whole feed (all it's streams).
-          streams.push({feed: feed.id});
-          log.info("[client] Feed " + JSON.stringify(feed) + " (" + feed.id + ") has left the room, detaching");
-        }
-      });
-    // Send an unsubscribe request.
-    const {remoteFeed} = this.state;
-    if (remoteFeed !== null && streams.length > 0) {
-      this.state.subscriber.unsub(streams);
-    }
-    if (!onlyVideo) {
-      this.setState({feeds: feeds.filter((feed) => !idsSet.has(feed.id))});
-    }
-  };
-
-  userState = (user) => {
-    const {feeds} = this.state;
-    const {camera, question, rfid} = user;
-
-    for (let i = 0; i < feeds.length; i++) {
-      if (feeds[i] && feeds[i].id === rfid) {
-        feeds[i].cammute = !camera;
-        feeds[i].question = question;
-        this.setState({feeds});
-        break;
-      }
-    }
-  };
 
   handleCmdData = (data) => {
     const {user, cammuted, videoroom} = this.state;
@@ -1129,8 +867,6 @@ class WebinarClient extends Component {
       this.handleAudioOut(data);
     } else if (type === "client-reload-all") {
       window.location.reload();
-    } else if (type === "client-state") {
-      this.userState(data.user);
     }
   };
 
@@ -1279,30 +1015,6 @@ class WebinarClient extends Component {
     };
   };
 
-  otherCamsMuteToggle = () => {
-    const {feeds, muteOtherCams, isAv1} = this.state;
-
-    if (!muteOtherCams) {
-      // Should hide/mute now all videos.
-      this.unsubscribeFrom(
-        feeds.map((feed) => feed.id),
-        /* onlyVideo= */ true
-      );
-      this.camMute(/* cammuted= */ false);
-      this.setState({videos: NO_VIDEO_OPTION_VALUE, isKliOlamiShown: false});
-      JanusStream.setVideo(NO_VIDEO_OPTION_VALUE);
-    } else {
-      // Should unmute/show now all videos.
-      this.makeSubscriptionAudioMode();
-      this.camMute(/* cammuted= */ true);
-      const videos = isAv1 ? VIDEO_IS_AV1_360P_OPTION_VALUE : VIDEO_360P_OPTION_VALUE;
-      this.setState({videos, isKliOlamiShown: true});
-      JanusStream.setVideo(videos);
-    }
-
-    this.setState({muteOtherCams: !muteOtherCams});
-  };
-
   toggleShidur = () => {
     const {shidur} = this.state;
     const stateUpdate = {shidur: !shidur};
@@ -1326,12 +1038,6 @@ class WebinarClient extends Component {
     localStorage.setItem("hideUserDisplays", hideUserDisplays);
     this.setState({hideUserDisplays});
   }
-
-  updateLayout = (currentLayout) => {
-    this.setState({currentLayout}, () => {
-      localStorage.setItem("currentLayout", currentLayout);
-    });
-  };
 
   onChatMessage = () => {
     const {asideMsgCounter, chatMessagesCount} = this.state;
@@ -1375,64 +1081,35 @@ class WebinarClient extends Component {
     }
   };
 
-  renderLocalMedia = (width, height, index, isGroup) => {
+  renderLocalMedia = () => {
     const {user, cammuted, question, muted, reconnecting} = this.state;
     const userName = user ? user.username : "";
     const {t} = this.props;
 
+    if (this.context.hideSelf) return null;
+
     return (
-      <div className={classNames("video", {"hidden": this.context.hideSelf})} key={index}>
-        {this.renderVideoOverlay(!muted, question, cammuted, userName, isGroup, true)}
+      <div className="video self-pip" key="local">
+        {this.renderVideoOverlay(!muted, question, cammuted, userName, false, true)}
 
         {reconnecting && (
           <div style={{
             position: "absolute", top: 0, left: 0, width: "100%", height: "100%",
             background: "rgba(0,0,0,0.78)", zIndex: 2,
             display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-            gap: "10px", color: "#fff", textAlign: "center", padding: "8px",
+            gap: "6px", color: "#fff", textAlign: "center", padding: "4px",
           }}>
-            <CircularProgress size={28} style={{color: "#ffb300"}} />
-            <span style={{fontWeight: 700, fontSize: "1.5em", lineHeight: 1.3}}>
+            <CircularProgress size={20} style={{color: "#ffb300"}} />
+            <span style={{fontWeight: 700, fontSize: "0.9em", lineHeight: 1.2}}>
               {t("oldClient.reconnectingTitle")}
             </span>
-            {/* <span style={{fontSize: "1.2em", opacity: 0.85, lineHeight: 1.3}}>
-              {t("oldClient.reconnectingHint")}
-            </span> */}
           </div>
         )}
 
-        {this.renderVideo(cammuted, "localVideo", width, height)}
+        {this.renderVideo(cammuted, "localVideo", "100%", "100%")}
       </div>
     );
   }
-
-  renderMedia = (feed, width, height, layout) => {
-    const {id, talking, question, cammute, display: {display: userName, is_group: isGroup}} = feed;
-    const {muteOtherCams} = this.state;
-    const muteCamera = cammute || muteOtherCams;
-
-    const videoId = "video" + id;
-    const remoteVideoId = "remoteVideo" + id;
-    const remoteAudioId = "remoteAudio" + id;
-
-    return (
-      <div className={classNames("video", {"is-double-size": isGroup && layout !== "equal"})} key={"v" + id}
-           ref={videoId} id={videoId}>
-        {this.renderVideoOverlay(talking, question, muteCamera, userName, isGroup)}
-
-        {this.renderVideo(muteCamera, remoteVideoId, width, height)}
-
-        <audio
-          key={"a" + id}
-          ref={remoteAudioId}
-          id={remoteAudioId}
-          autoPlay={true}
-          controls={false}
-          playsInline={true}
-        />
-      </div>
-    );
-  };
 
   renderVideoOverlay = (talking, question, muteCamera, userName, isGroup, isLocal = false) => {
     const { hideUserDisplays } = this.state;
@@ -1495,12 +1172,11 @@ class WebinarClient extends Component {
       playsInline={true}
     />;
 
-  renderBottomBar = (layout, otherFeedHasQuestion) => {
+  renderBottomBar = () => {
     const {t} = this.props;
     const {
       cammuted,
       delay,
-      muteOtherCams,
       muted,
       question,
       room,
@@ -1536,21 +1212,13 @@ class WebinarClient extends Component {
               disabled={room === "" || sourceLoading}
             />
             <ShowSelfBtn/>
-            <Layout
-              t={t}
-              active={layout}
-              action={this.updateLayout.bind(this)}
-              disabled={room === "" || sourceLoading}
-              iconDisabled={sourceLoading}
-            />
-            <AudioMode t={t} action={this.otherCamsMuteToggle.bind(this)} isOn={muteOtherCams} />
           </ButtonGroup>
 
           <ButtonGroup className={classNames("bottom-toolbar__item")} variant="contained" disableElevation>
             <AskQuestion
               t={t}
               isOn={!!question}
-              disabled={!mqttOn || premodStatus || !media.audio.device || delay || otherFeedHasQuestion}
+              disabled={!mqttOn || premodStatus || !media.audio.device || delay}
               action={this.handleQuestion.bind(this)}
             />
             <Vote t={t} id={user?.id} disabled={!user || !user.id || room === ""} />
@@ -1678,12 +1346,6 @@ class WebinarClient extends Component {
                     {t("oldClient.drawing")}
                   </ButtonMD>
                 </Badge>
-                <ButtonMD
-                  variant={leftAsideName === "material" ? "contained" : "outlined"}
-                  onClick={() => this.toggleLeftAside("material")}
-                >
-                  {t("oldClient.material")}
-                </ButtonMD>
               </ButtonGroup>
 
               <Typography variant="h6" align="center" className={classNames("top-toolbar__item", "top-toolbar__title")}>
@@ -1735,10 +1397,7 @@ class WebinarClient extends Component {
     }
 
     let content;
-    if (leftAsideName === "material") {
-      // Add key to force remount when toggled
-      content = <StudyMaterialsWidget key="study-materials" language={language} apiUrl={process.env.REACT_APP_STUDY_MATERIALS_API_URL || "http://10.66.1.76:8080"} />;
-    } else if (leftAsideName === "drawing") {
+    if (leftAsideName === "drawing") {
       content = (
         <iframe
           title={"classboard"}
@@ -1780,9 +1439,8 @@ class WebinarClient extends Component {
     );
   };
 
-  renderNewVersionContent = (layout, isDeb, source, otherFeedHasQuestion, noOfVideos, remoteVideos) => {
-    const {i18n} = this.props;
-    const {attachedSource, chatVisible, room, shidur, user, rightAsideName, leftAsideSize, leftAsideName, isKliOlamiShown, kliOlamiAttached} = this.state;
+  renderNewVersionContent = (isDeb, source) => {
+    const {chatVisible, room, user, rightAsideName, leftAsideName, isKliOlamiShown, kliOlamiAttached} = this.state;
 
     const notApproved = user && user.role !== userRolesEnum.user;
 
@@ -1791,12 +1449,8 @@ class WebinarClient extends Component {
         close={() => this.toggleQuad(false)}
         toggleAttach={(val = !kliOlamiAttached) => this.setState({kliOlamiAttached: val})}
         attached={kliOlamiAttached}
-        isDoubleSize={"double" === layout}
       />
     );
-
-    const noBroadcastPanel = layout !== "split" ||
-      (((room === "" || !shidur) || !attachedSource) && (!isKliOlamiShown || !kliOlamiAttached));
 
     return (
       <div className={classNames("vclient", {
@@ -1814,34 +1468,17 @@ class WebinarClient extends Component {
             size={12 - (!leftAsideName ? 0 : 3) - (!rightAsideName ? 0 : 3)}
             style={{display: "flex", flexDirection: "column", overflow: "hidden"}}
           >
-            <div
-              className={`
-                  vclient__main-wrapper
-                  no-of-videos-${noOfVideos}
-                  layout--${layout}
-                  broadcast--${(room !== "" && shidur) ? "on" : "off"}
-                  broadcast--${!attachedSource ? "popup" : "inline"}
-                  kli-olami--${isKliOlamiShown ? "on" : "off"}
-                  kli-olami--${!kliOlamiAttached ? "popup" : "inline"}
-                  ${noBroadcastPanel ? "no-broadcast-panel" : ""}
-              `}
-            >
+            <div className="vclient__main-wrapper webinar-layout">
               <div className="broadcast-panel">
                 <div className="broadcast__wrapper">
-                  {layout === "split" && !notApproved && source}
-                  {layout === "split" && !notApproved && kliOlami}
+                  {source}
+                  {kliOlami}
                 </div>
               </div>
 
-              <div className="videos-panel">
-                <div className="videos__wrapper">
-                  {(layout === "equal" || layout === "double" || notApproved) && source}
-                  {(layout === "equal" || layout === "double" || notApproved) && kliOlami}
-                  {!notApproved && remoteVideos}
-                </div>
-              </div>
+              {!notApproved && this.renderLocalMedia()}
             </div>
-            {this.state.showBars && !notApproved && this.renderBottomBar(layout, otherFeedHasQuestion)}
+            {this.state.showBars && !notApproved && this.renderBottomBar()}
           </Grid>
 
           {this.renderRightAside()}
@@ -1886,14 +1523,8 @@ class WebinarClient extends Component {
       appInitError,
       attachedSource,
       cammuted,
-      currentLayout,
-      feeds,
       media,
-      muteOtherCams,
-      myid,
-      numberOfVirtualUsers,
       room,
-      rooms,
       selected_room,
       shidur,
       user,
@@ -1904,8 +1535,6 @@ class WebinarClient extends Component {
       shidurForGuestReady,
       isGroup,
       hideUserDisplays,
-      isKliOlamiShown,
-      kliOlamiAttached
     } = this.state;
 
     if (appInitError) {
@@ -1918,9 +1547,6 @@ class WebinarClient extends Component {
     }
 
     const notApproved = user && user.role !== userRolesEnum.user;
-    const width = "134";
-    const height = "100";
-    const layout = room === "" || currentLayout;
 
     let source;
 
@@ -1949,59 +1575,9 @@ class WebinarClient extends Component {
           isAv1={isAv1}
           setAudio={this.setAudio.bind(this)}
           audios={audios.audios}
-          isDoubleSize={"double" === layout}
+          isDoubleSize={false}
         />
       );
-    }
-
-    let otherFeedHasQuestion = false;
-    let localPushed = false;
-    let groupsNum = 0;
-    let remoteVideos = sortAndFilterFeeds(feeds).reduce((result, feed) => {
-      const {question, id} = feed;
-      otherFeedHasQuestion = otherFeedHasQuestion || (question && id !== myid);
-
-      if (!localPushed && ((!feed.display.is_group && isGroup) ||
-          (feed.display.is_group === isGroup && feed.display.timestamp >= user.timestamp))) {
-        localPushed = true;
-        for (let i = 0; i < parseInt(numberOfVirtualUsers, 10); i++) {
-          result.push(this.renderLocalMedia(width, height, i, isGroup));
-        }
-      }
-
-      if (feed.display.is_group) {
-        groupsNum += 1;
-      }
-
-      result.push(this.renderMedia(feed, width, height, layout));
-      return result;
-    }, []);
-
-    if (!localPushed) {
-      for (let i = 0; i < parseInt(numberOfVirtualUsers, 10); i++) {
-        remoteVideos.push(this.renderLocalMedia(width, height, i, isGroup));
-      }
-    }
-
-    const groupMultiplier = "equal" === layout ? 0 : 3;
-    let noOfVideos = remoteVideos.length + groupMultiplier * groupsNum;
-    if (this.context.hideSelf)
-      noOfVideos -= 1;
-
-    if (room !== "" && shidur && attachedSource) {
-      if ("double" === layout) {
-        noOfVideos += 4;
-      } else if ("equal" === layout) {
-        noOfVideos += 1;
-      }
-    }
-
-    if (isKliOlamiShown && kliOlamiAttached) {
-      if ("double" === layout) {
-        noOfVideos += 4;
-      } else if ("equal" === layout) {
-        noOfVideos += 1;
-      }
     }
 
     let login = <LoginPage user={user} checkPermission={this.checkPermission} loading={true} />;
@@ -2009,7 +1585,7 @@ class WebinarClient extends Component {
     const isDeb = new URL(window.location.href).searchParams.has("deb");
 
     let content = user?.allowed ?
-      this.renderNewVersionContent(layout, isDeb, source, otherFeedHasQuestion, noOfVideos, remoteVideos) :
+      this.renderNewVersionContent(isDeb, source) :
       this.renderNotAllowed(isDeb);
 
     return (
@@ -2025,8 +1601,6 @@ class WebinarClient extends Component {
             closeModal={() => this.setState({isSettings: false, isOpenTopMenu: false})}
             setAudio={this.setAudio.bind(this)}
             videoLength={media.video?.devices.length}
-            audioModeChange={this.otherCamsMuteToggle}
-            isAudioMode={muteOtherCams}
             audioDevice={media.audio?.device}
             setAudioDevice={this.setAudioDevice.bind(this)}
             audios={audios.audios}
@@ -2037,16 +1611,12 @@ class WebinarClient extends Component {
         {user?.allowed && !Boolean(room) && (
           <Settings
             user={user}
-            rooms={rooms}
-            selectRoom={this.selectRoom.bind(this)}
             selectedRoom={selected_room}
             initClient={this.initClient.bind(this)}
-            isAudioMode={muteOtherCams}
             isGroup={isGroup}
             setAudioDevice={this.setAudioDevice.bind(this)}
             setVideoDevice={this.setVideoDevice.bind(this)}
             settingsChange={this.setVideoSize}
-            audioModeChange={this.otherCamsMuteToggle}
             handleGroupChange={() => this.setState({isGroup: !isGroup})}
             audio={media.audio}
             video={media.video}

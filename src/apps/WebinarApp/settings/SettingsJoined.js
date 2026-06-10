@@ -78,8 +78,6 @@ const SettingsJoined = (props) => {
     isOpen = false,
     closeModal,
     userDisplay,
-    audioModeChange,
-    isAudioMode,
     setAudioDevice,
     audioDevice = audio.devices[0]?.deviceId,
     hideUserDisplays,
@@ -102,8 +100,6 @@ const SettingsJoined = (props) => {
     if (!localStorage.getItem(WQ_LANG)) setSubtitleWQ(key);
     if (!localStorage.getItem(SUBTITLE_LANG)) setSubtitleMQTT(key);
   }, [audios]);
-
-  const handleAudioModeChange = () => audioModeChange();
 
   const handleUsersDisplays = () => toggleUsersDisplays()
 
@@ -282,10 +278,6 @@ const SettingsJoined = (props) => {
         {renderMediaSettings()}
 
         <Grid item xs={12} size={12}>
-          <FormControlLabel
-            label={<Typography color="textPrimary">{t("oldClient.audioMode")}</Typography>}
-            control={<Checkbox checked={!!isAudioMode} onChange={handleAudioModeChange} name="isAudioMode" />}
-          />
           <FormControlLabel
             label={<Typography color="textPrimary">{t("oldClient.darkTheme")}</Typography>}
             control={<Checkbox checked={isDark} onChange={toggleTheme} name="isDark" color="secondary" />}
