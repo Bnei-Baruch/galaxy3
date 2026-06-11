@@ -46,7 +46,7 @@ import {isFullScreen, toggleFullScreen} from "./FullScreenHelper";
 import {AppBar, Badge, Box, Button as ButtonMD, ButtonGroup, CircularProgress, Grid, IconButton, useTheme} from "@mui/material";
 import {ChevronLeft, ChevronRight, PlayCircleOutline} from "@mui/icons-material";
 import {grey} from "@mui/material/colors";
-import {AskQuestion, CloseBroadcast, Fullscreen, Mute, MuteVideo, Vote} from "./buttons";
+import {AskQuestion, CloseBroadcast, Fullscreen, Mute, MuteVideo} from "./buttons";
 import Settings from "./settings/Settings";
 import SettingsJoined from "./settings/SettingsJoined";
 import {initCrisp, Support} from "./components/Support";
@@ -62,7 +62,6 @@ import devices from "../../lib/devices";
 import {JanusMqtt} from "../../lib/janus-mqtt";
 import {PublisherPlugin} from "../../lib/publisher-plugin";
 import log from "loglevel";
-import Donations from "./buttons/Donations";
 import version from './Version.js';
 import {PopUp} from "./components/PopUp"
 import {BroadcastNotification} from "./components/BroadcastNotification";
@@ -1086,10 +1085,10 @@ class WebinarClient extends Component {
     const userName = user ? user.username : "";
     const {t} = this.props;
 
-    if (this.context.hideSelf) return null;
-
+    // Keep the element mounted (only visually hidden) so the localVideo srcObject
+    // stays attached; unmounting on hideSelf breaks the video when shown again.
     return (
-      <div className="video self-pip" key="local">
+      <div className={classNames("video self-pip", {"hidden": this.context.hideSelf})} key="local">
         {this.renderVideoOverlay(!muted, question, cammuted, userName, false, true)}
 
         {reconnecting && (
@@ -1221,7 +1220,6 @@ class WebinarClient extends Component {
               disabled={!mqttOn || premodStatus || !media.audio.device || delay}
               action={this.handleQuestion.bind(this)}
             />
-            <Vote t={t} id={user?.id} disabled={!user || !user.id || room === ""} />
           </ButtonGroup>
 
           <ButtonMD
@@ -1305,7 +1303,7 @@ class WebinarClient extends Component {
 
   renderTopBar = () => {
     const {t, i18n} = this.props;
-    const {user, asideMsgCounter, leftAsideName, rightAsideName, isOpenTopMenu} = this.state;
+    const {user, asideMsgCounter, rightAsideName, isOpenTopMenu, question} = this.state;
 
     return (
       <AppBar color="default" position="static">
@@ -1330,6 +1328,7 @@ class WebinarClient extends Component {
           </ButtonMD>
           { user?.allowed && (
             <>
+              {/* Sketches (drawing) temporarily disabled, may be needed later.
               <ButtonGroup
                 variant="outlined"
                 color="primary"
@@ -1347,9 +1346,17 @@ class WebinarClient extends Component {
                   </ButtonMD>
                 </Badge>
               </ButtonGroup>
+              */}
 
               <Typography variant="h6" align="center" className={classNames("top-toolbar__item", "top-toolbar__title")}>
-                {user?.group}
+                <Popup
+                  content={this.connectionLabel()}
+                  mouseEnterDelay={200}
+                  mouseLeaveDelay={500}
+                  on="hover"
+                  trigger={<Icon style={{marginLeft: "0.5rem"}} name="signal" color={this.connectionColor()} />}
+                />
+                {question && <Icon name="question" color="red" style={{marginLeft: "0.2rem"}} />}
               </Typography>
 
               <ButtonGroup
@@ -1382,7 +1389,6 @@ class WebinarClient extends Component {
           }
 
           <Support />
-          <Donations />
         </Toolbar>
       </AppBar>
     );

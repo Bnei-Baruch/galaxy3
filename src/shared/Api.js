@@ -39,9 +39,15 @@ class Api {
   fetchActiveRooms = () => this.logAndParse("fetch active rooms", fetch(this.urlFor("/rooms"), this.defaultOptions()));
 
   // Returns the single room assigned to this user by the server: {room, janus, description, ...}.
-  // NOTE: endpoint path to be confirmed with backend.
+  // TEMP: backend endpoint is not ready yet, so we behave as if room 1051 was selected,
+  // pulling its real janus/description from the available rooms list.
+  // TODO: replace with the real endpoint, e.g.:
+  //   this.logAndParse(`fetch assigned room ${id}`, fetch(this.urlFor(`/v2/users/${id}/room`), this.defaultOptions()));
   fetchAssignedRoom = (id) =>
-    this.logAndParse(`fetch assigned room ${id}`, fetch(this.urlFor(`/v2/users/${id}/room`), this.defaultOptions()));
+    this.fetchAvailableRooms({with_num_users: true}).then((data) => {
+      const rooms = (data && data.rooms) || [];
+      return rooms.find((r) => Number(r.room) === 1051) || {room: 1051, description: "1051"};
+    });
 
   fetchRoom = (id) => this.logAndParse(`fetch room ${id}`, fetch(this.urlFor(`/room/${id}`), this.defaultOptions()));
 

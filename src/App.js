@@ -14,7 +14,7 @@ const apps = {
   videoout: lazy(() => import('./apps/VideoOutApp/VideoOutMqtt')),
   qstout: lazy(() => import('./apps/VideoOutApp/QstOutMqtt')),
   webout: lazy(() => import('./apps/WebOutApp/WebOutMqtt')),
-  webinar: lazy(() => import('./apps/WebinarApp/WebinarClient')),
+  wclient: lazy(() => import('./apps/WebinarApp/WebinarClient')),
 };
 
 class App extends Component {

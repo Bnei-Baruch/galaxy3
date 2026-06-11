@@ -57,6 +57,7 @@
     "start:videoout": "REACT_APP_GALAXY_APP=videoout yarn start",
     "start:qstout": "REACT_APP_GALAXY_APP=qstout yarn start",
     "start:webout": "REACT_APP_GALAXY_APP=webout yarn start",
+    "start:wclient": "REACT_APP_GALAXY_APP=wclient yarn start",
     "build": "webpack --mode=production",
     "build:virtual": "REACT_APP_GALAXY_APP=virtual yarn build",
     "build:admin": "REACT_APP_GALAXY_APP=admin yarn build",

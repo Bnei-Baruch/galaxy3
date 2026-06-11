@@ -360,8 +360,8 @@
   position: absolute;
   bottom: 16px;
   right: 16px;
-  width: 180px;
-  height: 135px;
+  width: 360px;
+  height: 270px;
   z-index: 30;
   border-radius: 8px;
   overflow: hidden;
@@ -375,8 +375,8 @@
   }
 
   @include portrait {
-    width: 120px;
-    height: 90px;
+    width: 240px;
+    height: 180px;
   }
 }
 
