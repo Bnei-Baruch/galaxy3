@@ -1,6 +1,6 @@
 import React, {Component, Fragment} from "react";
 import {kc} from "../../components/UserManager";
-import {Button, Confirm, Grid, Header, Icon, List, Popup, Segment, Select, Table} from "semantic-ui-react";
+import {Button, Confirm, Grid, Header, Icon, Input, List, Pagination, Popup, Segment, Select, Table} from "semantic-ui-react";
 import "./AdminClient.css";
 import "./AdminClientVideo.scss";
 import classNames from "classnames";
@@ -40,6 +40,19 @@ class AdminClient extends Component {
     feed_rtcp: {},
     users: [],
     users_count: 0,
+    questions: [],
+    total: 0,
+    page_no: 1,
+    page_size: 50,
+    filters: {
+      display: "",
+      camera: "",
+      question: "",
+      room_id: "",
+      gateway_id: "",
+      gateway_feed: "",
+      ip_address: "",
+    },
     user: null,
     appInitError: null,
     command_status: true,
@@ -51,6 +64,7 @@ class AdminClient extends Component {
 
   componentWillUnmount() {
     if (this._usersTimer) clearInterval(this._usersTimer);
+    if (this._filterTimer) clearTimeout(this._filterTimer);
     Object.values(this.state.gateways).forEach((g) => g && g.destroy());
   }
 
@@ -128,23 +142,91 @@ class AdminClient extends Component {
 
   pollUsers = () => {
     this.fetchUsers();
-    this._usersTimer = setInterval(this.fetchUsers, 10 * 1000);
+    this.fetchQuestions();
+    this._usersTimer = setInterval(() => {
+      this.fetchUsers();
+      this.fetchQuestions();
+    }, 10 * 1000);
   };
 
-  // fetchSessions returns the list of user sessions. `data` may be nested
-  // (sessions grouped per user), so we flatten it into a single users list.
-  // Each user carries its own room/janus/rfid, so video subscription does not
-  // depend on a single assigned room (rooms handling lives in a separate tab).
+  // Separate list of users who raised their hand (question=true).
+  fetchQuestions = () => {
+    api
+      .fetchSessions({question: true})
+      .then((sessions) => {
+        const questions = ((sessions && sessions.data) || []).flat();
+        this.setState({questions});
+      })
+      .catch((err) => {
+        log.error("[admin] error fetching questions", err);
+      });
+  };
+
+  // Build the query for /admin/sessions from the active filters + pagination.
+  // Only non-empty filters are sent. `display` is a server-side regex (~*), so
+  // we escape it to behave as a plain case-insensitive substring search.
+  buildSessionParams = () => {
+    const {filters, page_no, page_size} = this.state;
+    const params = {page_no, page_size};
+    Object.entries(filters).forEach(([k, v]) => {
+      if (v === "" || v == null) return;
+      params[k] = k === "display" ? v.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") : v;
+    });
+    return params;
+  };
+
   fetchUsers = () => {
     api
-      .fetchSessions()
+      .fetchSessions(this.buildSessionParams())
       .then((sessions) => {
         const users = ((sessions && sessions.data) || []).flat();
-        this.setState({users, users_count: (sessions && sessions.total) || users.length});
+        const total = (sessions && sessions.total) || 0;
+        this.setState({users, users_count: total});
+        // Keep total in sync; needed for pagination controls.
+        this.setState({total});
       })
       .catch((err) => {
         log.error("[admin] error fetching sessions", err);
       });
+  };
+
+  setFilter = (name, value) => {
+    this.setState((s) => ({filters: {...s.filters, [name]: value}, page_no: 1}), this.fetchUsers);
+  };
+
+  // Free-text filters are debounced so we don't hit the backend per keystroke.
+  onTextFilter = (name, value) => {
+    this.setState((s) => ({filters: {...s.filters, [name]: value}}));
+    if (this._filterTimer) clearTimeout(this._filterTimer);
+    this._filterTimer = setTimeout(() => {
+      this.setState({page_no: 1}, this.fetchUsers);
+    }, 400);
+  };
+
+  goToPage = (page_no) => {
+    this.setState({page_no}, this.fetchUsers);
+  };
+
+  setPageSize = (page_size) => {
+    this.setState({page_size, page_no: 1}, this.fetchUsers);
+  };
+
+  resetFilters = () => {
+    this.setState(
+      {
+        filters: {
+          display: "",
+          camera: "",
+          question: "",
+          room_id: "",
+          gateway_id: "",
+          gateway_feed: "",
+          ip_address: "",
+        },
+        page_no: 1,
+      },
+      this.fetchUsers
+    );
   };
 
   initJanus = (user, gxy) => {
@@ -407,6 +489,103 @@ class AdminClient extends Component {
     this.sendRemoteCommand("client-reload-all");
   };
 
+  renderFilters = () => {
+    const {filters, page_size} = this.state;
+    const triState = [
+      {key: "any", text: "Any", value: ""},
+      {key: "on", text: "On", value: "true"},
+      {key: "off", text: "Off", value: "false"},
+    ];
+    const pageSizeOptions = [
+      {key: 10, text: "10", value: 10},
+      {key: 25, text: "25", value: 25},
+      {key: 50, text: "50", value: 50},
+      {key: 100, text: "100", value: 100},
+      {key: 200, text: "200", value: 200},
+    ];
+
+    return (
+      <Segment className="ingest_segment">
+        <div style={{display: "flex", flexWrap: "wrap", gap: "0.5em", alignItems: "center"}}>
+          <Input
+            icon="search"
+            placeholder="Name"
+            value={filters.display}
+            onChange={(e, {value}) => this.onTextFilter("display", value)}
+          />
+          <Input
+            placeholder="Room id"
+            value={filters.room_id}
+            onChange={(e, {value}) => this.onTextFilter("room_id", value)}
+          />
+          <Input
+            placeholder="Gateway id"
+            value={filters.gateway_id}
+            onChange={(e, {value}) => this.onTextFilter("gateway_id", value)}
+          />
+          <Input
+            placeholder="Feed (rfid)"
+            value={filters.gateway_feed}
+            onChange={(e, {value}) => this.onTextFilter("gateway_feed", value)}
+          />
+          <Input
+            placeholder="IP address"
+            value={filters.ip_address}
+            onChange={(e, {value}) => this.onTextFilter("ip_address", value)}
+          />
+          <span>
+            Cam:&nbsp;
+            <Select
+              compact
+              options={triState}
+              value={filters.camera}
+              onChange={(e, {value}) => this.setFilter("camera", value)}
+            />
+          </span>
+          <span>
+            Q:&nbsp;
+            <Select
+              compact
+              options={triState}
+              value={filters.question}
+              onChange={(e, {value}) => this.setFilter("question", value)}
+            />
+          </span>
+          <span>
+            Per page:&nbsp;
+            <Select
+              compact
+              options={pageSizeOptions}
+              value={page_size}
+              onChange={(e, {value}) => this.setPageSize(value)}
+            />
+          </span>
+          <Button basic icon="undo" content="Reset" onClick={this.resetFilters} />
+        </div>
+      </Segment>
+    );
+  };
+
+  renderPagination = () => {
+    const {total, page_no, page_size} = this.state;
+    const pages = Math.max(1, Math.ceil((total || 0) / page_size));
+    return (
+      <Segment textAlign="center" basic style={{padding: "0.5em 0"}}>
+        <Pagination
+          size="mini"
+          activePage={page_no}
+          totalPages={pages}
+          boundaryRange={0}
+          siblingRange={1}
+          firstItem={null}
+          lastItem={null}
+          onPageChange={(e, {activePage}) => this.goToPage(activePage)}
+        />
+        <div style={{marginTop: "0.4em", color: "grey", fontSize: "0.85em"}}>Total: {total}</div>
+      </Segment>
+    );
+  };
+
   render() {
     const {
       user,
@@ -417,6 +596,7 @@ class AdminClient extends Component {
       feed_user,
       users,
       users_count,
+      questions,
       current_room,
       current_group,
       appInitError,
@@ -462,6 +642,19 @@ class AdminClient extends Component {
             {u.display}
           </Table.Cell>
           <Table.Cell width={1}>{camera ? cam : ""}</Table.Cell>
+        </Table.Row>
+      );
+    });
+
+    const questions_grid = questions.map((u, i) => {
+      if (!u) return null;
+      return (
+        <Table.Row active={u.rfid === feed_id} key={u.rfid || i} onClick={() => this.selectUser(u)}>
+          <Table.Cell width={10}>
+            {q}
+            {u.display}
+          </Table.Cell>
+          <Table.Cell width={1}>{u.camera ? cam : ""}</Table.Cell>
         </Table.Row>
       );
     });
@@ -644,6 +837,7 @@ class AdminClient extends Component {
                 {rootControlPanel}
               </Segment>
             ) : null}
+            {this.isAllowed("admin") ? this.renderFilters() : null}
           </Grid.Column>
         </Grid.Row>
         <Grid.Row columns="equal">
@@ -663,6 +857,7 @@ class AdminClient extends Component {
                     {users_grid}
                   </Table.Body>
                 </Table>
+                {this.renderPagination()}
               </Segment>
             </Segment.Group>
           </Grid.Column>
@@ -680,10 +875,10 @@ class AdminClient extends Component {
               <Table selectable compact="very" basic structured className="admin_table" unstackable>
                 <Table.Body>
                   <Table.Row disabled positive>
-                    <Table.Cell width={5}>Info</Table.Cell>
+                    <Table.Cell width={10}>Questions: {questions.length}</Table.Cell>
                     <Table.Cell width={1}></Table.Cell>
                   </Table.Row>
-                  {/* TODO: right-side panel content (placeholder for now) */}
+                  {questions_grid}
                 </Table.Body>
               </Table>
             </Segment>

@@ -53,7 +53,14 @@ class Api {
 
   fetchUsers = () => this.logAndParse("fetch users", fetch(this.urlFor("/users"), this.defaultOptions()));
 
-  fetchSessions = () => this.logAndParse("fetch sessions", fetch(this.urlFor("admin/sessions"), this.defaultOptions()));
+  // GET /admin/sessions (root-only). Supports filters/pagination:
+  // page_no, page_size, order_by, room_id, gateway_id, camera, question,
+  // display (name regex), gateway_feed, ip_address. Returns {total, data:[V1User]}.
+  fetchSessions = (params = {}) =>
+    this.logAndParse(
+      "fetch sessions",
+      fetch(`${this.urlFor("admin/sessions")}?${Api.makeParams(params)}`, this.defaultOptions())
+    );
 
   fetchQuad = (col) =>
     this.logAndParse(`fetch quad ${col}`, fetch(this.urlFor(`/qids/q${col}`), this.defaultOptions()));
