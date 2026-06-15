@@ -41,6 +41,8 @@ class AdminClient extends Component {
     users: [],
     users_count: 0,
     questions: [],
+    air_queue: [],
+    on_air_id: null,
     total: 0,
     page_no: 1,
     page_size: 50,
@@ -295,6 +297,42 @@ class AdminClient extends Component {
     this.watchUserVideo(selected_user);
   };
 
+  // Stable key for matching a user across lists (feed id first, user id fallback).
+  userKey = (u) => (u ? u.rfid || u.id : null);
+
+  // Add a (hand-raised) user to the operator's broadcast queue. Local-only for
+  // now; deduped by userKey so the same person can't be queued twice.
+  addToQueue = (u) => {
+    if (!u) return;
+    const key = this.userKey(u);
+    this.setState((s) => {
+      if (s.air_queue.some((q) => this.userKey(q) === key)) return null;
+      return {air_queue: [...s.air_queue, u]};
+    });
+  };
+
+  // Remove a user from the queue. If they are currently on air, take them off
+  // first so we never leave a dangling on-air signal.
+  removeFromQueue = (u) => {
+    const key = this.userKey(u);
+    this.setState((s) => {
+      const on_air_id = s.on_air_id === key ? null : s.on_air_id;
+      return {air_queue: s.air_queue.filter((q) => this.userKey(q) !== key), on_air_id};
+    });
+    if (this.state.on_air_id === key) {
+      this.sendRemoteCommand("audio-out", false, u);
+    }
+  };
+
+  // Toggle a single queued user on/off air. Only one user can be on air at a
+  // time, so putting someone on air implicitly takes the previous one off.
+  toggleOnAir = (u) => {
+    const key = this.userKey(u);
+    const turningOn = this.state.on_air_id !== key;
+    this.setState({on_air_id: turningOn ? key : null});
+    this.sendRemoteCommand("audio-out", turningOn, u);
+  };
+
   watchUserVideo = (u) => {
     if (!u || !u.rfid) {
       log.warn("[admin] watchUserVideo: user has no rfid (not published yet)", u);
@@ -422,22 +460,29 @@ class AdminClient extends Component {
     }
   };
 
-  sendRemoteCommand = (command_type, value) => {
+  // `target` defaults to the user we are watching (feed_user) but can be any
+  // user (e.g. a person picked from the broadcast queue for an on-air signal).
+  // For "audio-out" a boolean `value` sets the on/off status explicitly; the
+  // legacy room button omits it and keeps toggling the shared command_status.
+  sendRemoteCommand = (command_type, value, target) => {
     const {feed_user, current_room, command_status} = this.state;
+    const recipient = target || feed_user;
+
+    const explicitStatus = command_type === "audio-out" && typeof value === "boolean";
 
     const cmd = {
       type: command_type,
       room: current_room,
-      status: command_status,
-      id: feed_user?.id,
+      status: explicitStatus ? value : command_status,
+      id: recipient?.id,
     };
 
-    if (feed_user) {
-      const {camera, question, rfid} = feed_user;
+    if (recipient) {
+      const {camera, question, rfid} = recipient;
       cmd.user = {camera, question, rfid};
     }
 
-    if (feed_user && command_type === "client-bitrate") cmd.bitrate = value;
+    if (recipient && command_type === "client-bitrate") cmd.bitrate = value;
 
     log.info("[admin] sending cmd json", cmd);
     let topic = command_type.match(/^(reload-config|client-reload-all)$/)
@@ -445,7 +490,7 @@ class AdminClient extends Component {
       : "galaxy/room/" + current_room;
     mqtt.send(JSON.stringify(cmd), false, topic);
 
-    if (command_type === "audio-out") {
+    if (command_type === "audio-out" && !explicitStatus) {
       this.setState({command_status: !command_status});
     }
   };
@@ -597,6 +642,8 @@ class AdminClient extends Component {
       users,
       users_count,
       questions,
+      air_queue,
+      on_air_id,
       current_room,
       current_group,
       appInitError,
@@ -646,7 +693,12 @@ class AdminClient extends Component {
       );
     });
 
-    const questions_grid = questions.map((u, i) => {
+    const inQueue = (u) => air_queue.some((x) => this.userKey(x) === this.userKey(u));
+
+    // Hide hand-raised users that the operator already moved to the air queue.
+    const pending_questions = questions.filter((u) => u && !inQueue(u));
+
+    const questions_grid = pending_questions.map((u, i) => {
       if (!u) return null;
       return (
         <Table.Row active={u.rfid === feed_id} key={u.rfid || i} onClick={() => this.selectUser(u)}>
@@ -655,6 +707,63 @@ class AdminClient extends Component {
             {u.display}
           </Table.Cell>
           <Table.Cell width={1}>{u.camera ? cam : ""}</Table.Cell>
+          <Table.Cell width={1} textAlign="center">
+            <Button
+              compact
+              size="mini"
+              icon="plus"
+              color="blue"
+              disabled={inQueue(u)}
+              title="Добавить в эфирную очередь"
+              onClick={(e) => {
+                e.stopPropagation();
+                this.addToQueue(u);
+              }}
+            />
+          </Table.Cell>
+        </Table.Row>
+      );
+    });
+
+    const air_queue_grid = air_queue.map((u, i) => {
+      if (!u) return null;
+      const onAir = this.userKey(u) === on_air_id;
+      return (
+        <Table.Row
+          active={u.rfid === feed_id}
+          negative={onAir}
+          key={this.userKey(u) || i}
+          onClick={() => this.selectUser(u)}
+        >
+          <Table.Cell width={8}>
+            {onAir ? <Icon color="red" name="microphone" /> : ""}
+            {u.display}
+          </Table.Cell>
+          <Table.Cell width={1}>{u.camera ? cam : ""}</Table.Cell>
+          <Table.Cell width={2} textAlign="center">
+            <Button
+              compact
+              size="mini"
+              icon={onAir ? "microphone slash" : "microphone"}
+              color={onAir ? "red" : "green"}
+              title={onAir ? "Снять с эфира" : "В эфир"}
+              onClick={(e) => {
+                e.stopPropagation();
+                this.toggleOnAir(u);
+              }}
+            />
+            <Button
+              compact
+              size="mini"
+              icon="trash"
+              basic
+              title="Убрать из очереди"
+              onClick={(e) => {
+                e.stopPropagation();
+                this.removeFromQueue(u);
+              }}
+            />
+          </Table.Cell>
         </Table.Row>
       );
     });
@@ -871,14 +980,15 @@ class AdminClient extends Component {
             </div>
           </Grid.Column>
           <Grid.Column width={3}>
-            <Segment textAlign="center" className="group_list">
+            <Segment textAlign="center" className="air_list">
               <Table selectable compact="very" basic structured className="admin_table" unstackable>
                 <Table.Body>
-                  <Table.Row disabled positive>
-                    <Table.Cell width={10}>Questions: {questions.length}</Table.Cell>
+                  <Table.Row disabled warning>
+                    <Table.Cell width={8}>Эфирная очередь: {air_queue.length}</Table.Cell>
                     <Table.Cell width={1}></Table.Cell>
+                    <Table.Cell width={2}></Table.Cell>
                   </Table.Row>
-                  {questions_grid}
+                  {air_queue_grid}
                 </Table.Body>
               </Table>
             </Segment>
@@ -896,6 +1006,20 @@ class AdminClient extends Component {
                 selected_group={current_group}
                 selected_user={feed_user}
               />
+            </Grid.Column>
+            <Grid.Column width={3}>
+              <Segment textAlign="center" className="hands_list">
+                <Table selectable compact="very" basic structured className="admin_table" unstackable>
+                  <Table.Body>
+                    <Table.Row disabled positive>
+                      <Table.Cell width={8}>Поднятые руки: {pending_questions.length}</Table.Cell>
+                      <Table.Cell width={1}></Table.Cell>
+                      <Table.Cell width={1}></Table.Cell>
+                    </Table.Row>
+                    {questions_grid}
+                  </Table.Body>
+                </Table>
+              </Segment>
             </Grid.Column>
           </Grid.Row>
         ) : null}

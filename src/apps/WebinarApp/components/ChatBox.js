@@ -6,7 +6,7 @@ import mqtt from "../../../shared/mqtt";
 class ChatBox extends Component {
 
   state = {
-    msg_type: "public",
+    msg_type: "private",
     messages: [],
     visible: false,
     input_value: "",
@@ -17,6 +17,16 @@ class ChatBox extends Component {
     this.props.onRef(this);
     this.initChatEvents();
     document.addEventListener("keydown", this.onKeyPressed);
+  }
+
+  // When the operator picks a user (main list or raised hands), preselect them
+  // in the chat recipient dropdown so a message goes straight to that person.
+  componentDidUpdate(prevProps) {
+    const prevId = prevProps.selected_user?.id;
+    const curId = this.props.selected_user?.id;
+    if (curId && curId !== prevId && this.state.msg_type !== "private") {
+      this.setState({msg_type: "private"});
+    }
   }
 
   componentWillUnmount() {
@@ -92,7 +102,7 @@ class ChatBox extends Component {
   };
 
   newChatMessage = () => {
-    const {user: {role, display, id}, selected_room, selected_user} = this.props;
+    const {user: {role, display, id}, selected_user} = this.props;
     let {input_value, msg_type} = this.state;
 
     if (msg_type === "all") {
@@ -104,18 +114,13 @@ class ChatBox extends Component {
       return;
     }
 
-    if (!selected_room) {
-      alert("Enter room");
-      return;
-    }
-
-    if (msg_type === "private" && !selected_user) {
+    if (!selected_user) {
       alert("Choose user");
       return;
     }
 
     const msg = {user: {id, role, display}, type: "client-chat", text: input_value};
-    const topic = msg_type === "private" ? `galaxy/users/${selected_user.id}` : `galaxy/room/${selected_room}/chat`;
+    const topic = `galaxy/users/${selected_user.id}`;
 
     mqtt.send(JSON.stringify(msg), false, topic);
     console.log(msg)
@@ -134,13 +139,11 @@ class ChatBox extends Component {
   };
 
   render() {
-    const {selected_user, selected_group, user} = this.props;
+    const {selected_user, user} = this.props;
     const {messages, msg_type, input_value, show_confirm} = this.state;
     const to = selected_user && selected_user.display ? selected_user.display : "Select User:";
-    const group = selected_group ? selected_group : "Select Group:";
 
     const send_options = [
-      {key: "public", text: group, value: "public"},
       {key: "private", text: to, value: "private"},
     ];
 

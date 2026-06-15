@@ -97,6 +97,13 @@
     color: #20522c !important;
 }
 
+.admin_table .ui.table tr.negative,
+.admin_table .ui.selectable.table tr.negative:hover {
+    background: #ffd6d6 !important;
+    color: #912d2b !important;
+    font-weight: bold !important;
+}
+
 .ui.table tr.active, .scoped-semantic-ltr .ui.table td.active {
     background: #f7ffe6 !important;
     color: #275b28 !important;
@@ -115,6 +122,20 @@
     top:0px; left:0px;
     width:100%;
     height: 45vh;
+}
+
+.air_list {
+    overflow-y:scroll;
+    top:0px; left:0px;
+    width:100%;
+    height: 45vh;
+}
+
+.hands_list {
+    overflow-y:scroll;
+    top:0px; left:0px;
+    width:100%;
+    height: 25vh;
 }
 
 .user_list {
