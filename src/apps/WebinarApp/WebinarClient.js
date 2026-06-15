@@ -352,13 +352,12 @@ class WebinarClient extends Component {
           }
         });
 
-        // Private chat
+        // Private chat: messages from operators (admin/root) shown in support tab.
         mqtt.mq.on("MqttPrivateMessage", (data) => {
           let message = JSON.parse(data);
-          if (message?.type === "client-chat") {
-            notifyMe("Arvut System", message.text, true);
+          if (message?.type === "client-chat" && this.chat) {
+            this.chat.onPrivateMessage(message);
           }
-          //TODO: Make private dialog exchange
         });
 
         // Broadcast message

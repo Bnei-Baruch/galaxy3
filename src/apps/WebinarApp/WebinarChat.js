@@ -50,6 +50,21 @@ class WebinarChat extends Component {
     }
   };
 
+  // Private (whisper) messages can only come from operators (admin/root) and are
+  // shown in the support tab (support_msgs), separate from the public room chat.
+  onPrivateMessage = (message) => {
+    let {support_msgs} = this.state;
+    message.time = getDateString();
+    support_msgs.push(message);
+    this.setState({support_msgs});
+    if (this.props.visible && !this.props.room_chat) {
+      this.scrollToBottom();
+    } else {
+      notifyMe("Shidur", message.text, true);
+      this.props.onNewMsg();
+    }
+  };
+
   newChatMessage = (user) => {
     const {room_chat} = this.props;
     let {id, role, display} = this.props.user;

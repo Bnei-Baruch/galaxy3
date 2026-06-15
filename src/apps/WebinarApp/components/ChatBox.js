@@ -102,7 +102,7 @@ class ChatBox extends Component {
   };
 
   newChatMessage = () => {
-    const {user: {role, display, id}, selected_user} = this.props;
+    const {user: {role, display, id, username}, selected_user} = this.props;
     let {input_value, msg_type} = this.state;
 
     if (msg_type === "all") {
@@ -119,14 +119,14 @@ class ChatBox extends Component {
       return;
     }
 
-    const msg = {user: {id, role, display}, type: "client-chat", text: input_value};
+    const msg = {user: {id, role, display, username}, type: "client-chat", text: input_value};
     const topic = `galaxy/users/${selected_user.id}`;
 
     mqtt.send(JSON.stringify(msg), false, topic);
-    console.log(msg)
-    this.setState({input_value: ""});
 
-    // TODO: Make private dialog exchange
+    // Echo the outgoing message in the operator's chat (no reply path back yet).
+    const sent = {...msg, time: getDateString(), to: selected_user.display};
+    this.setState((s) => ({messages: [...s.messages, sent], input_value: ""}));
   };
 
   scrollToBottom = () => {
@@ -158,7 +158,7 @@ class ChatBox extends Component {
           <p>
             <i style={{color: "grey"}}>{time}</i> -
             <b style={{color: user.role === "admin" ? "red" : "blue"}}>{user.display}</b>
-            {to ? <b style={{color: "blue"}}>-> {to} :</b> : ""}
+            {to ? <b style={{color: "blue"}}>{"->"} {to} :</b> : ""}
           </p>
           {text}
         </div>
