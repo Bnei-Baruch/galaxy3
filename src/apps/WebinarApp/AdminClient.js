@@ -13,6 +13,11 @@ import {JanusMqtt} from "../../lib/janus-mqtt";
 import {SubscriberPlugin} from "../../lib/subscriber-plugin";
 import log from "loglevel";
 
+// Retained MQTT topic that carries the whole broadcast (air) queue as an array
+// of full user objects, so a late-joining consumer (QuadOut) gets the current
+// list immediately. TODO: replace with the real topic.
+const AIR_QUEUE_TOPIC = "galaxy/room/air_queue";
+
 // Admin/monitoring client for the simplified WebinarApp.
 // Scope of this file: everything related to USERS of a single assigned room.
 // - The room is provided by the server via api.fetchAssignedRoom (currently a
@@ -300,26 +305,41 @@ class AdminClient extends Component {
   // Stable key for matching a user across lists (feed id first, user id fallback).
   userKey = (u) => (u ? u.rfid || u.id : null);
 
-  // Add a (hand-raised) user to the operator's broadcast queue. Local-only for
-  // now; deduped by userKey so the same person can't be queued twice.
+  // Publish the current queue (full user objects, each tagged with its on_air
+  // state) to the retained topic so consumers always see the latest snapshot.
+  publishAirQueue = () => {
+    const {air_queue, on_air_id} = this.state;
+    const payload = air_queue.map((u) => ({...u, on_air: this.userKey(u) === on_air_id}));
+    mqtt.send(JSON.stringify(payload), true, AIR_QUEUE_TOPIC);
+  };
+
+  // Add a (hand-raised) user to the operator's broadcast queue. Deduped by
+  // userKey so the same person can't be queued twice.
   addToQueue = (u) => {
     if (!u) return;
     const key = this.userKey(u);
-    this.setState((s) => {
-      if (s.air_queue.some((q) => this.userKey(q) === key)) return null;
-      return {air_queue: [...s.air_queue, u]};
-    });
+    this.setState(
+      (s) => {
+        if (s.air_queue.some((q) => this.userKey(q) === key)) return null;
+        return {air_queue: [...s.air_queue, u]};
+      },
+      this.publishAirQueue
+    );
   };
 
   // Remove a user from the queue. If they are currently on air, take them off
   // first so we never leave a dangling on-air signal.
   removeFromQueue = (u) => {
     const key = this.userKey(u);
-    this.setState((s) => {
-      const on_air_id = s.on_air_id === key ? null : s.on_air_id;
-      return {air_queue: s.air_queue.filter((q) => this.userKey(q) !== key), on_air_id};
-    });
-    if (this.state.on_air_id === key) {
+    const wasOnAir = this.state.on_air_id === key;
+    this.setState(
+      (s) => {
+        const on_air_id = s.on_air_id === key ? null : s.on_air_id;
+        return {air_queue: s.air_queue.filter((q) => this.userKey(q) !== key), on_air_id};
+      },
+      this.publishAirQueue
+    );
+    if (wasOnAir) {
       this.sendRemoteCommand("audio-out", false, u);
     }
   };
@@ -329,7 +349,7 @@ class AdminClient extends Component {
   toggleOnAir = (u) => {
     const key = this.userKey(u);
     const turningOn = this.state.on_air_id !== key;
-    this.setState({on_air_id: turningOn ? key : null});
+    this.setState({on_air_id: turningOn ? key : null}, this.publishAirQueue);
     this.sendRemoteCommand("audio-out", turningOn, u);
   };
 
