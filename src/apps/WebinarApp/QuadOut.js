@@ -3,14 +3,12 @@ import {Grid} from "semantic-ui-react";
 import "./QuadOut.css";
 import "./QuadUsers.scss";
 import api from "../../shared/Api";
-import {API_BACKEND_PASSWORD, API_BACKEND_USERNAME} from "../../shared/env";
-import GxyJanus from "../../shared/janus-utils";
 import QuadUsers from "./QuadUsers";
 import mqtt from "../../shared/mqtt";
 import log from "loglevel";
-import ConfigStore from "../../shared/ConfigStore";
 import {JanusMqtt} from "../../lib/janus-mqtt";
 import version from './Version.js';
+import {MQTT_PWD} from "../../shared/env";
 
 class QuadOut extends Component {
   state = {
@@ -19,7 +17,7 @@ class QuadOut extends Component {
     room: null,
     groups: [],
     groups_queue: 0,
-    shidur_mode: "nashim",
+    shidur_mode: "beyahad",
     round: 0,
     questions: [],
     quads: [],
@@ -56,6 +54,21 @@ class QuadOut extends Component {
     Object.values(this.state.gateways).forEach((x) => x.destroy());
   }
 
+  initApp = () => {
+    const {user} = this.state;
+    console.log(" :: Version :: ", version);
+    this.setState({user});
+    this.initMQTT(user);
+    this.pollRooms();
+  };
+
+  initMQTT = (user) => {
+    mqtt.init(user, (data) => {
+      log.info("[WebOut] mqtt init: ", data);
+      mqtt.watch(() => {});
+    });
+  };
+
   pollRooms = () => {
     this.fetchRooms();
     setInterval(this.fetchRooms, 10 * 1000);
@@ -63,6 +76,7 @@ class QuadOut extends Component {
 
   fetchRooms = () => {
     let {disabled_rooms, groups, shidur_mode, region_groups} = this.state;
+    api.setAccessToken(MQTT_PWD);
     api
       .fetchActiveRooms()
       .then((data) => {
@@ -94,29 +108,6 @@ class QuadOut extends Component {
       });
   };
 
-  initApp = () => {
-    const {user} = this.state;
-
-    api.setBasicAuth(API_BACKEND_USERNAME, API_BACKEND_PASSWORD);
-
-    api.fetchConfig().then(data => {
-      ConfigStore.setGlobalConfig(data);
-      GxyJanus.setGlobalConfig(data);
-    }).then(() => this.initMQTT(user))
-      .then(this.pollRooms)
-      .catch((err) => {
-        log.error("[WebOut] error initializing app", err);
-        this.setState({appInitError: err});
-      });
-  };
-
-  initMQTT = (user) => {
-    mqtt.init(user, (data) => {
-      log.info("[WebOut] mqtt init: ", data);
-      mqtt.watch(() => {});
-    });
-  };
-
   initServers = (quads_list) => {
     const {gateways, gxy_list} = this.state;
     //let quads_list = [...qids.q1.vquad, ...qids.q2.vquad, ...qids.q3.vquad, ...qids.q4.vquad];
@@ -138,9 +129,8 @@ class QuadOut extends Component {
   initJanus = (gxy) => {
     log.info("["+gxy+"] Janus init")
     const {user, gateways} = this.state;
-    const token = ConfigStore.globalConfig.gateways.rooms[gxy].token
     gateways[gxy] = new JanusMqtt(user, gxy, gxy);
-    gateways[gxy].init(token).then(data => {
+    gateways[gxy].init().then(data => {
       log.info("["+gxy+"] Janus init success", data)
       gateways[gxy].onStatus = (srv, status) => {
         if (status !== "online") {
