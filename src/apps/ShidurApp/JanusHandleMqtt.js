@@ -16,7 +16,31 @@ class JanusHandleMqtt extends Component {
     room: "",
     myid: null,
     mystream: null,
+    num_videos: 0,
   };
+
+  getShownCount = (feeds) => {
+    const {g} = this.props;
+    if (!g || !g.users) return feeds.length;
+    const shown = feeds.filter((f) => {
+      const u = g.users.find((usr) => usr.rfid === f.id);
+      // Publisher not in the program snapshot (joined while already on air) → visible.
+      return u ? !!u.camera : true;
+    });
+    return shown.length;
+  }
+
+  hasGroup = () => {
+    const {g} = this.props;
+    if (!g || !g.users) return false;
+    return g.users.some((u) => u.camera && u.role === "user" && u.extra?.isGroup);
+  }
+
+  getLayoutCount = (feeds) => {
+    const shown = this.getShownCount(feeds);
+    const cap = this.hasGroup() ? 10 : 25;
+    return shown >= cap ? cap : shown;
+  }
 
   componentDidUpdate(prevProps) {
     let {g} = this.props;
@@ -30,40 +54,56 @@ class JanusHandleMqtt extends Component {
         this.initVideoRoom(g.room, g.janus);
       }
     }
+    // Recompute grid size when feeds or the live user/camera list changed.
+    // Guard against loops by only updating when the value actually differs.
+    const num_videos = this.getLayoutCount(this.state.feeds);
+    if (num_videos !== this.state.num_videos) {
+      this.setState({num_videos});
+    }
   }
 
   componentWillUnmount() {
     this.exitVideoRoom(this.state.room, () => {});
   }
 
-  initJanus = (gxy, p) => {
-    log.info("["+gxy+"] Janus init")
-    this.props.initJanus(gxy)
-  };
-
   initVideoRoom = (room, inst) => {
     const {gateways, user, q, col} = this.props;
-    log.info(gateways)
-    let janus = gateways[inst];
-    if(!janus) {
-      this.initJanus(inst)
+    const mit = "col" + col + "_q" + (q+1) + "_" + inst;
+    log.info("["+mit+"] Init room: ", room, inst, ConfigStore.globalConfig);
+
+    const janus = gateways[inst];
+    if (janus?.isConnected) {
+      this.setState({mit, janus});
+      this.initVideoHandles(janus, room, user, mit);
+      return;
     }
-    const mit = "col" + col + "_q" + (q+1) + "_" + inst
 
-    log.info("["+mit+"] Init room: ", room, inst, ConfigStore.globalConfig)
-    log.info("["+mit+"] mit", mit)
-
-    if(janus?.isConnected !== true) {
+    // Not connected yet — ask the parent to init the gateway and wait for it.
+    const p = this.props.initJanus(inst);
+    if (p && typeof p.then === "function") {
+      p.then((ready) => {
+        // Room may have changed while we were waiting.
+        if (this.state.room && this.state.room !== room) return;
+        // Parent's initJanus resolves to null on failure (it retries internally).
+        // Reschedule locally so this component keeps trying without dying.
+        if (!ready || !ready.isConnected) {
+          log.warn("["+mit+"] gateway not ready, will retry");
+          setTimeout(() => this.initVideoRoom(room, inst), 5000);
+          return;
+        }
+        this.setState({mit, janus: ready});
+        this.initVideoHandles(ready, room, user, mit);
+      }).catch((err) => {
+        log.error("["+mit+"] initJanus rejected unexpectedly: ", err);
+        setTimeout(() => this.initVideoRoom(room, inst), 5000);
+      });
+    } else {
+      // Backwards-compat: parent's initJanus did not return a promise.
       setTimeout(() => {
-        log.info("["+mit+"] Not connected, waiting... ", janus)
-        this.initVideoRoom(room, inst)
-      }, 1000)
-      return
+        log.info("["+mit+"] Not connected, waiting... ", gateways[inst]);
+        this.initVideoRoom(room, inst);
+      }, 1000);
     }
-
-    this.setState({mit, janus});
-
-    this.initVideoHandles(janus, room, user, mit)
   }
 
   initVideoHandles = (janus, room, user, mit) => {
@@ -82,6 +122,8 @@ class JanusHandleMqtt extends Component {
       }).catch(err => {
         log.error("["+mit+"] Join error :", err);
       })
+    }).catch(err => {
+      log.error("["+mit+"] Publisher attach error :", err);
     })
   }
 
@@ -113,7 +155,8 @@ class JanusHandleMqtt extends Component {
         }
       }
     }
-    this.setState({feeds});
+    const num_videos = this.getLayoutCount(feeds);
+    this.setState({feeds, num_videos});
     if (subscription.length > 0) {
       this.subscribeTo(room, subscription);
     }
@@ -146,7 +189,8 @@ class JanusHandleMqtt extends Component {
     const isExistFeed = feeds.find((f) => f.id === feed[0].id);
     if (!isExistFeed) {
       feeds.push(feed[0]);
-      this.setState({feeds});
+      const num_videos = this.getLayoutCount(feeds);
+      this.setState({feeds, num_videos});
     }
     if (subscription.length > 0) {
       this.subscribeTo(room, subscription);
@@ -155,13 +199,26 @@ class JanusHandleMqtt extends Component {
 
   exitPlugins = (callback) => {
     const {subscriber, videoroom, janus, mit} = this.state;
+    const finalize = () => {
+      log.info("["+mit+"] plugin detached");
+      this.setState({feeds: [], mids: [], remoteFeed: false, videoroom: null, subscriber: null, janus: null});
+      if(typeof callback === "function") callback();
+    };
     if(janus) {
-      if(subscriber) janus.detach(subscriber)
-      janus.detach(videoroom).then(() => {
-        log.info("["+mit+"] plugin detached:");
-        this.setState({feeds: [], mids: [], remoteFeed: false, videoroom: null, subscriber: null, janus: null});
-        if(typeof callback === "function") callback();
-      })
+      // Best-effort detach: never let a dead/disconnected gateway block teardown.
+      const detachSub = subscriber
+        ? Promise.resolve(janus.detach(subscriber)).catch(err => {
+            log.error("["+mit+"] subscriber detach error:", err);
+          })
+        : Promise.resolve();
+      const detachPub = videoroom
+        ? Promise.resolve(janus.detach(videoroom)).catch(err => {
+            log.error("["+mit+"] publisher detach error:", err);
+          })
+        : Promise.resolve();
+      Promise.allSettled([detachSub, detachPub]).then(finalize);
+    } else {
+      finalize();
     }
   }
 
@@ -192,7 +249,10 @@ class JanusHandleMqtt extends Component {
     let {janus, creatingFeed, remoteFeed, subscriber, mit} = this.state
 
     if (remoteFeed && subscriber) {
-      subscriber.sub(subscription);
+      const p = subscriber.sub(subscription);
+      if (p && typeof p.catch === "function") {
+        p.catch(err => log.error("["+mit+"] subscriber.sub error:", err));
+      }
       return;
     }
 
@@ -200,6 +260,11 @@ class JanusHandleMqtt extends Component {
       setTimeout(() => {
         this.subscribeTo(subscription);
       }, 500);
+      return;
+    }
+
+    if (!janus || janus.isConnected !== true) {
+      log.warn("["+mit+"] subscribeTo: gateway not connected, skipping");
       return;
     }
 
@@ -212,9 +277,15 @@ class JanusHandleMqtt extends Component {
       log.info("["+mit+"] Subscriber Handle: ", data)
       subscriber.join(subscription, room).then(data => {
         log.info("["+mit+"] Subscriber join: ", data)
-        this.onUpdateStreams(data.streams);
+        if (data && data.streams) this.onUpdateStreams(data.streams);
         this.setState({remoteFeed: true, creatingFeed: false});
+      }).catch(err => {
+        log.error("["+mit+"] Subscriber join error:", err);
+        this.setState({creatingFeed: false});
       });
+    }).catch(err => {
+      log.error("["+mit+"] Subscriber attach error:", err);
+      this.setState({creatingFeed: false});
     })
   };
 
@@ -231,11 +302,15 @@ class JanusHandleMqtt extends Component {
         const streams = [{feed: id}]
 
         const {remoteFeed} = this.state;
-        if (remoteFeed !== null && streams.length > 0) {
-          subscriber.unsub(streams);
+        if (remoteFeed !== null && streams.length > 0 && subscriber) {
+          const p = subscriber.unsub(streams);
+          if (p && typeof p.catch === "function") {
+            p.catch(err => log.error("["+mit+"] subscriber.unsub error:", err));
+          }
         }
 
-        this.setState({feeds});
+        const num_videos = this.getLayoutCount(feeds);
+        this.setState({feeds, num_videos});
         break;
       }
     }
@@ -271,23 +346,77 @@ class JanusHandleMqtt extends Component {
   }
 
   render() {
-    const {feeds} = this.state;
+    const {feeds, num_videos} = this.state;
+    const {g} = this.props;
     const width = "400";
     const height = "300";
     const autoPlay = true;
     const controls = false;
     const muted = true;
-    //const q = (<b style={{color: 'red', fontSize: '20px', fontFamily: 'Verdana', fontWeight: 'bold'}}>?</b>);
 
-    let program_feeds = feeds.map((feed) => {
-      //let camera = users[feed.display.id] && users[feed.display.id].camera !== false;
+    // Group users from the room data. A group only switches the layout when it
+    // actually has a live feed on screen — a group flagged in the DB that isn't
+    // publishing must not shrink a lone regular client into the small group grid.
+    const groupUserIds = (g && g.users ? g.users.filter((u) => u.camera && u.role === "user" && u.extra?.isGroup) : [])
+      .sort((a, b) => String(a.rfid).localeCompare(String(b.rfid)))
+      .slice(0, 2)
+      .map(u => u.rfid);
+
+    const allowedGroupIds = feeds
+      .map((f) => f.id)
+      .filter((id) => groupUserIds.includes(id));
+    const groupCount = Math.min(allowedGroupIds.length, 2);
+    const hasAnyGroup = groupCount > 0;
+
+    const sortedFeeds = [...feeds].sort((a, b) => {
+      const aUser = g?.users?.find((u) => u.rfid === a.id);
+      const bUser = g?.users?.find((u) => u.rfid === b.id);
+      const aIsGroup = aUser?.extra?.isGroup && allowedGroupIds.includes(a.id);
+      const bIsGroup = bUser?.extra?.isGroup && allowedGroupIds.includes(b.id);
+      if (aIsGroup && !bIsGroup) return -1;
+      if (!aIsGroup && bIsGroup) return 1;
+      return 0;
+    });
+
+    const visibleVideoCount = sortedFeeds.filter((feed) => {
+      const u = g && g.users ? g.users.find((usr) => feed.id === usr.rfid) : null;
+      return u ? !!u.camera : true;
+    }).length;
+
+    let regularUserCount = 0;
+    const maxRegularUsers = 4;
+
+    let program_feeds = sortedFeeds.map((feed) => {
+      const known = g && g.users ? g.users.find((u) => feed.id === u.rfid) : null;
+      // Publishers that joined while the room was already on air are not in the
+      // program snapshot (g.users); show them by default instead of hiding.
+      let camera = known ? !!known.camera : true;
       if (feed) {
         let id = feed.id;
         let talk = feed.talk;
-        //let question = users[feed.display.id] && users[feed.display.id].question;
-        //let st = users[feed.display.id] && users[feed.display.id].sound_test;
+        const user = g?.users?.find((u) => u.rfid === id);
+        let isGroup = user?.extra?.isGroup && allowedGroupIds.includes(id);
+
+        if (hasAnyGroup && !isGroup && camera) {
+          regularUserCount++;
+          if (regularUserCount > maxRegularUsers) {
+            camera = false;
+          }
+        }
+
+        let isAlone = isGroup && visibleVideoCount === 1;
+
         return (
-          <div className="video" key={"prov" + id} ref={"provideo" + id} id={"provideo" + id}>
+          <div
+            className={classNames(camera ? "video" : "hidden", {
+              "video--group": isGroup,
+              "video--group--multiple": isGroup && groupCount > 1,
+              "video--alone": isAlone
+            })}
+            key={"prov" + id}
+            ref={"provideo" + id}
+            id={"provideo" + id}
+          >
             <div className={classNames("video__overlay", {talk: talk})}>
               {/*{question ? <div className="question">*/}
               {/*    <svg viewBox="0 0 50 50">*/}
@@ -315,10 +444,10 @@ class JanusHandleMqtt extends Component {
     });
 
     return (
-      <div className={`vclient__main-wrapper no-of-videos-${feeds.length} layout--equal broadcast--off`}>
+      <div className={`vclient__main-wrapper no-of-videos-${num_videos} layout--equal broadcast--off`}>
         <div className="videos-panel">
           <div className="videos">
-            <div className="videos__wrapper">
+            <div className={classNames("videos__wrapper", {"has-group": hasAnyGroup})}>
               {program_feeds}
             </div>
           </div>

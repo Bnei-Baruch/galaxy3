@@ -1,8 +1,7 @@
 import mqtt from 'mqtt';
-import {MQTT_URL, MSG_URL} from "./env";
+import {MQTT_PWD, MQTT_URL, MSG_URL} from "./env";
 import {isServiceID, userRolesEnum} from "./enums";
 import {randomString} from "./tools";
-import GxyJanus from "./janus-utils";
 import log from "loglevel";
 
 const mqttTimeout = 30 // Seconds
@@ -44,7 +43,7 @@ class MqttMsg {
     this.user = user;
     const RC = mqttTimeout;
     const service = isServiceID(user.id);
-    const svc_token = GxyJanus?.globalConfig?.dynamic_config?.mqtt_auth;
+    const svc_token = MQTT_PWD;
     const token = service ? svc_token : this.token;
     this.clientId = user.id + "-" + randomString(3);
     const id = service ? user.id : this.clientId;

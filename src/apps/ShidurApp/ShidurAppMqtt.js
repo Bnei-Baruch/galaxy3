@@ -10,7 +10,6 @@ import QuadPanelMqtt from "./QuadPanelMqtt";
 import "./ShidurApp.css";
 import {getDateString} from "../../shared/tools";
 import mqtt from "../../shared/mqtt";
-import ConfigStore from "../../shared/ConfigStore";
 import {JanusMqtt} from "../../lib/janus-mqtt";
 import {short_regions, region_filter, SHIDUR_ID} from "../../shared/consts";
 import {isServiceID} from "../../shared/enums";
@@ -69,18 +68,18 @@ class ShidurAppMqtt extends Component {
     Object.values(this.state.gateways).forEach((x) => x.destroy());
   }
 
-  componentDidUpdate(prevProps, prevState) {
-    let {groups} = this.state;
-    if (groups.length > prevState.groups.length) {
-      let res = groups.filter((o) => !prevState.groups.some((v) => v.room === o.room))[0];
-      log.debug("[Shidur] :: Group enter in queue: ", res);
-      this.actionLog(res, "enter");
-    } else if (groups.length < prevState.groups.length) {
-      let res = prevState.groups.filter((o) => !groups.some((v) => v.room === o.room))[0];
-      log.debug("[Shidur] :: Group exit from queue: ", res);
-      this.actionLog(res, "leave");
-    }
-  }
+  // componentDidUpdate(prevProps, prevState) {
+  //   let {groups} = this.state;
+  //   if (groups.length > prevState.groups.length) {
+  //     let res = groups.filter((o) => !prevState.groups.some((v) => v.room === o.room))[0];
+  //     log.debug("[Shidur] :: Group enter in queue: ", res);
+  //     this.actionLog(res, "enter");
+  //   } else if (groups.length < prevState.groups.length) {
+  //     let res = prevState.groups.filter((o) => !groups.some((v) => v.room === o.room))[0];
+  //     log.debug("[Shidur] :: Group exit from queue: ", res);
+  //     this.actionLog(res, "leave");
+  //   }
+  // }
 
   checkPermission = (user) => {
     const allowed = kc.hasRealmRole("gxy_shidur");
@@ -100,19 +99,22 @@ class ShidurAppMqtt extends Component {
   initApp = (user) => {
     console.log(" :: Version :: ", version);
     this.setState({user});
-    api.fetchConfig().then(data => {
-      ConfigStore.setGlobalConfig(data);
-      GxyJanus.setGlobalConfig(data);
-    }).then(() => this.initMQTT(user))
-      .then(this.pollRooms)
-      .catch((err) => {
-        log.error("[Shidur] error initializing app", err);
-        this.setState({appInitError: err});
-      });
+    this.initMQTT(user);
+    this.pollRooms();
+
+    // api.fetchConfig().then(data => {
+    //   ConfigStore.setGlobalConfig(data);
+    //   GxyJanus.setGlobalConfig(data);
+    // }).then(() => this.initMQTT(user))
+    //   .then(this.pollRooms)
+    //   .catch((err) => {
+    //     log.error("[Shidur] error initializing app", err);
+    //     this.setState({appInitError: err});
+    //   });
   };
 
   initMQTT = (user) => {
-    this.setState({tcp: GxyJanus.globalConfig.dynamic_config.galaxy_protocol});
+    //this.setState({tcp: GxyJanus.globalConfig.dynamic_config.galaxy_protocol});
     mqtt.init(user, (data) => {
       log.info("[Shidur] mqtt init: ", data);
       mqtt.watch((data) => {
@@ -146,25 +148,61 @@ class ShidurAppMqtt extends Component {
   }
 
   initJanus = (gxy) => {
-    log.info("["+gxy+"] Janus init")
     const {user, gateways} = this.state;
-    if(gateways[gxy]) return
-    const token = ConfigStore.globalConfig.gateways.rooms[gxy].token
-    gateways[gxy] = new JanusMqtt(user, gxy, gxy);
-    gateways[gxy].init(token).then(data => {
-      log.info("["+gxy+"] Janus init success", data);
-      this.setState({gateways});
-      gateways[gxy].onStatus = (srv, status) => {
-        if (status !== "online") {
-          log.error("["+srv+"] Janus: ", status);
-          setTimeout(() => {
-            this.initJanus(srv);
-          }, 10000)
-        }
+    const existing = gateways[gxy];
+
+    // Already connected — reuse.
+    if (existing && existing.isConnected) {
+      return Promise.resolve(existing);
+    }
+    // Init is in flight from another caller — wait for the same promise.
+    if (existing && existing.__initPromise) {
+      return existing.__initPromise;
+    }
+    // Stale dead instance left over from a previous offline — destroy
+    // it so the new init doesn't race with leftover MQTT subs / keepalive.
+    if (existing) {
+      try { existing.destroy(); } catch (_e) { /* best-effort */ }
+      delete gateways[gxy];
+    }
+
+    log.info("["+gxy+"] Janus init");
+    const janus = new JanusMqtt(user, gxy, gxy);
+    gateways[gxy] = janus;
+
+    janus.onStatus = (srv, status) => {
+      if (status === "online") return;
+      log.error("["+srv+"] Janus status: ", status);
+      const cur = this.state.gateways[srv];
+      if (cur === janus) {
+        try { cur.destroy(); } catch (_e) { /* best-effort */ }
+        delete this.state.gateways[srv];
       }
-    }).catch(err => {
-      log.error("["+gxy+"] Janus init", err);
-    })
+      setTimeout(() => {
+        this.initJanus(srv);
+      }, 10000);
+    };
+
+    // The promise we hand out NEVER rejects: callers that only care about
+    // "is this server up?" should not have to attach a .catch just to avoid
+    // unhandled rejections when one of many janus servers is down. The retry
+    // is scheduled internally; callers can poll initJanus again later.
+    janus.__initPromise = janus.init().then((data) => {
+      log.info("["+gxy+"] Janus init success", data);
+      janus.__initPromise = null;
+      this.setState({gateways: {...this.state.gateways}});
+      return janus;
+    }, (err) => {
+      log.error("["+gxy+"] Janus init error", err);
+      janus.__initPromise = null;
+      if (this.state.gateways[gxy] === janus) {
+        delete this.state.gateways[gxy];
+      }
+      setTimeout(() => this.initJanus(gxy), 10000);
+      return null;
+    });
+
+    return janus.__initPromise;
   };
 
   cleanSession = (uniq_list) => {
@@ -215,7 +253,7 @@ class ShidurAppMqtt extends Component {
     api
       .fetchActiveRooms()
       .then((data) => {
-        const users_count = data.map((r) => r.num_users).reduce((su, cur) => su + cur, 0);
+        const users_count = data.map((r) => r.cam_users).reduce((su, cur) => su + cur, 0);
         const isRegoinFilter = Object.values(region_filter).find(v => v)
         let rooms = data;
 
@@ -233,15 +271,28 @@ class ShidurAppMqtt extends Component {
         if (preview_mode) {
 
           if (preusers_count !== "Off") {
-            // Groups with insufficient cameras count (not ready for broadcast)
-            pre_groups = rooms.filter((r) => !r.extra?.disabled && r.users.filter((r) => r.camera).length < preusers_count);
-            
-            // Groups ready for broadcast (enough cameras or marked as group)
-            let new_groups = rooms.filter((r) => !r.extra?.disabled && (r.users.filter((u) => u.camera).length >= preusers_count || r.users.find(g => g.extra?.isGroup)));
+            // A real "group" room must have an isGroup user with their camera ON;
+            // an isGroup user with a disabled camera should not bypass preusers_count.
+            const hasActiveGroup = (r) => r.users.some((u) => u.extra?.isGroup && u.camera);
+
+            // Groups with insufficient cameras count (not ready for broadcast).
+            // Rooms that already have an active isGroup user are handled by new_groups,
+            // so we exclude them here to avoid showing the same room in both lists.
+            pre_groups = rooms.filter((r) =>
+              !r.extra?.disabled &&
+              r.users.filter((u) => u.camera).length < preusers_count &&
+              !hasActiveGroup(r)
+            );
+
+            // Groups ready for broadcast (enough cameras or marked as a real active group)
+            let new_groups = rooms.filter((r) =>
+              !r.extra?.disabled &&
+              (r.users.filter((u) => u.camera).length >= preusers_count || hasActiveGroup(r))
+            );
 
             // Update groups list while preserving order (new connections added to the end)
             let updated_groups = [];
-            
+
             // Keep existing groups in their current positions
             for (let existing of groups) {
               let updated_data = new_groups.find(g => g.room === existing.room);
@@ -249,14 +300,14 @@ class ShidurAppMqtt extends Component {
                 updated_groups.push(updated_data);
               }
             }
-            
+
             // Add new groups to the end of the queue
             for (let new_group of new_groups) {
               if (!updated_groups.find(g => g.room === new_group.room)) {
                 updated_groups.push(new_group);
               }
             }
-            
+
             groups = updated_groups;
 
           } else {
@@ -302,7 +353,7 @@ class ShidurAppMqtt extends Component {
         //if(quads_list.length > 0) this.initServers(quads_list);
         let list = groups.filter((r) => !quads.find((q) => q && r.room === q.room));
         let questions = list.filter((room) => room.questions);
-        
+
         // Adjust groups_queue index when groups list changes
         let groups_queue = this.state.groups_queue;
         if (groups.length > 0) {
@@ -310,12 +361,12 @@ class ShidurAppMqtt extends Component {
           if (groups_queue >= groups.length) {
             groups_queue = 0;
             log.info("[Shidur] groups_queue out of bounds, reset to 0");
-          } 
+          }
           // If we have old groups and queue points to a group, try to keep the same group
           else if (groups_queue > 0 && this.state.groups.length > 0 && this.state.groups[groups_queue]) {
             let old_room = this.state.groups[groups_queue].room;
             let new_index = groups.findIndex(g => g.room === old_room);
-            
+
             if (new_index !== -1 && new_index !== groups_queue) {
               // The group moved to a different position
               groups_queue = new_index;
@@ -333,7 +384,7 @@ class ShidurAppMqtt extends Component {
           // No groups available, reset queue
           groups_queue = 0;
         }
-        
+
         this.setState({group_user, quads, questions, users_count, rooms, groups, groups_queue, vip1_rooms, vip2_rooms, vip3_rooms, vip4_rooms, vip5_rooms, disabled_rooms, pre_groups, region_groups});
       })
       .catch((err) => {

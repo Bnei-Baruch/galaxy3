@@ -40,9 +40,13 @@ class ToranToolsMqtt extends Component {
     }
   }
 
-  initJanus = (gxy, p) => {
-    log.info("["+gxy+"] Janus init")
-    this.props.initJanus(gxy)
+  initJanus = (gxy) => {
+    log.info("["+gxy+"] Janus init");
+    const p = this.props.initJanus(gxy);
+    if (p && typeof p.catch === "function") {
+      p.catch(err => log.error("["+gxy+"] initJanus failed:", err));
+    }
+    return p;
   };
 
   selectGroup = (group, i) => {
@@ -358,7 +362,7 @@ class ToranToolsMqtt extends Component {
     });
 
     let question_list = questions.map((data, i) => {
-      const {room, num_users, description, questions, extra} = data;
+      const {room, cam_users, description, questions, extra} = data;
       const qs = !roomsStatistics[room] || roomsStatistics[room]["on_air"] === 0;
       const next = data.description === next_group;
       const active = group && group.room === room;
@@ -383,7 +387,7 @@ class ToranToolsMqtt extends Component {
           <Table.Cell width={1}>{pn}</Table.Cell>
           <Table.Cell width={5}>{description}&nbsp;&nbsp;{vip}</Table.Cell>
           <Table.Cell width={1}>{p}</Table.Cell>
-          <Table.Cell width={1}>{num_users}</Table.Cell>
+          <Table.Cell width={1}>{cam_users}</Table.Cell>
           <Table.Cell width={1}>{questions && qs ? qf : questions ? q : ""}</Table.Cell>
         </Table.Row>
       );
@@ -391,7 +395,7 @@ class ToranToolsMqtt extends Component {
 
 
     let rooms_list = pre_groups.map((data, i) => {
-      const {room, num_users, description, questions} = data;
+      const {room, cam_users, description, questions} = data;
       const qs = !roomsStatistics[room] || roomsStatistics[room]["on_air"] === 0;
       const active = group && group.room === room;
       const pr = false;
@@ -412,14 +416,14 @@ class ToranToolsMqtt extends Component {
         >
           <Table.Cell width={5}>{description}</Table.Cell>
           <Table.Cell width={1}>{p}</Table.Cell>
-          <Table.Cell width={1}>{num_users}</Table.Cell>
+          <Table.Cell width={1}>{cam_users}</Table.Cell>
           <Table.Cell width={1}>{questions && qs ? qf : questions ? q : ""}</Table.Cell>
         </Table.Row>
       );
     });
 
     let groups_list = groups.map((data, i) => {
-      const {room, num_users, description, questions, extra} = data;
+      const {room, cam_users, description, questions, extra} = data;
       const qs = !roomsStatistics[room] || roomsStatistics[room]["on_air"] === 0;
       const next = data.description === next_group;
       const active = group && group.room === room;
@@ -444,14 +448,14 @@ class ToranToolsMqtt extends Component {
           <Table.Cell width={1}>{pn}</Table.Cell>
           <Table.Cell width={5}>{description}&nbsp;&nbsp;{vip}</Table.Cell>
           <Table.Cell width={1}>{p}</Table.Cell>
-          <Table.Cell width={1}>{num_users}</Table.Cell>
+          <Table.Cell width={1}>{cam_users}</Table.Cell>
           <Table.Cell width={1}>{questions && qs ? qf : questions ? q : ""}</Table.Cell>
         </Table.Row>
       );
     });
 
     let groups_region_list = region_groups.map((data, i) => {
-      const {room, num_users, description, questions, extra} = data;
+      const {room, cam_users, description, questions, extra} = data;
       const qs = !roomsStatistics[room] || roomsStatistics[room]["on_air"] === 0;
       const next = data.description === next_group;
       const active = group && group.room === room;
@@ -478,14 +482,14 @@ class ToranToolsMqtt extends Component {
           <Table.Cell width={1}>{pn}</Table.Cell>
           <Table.Cell width={5}>{description}&nbsp;&nbsp;{vip}</Table.Cell>
           <Table.Cell width={1}>{p}</Table.Cell>
-          <Table.Cell width={1}>{num_users}</Table.Cell>
+          <Table.Cell width={1}>{cam_users}</Table.Cell>
           <Table.Cell width={1}>{questions && qs ? qf : questions ? q : ""}</Table.Cell>
         </Table.Row>
       );
     });
 
     let disabled_list = disabled_rooms.map((data, i) => {
-      const {room, num_users, description, questions} = data;
+      const {room, cam_users, description, questions} = data;
       const qs = !roomsStatistics[room] || roomsStatistics[room]["on_air"] === 0;
       return (
         <Table.Row
@@ -495,14 +499,14 @@ class ToranToolsMqtt extends Component {
           onContextMenu={(e) => this.restoreRoom(e, data, i)}
         >
           <Table.Cell width={5}>{description}</Table.Cell>
-          <Table.Cell width={1}>{num_users}</Table.Cell>
+          <Table.Cell width={1}>{cam_users}</Table.Cell>
           <Table.Cell width={1}>{questions && qs ? qf : questions ? q : ""}</Table.Cell>
         </Table.Row>
       );
     });
 
     let vip1_list = vip1_rooms.map((data, i) => {
-      const {room, num_users, description, questions} = data;
+      const {room, cam_users, description, questions} = data;
       const qs = !roomsStatistics[room] || roomsStatistics[room]["on_air"] === 0;
       const pn = (<Label circular content={pnum[room]} />);
       return (
@@ -514,14 +518,14 @@ class ToranToolsMqtt extends Component {
         >
           <Table.Cell width={1}>{pn}</Table.Cell>
           <Table.Cell width={5}>{description}</Table.Cell>
-          <Table.Cell width={1}>{num_users}</Table.Cell>
+          <Table.Cell width={1}>{cam_users}</Table.Cell>
           <Table.Cell width={1}>{questions && qs ? qf : questions ? q : ""}</Table.Cell>
         </Table.Row>
       );
     });
 
     let vip2_list = vip2_rooms.map((data, i) => {
-      const {room, num_users, description, questions} = data;
+      const {room, cam_users, description, questions} = data;
       const qs = !roomsStatistics[room] || roomsStatistics[room]["on_air"] === 0;
       const pn = (<Label circular content={pnum[room]} />);
       return (
@@ -533,14 +537,14 @@ class ToranToolsMqtt extends Component {
         >
           <Table.Cell width={1}>{pn}</Table.Cell>
           <Table.Cell width={5}>{description}</Table.Cell>
-          <Table.Cell width={1}>{num_users}</Table.Cell>
+          <Table.Cell width={1}>{cam_users}</Table.Cell>
           <Table.Cell width={1}>{questions && qs ? qf : questions ? q : ""}</Table.Cell>
         </Table.Row>
       );
     });
 
     let vip3_list = vip3_rooms.map((data, i) => {
-      const {room, num_users, description, questions} = data;
+      const {room, cam_users, description, questions} = data;
       const qs = !roomsStatistics[room] || roomsStatistics[room]["on_air"] === 0;
       const pn = (<Label circular content={pnum[room]} />);
       return (
@@ -552,14 +556,14 @@ class ToranToolsMqtt extends Component {
         >
           <Table.Cell width={1}>{pn}</Table.Cell>
           <Table.Cell width={5}>{description}</Table.Cell>
-          <Table.Cell width={1}>{num_users}</Table.Cell>
+          <Table.Cell width={1}>{cam_users}</Table.Cell>
           <Table.Cell width={1}>{questions && qs ? qf : questions ? q : ""}</Table.Cell>
         </Table.Row>
       );
     });
 
     let vip4_list = vip4_rooms.map((data, i) => {
-      const {room, num_users, description, questions} = data;
+      const {room, cam_users, description, questions} = data;
       const qs = !roomsStatistics[room] || roomsStatistics[room]["on_air"] === 0;
       const pn = (<Label circular content={pnum[room]} />);
       return (
@@ -571,14 +575,14 @@ class ToranToolsMqtt extends Component {
         >
           <Table.Cell width={1}>{pn}</Table.Cell>
           <Table.Cell width={5}>{description}</Table.Cell>
-          <Table.Cell width={1}>{num_users}</Table.Cell>
+          <Table.Cell width={1}>{cam_users}</Table.Cell>
           <Table.Cell width={1}>{questions && qs ? qf : questions ? q : ""}</Table.Cell>
         </Table.Row>
       );
     });
 
     let vip5_list = vip5_rooms.map((data, i) => {
-      const {room, num_users, description, questions} = data;
+      const {room, cam_users, description, questions} = data;
       const qs = !roomsStatistics[room] || roomsStatistics[room]["on_air"] === 0;
       const pn = (<Label circular content={pnum[room]} />);
       return (
@@ -590,14 +594,14 @@ class ToranToolsMqtt extends Component {
         >
           <Table.Cell width={1}>{pn}</Table.Cell>
           <Table.Cell width={5}>{description}</Table.Cell>
-          <Table.Cell width={1}>{num_users}</Table.Cell>
+          <Table.Cell width={1}>{cam_users}</Table.Cell>
           <Table.Cell width={1}>{questions && qs ? qf : questions ? q : ""}</Table.Cell>
         </Table.Row>
       );
     });
 
     let groups_user_list = group_user.map((data, i) => {
-      const {room, num_users, description, questions} = data;
+      const {room, cam_users, description, questions} = data;
       const qs = !roomsStatistics[room] || roomsStatistics[room]["on_air"] === 0;
       const pn = (<Label circular content={pnum[room]} />);
       return (
@@ -609,7 +613,7 @@ class ToranToolsMqtt extends Component {
         >
           <Table.Cell width={1}>{pn}</Table.Cell>
           <Table.Cell width={5}>{description}</Table.Cell>
-          <Table.Cell width={1}>{num_users}</Table.Cell>
+          <Table.Cell width={1}>{cam_users}</Table.Cell>
           <Table.Cell width={1}>{questions && qs ? qf : questions ? q : ""}</Table.Cell>
         </Table.Row>
       );
