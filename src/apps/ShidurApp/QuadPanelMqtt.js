@@ -75,7 +75,6 @@ class QuadPanelMqtt extends Component {
     let {groups} = this.props;
     let group = groups[queue];
     if (group && group.users) {
-      delete group.users;
       group.queue = queue;
       return group;
     } else {
@@ -93,7 +92,6 @@ class QuadPanelMqtt extends Component {
 
     if (group) {
       // From preview
-      delete group.users;
       vquad[i] = group;
       pnum[vquad[i].room] ? pnum[vquad[i].room]++ : (pnum[vquad[i].room] = 1);
       this.props.setProps({group: null, pnum});
@@ -112,9 +110,9 @@ class QuadPanelMqtt extends Component {
     }
 
     this.setState({vquad});
-    api.updateQuad(col, {vquad}).catch((err) => {
-      log.error("[Shidur] error updating quad state", col, err);
-    });
+    // api.updateQuad(col, {vquad}).catch((err) => {
+    //   log.error("[Shidur] error updating quad state", col, err);
+    // });
   };
 
   switchFour = () => {
@@ -150,9 +148,9 @@ class QuadPanelMqtt extends Component {
       this.props.setProps({groups_queue: 0});
     }
 
-    api.updateQuad(col, {vquad}).catch((err) => {
-      log.error("[Shidur] error updating quad state", col, err);
-    });
+    // api.updateQuad(col, {vquad}).catch((err) => {
+    //   log.error("[Shidur] error updating quad state", col, err);
+    // });
   };
 
   setPreset = (p) => {
@@ -168,9 +166,9 @@ class QuadPanelMqtt extends Component {
     }
     this.setState({vquad});
 
-    api.updateQuad(col, {vquad}).catch((err) => {
-      log.error("[Shidur] error updating quad state", col, err);
-    });
+    // api.updateQuad(col, {vquad}).catch((err) => {
+    //   log.error("[Shidur] error updating quad state", col, err);
+    // });
   };
 
   sdiAction = (action, status, i, group, qst) => {
