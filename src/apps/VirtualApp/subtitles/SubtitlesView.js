@@ -20,17 +20,12 @@ const SLIDE_SIZE_MIN = -30;
 const DEFAULT_SLIDE_SIZE = 0;
 const WQ_SLIDE_SIZE = "wq-slide-size";
 
-const tagARegEx = /<a[^>]*>([^<]+)<\/a>/;
-
 export const SubtitlesView = ({msgState}) => {
-  let {msg: {message, isLtr, slide, renderer} = {}, language, wqLangs, display_status} = msgState;
+  let {msg: {message, isLtr, renderer} = {}, language, wqLangs, display_status} = msgState;
 
   const {t} = useTranslation();
   const _initSlideSize = Number.parseInt(localStorage.getItem(WQ_SLIDE_SIZE) || DEFAULT_SLIDE_SIZE);
   const [slideSize, setSlideSize] = useState(_initSlideSize);
-
-  // FontSize applied to non-slide content, like a link.
-  const fontSize = (slideSize + 30)*0.3 + 14;  // From 14 to 32.
   const [fontPop, setFontPop] = useState(false);
   const [settings, setSettings] = useState(false);
   const [showQuestion, setShowQuestion] = useState(true);
@@ -136,51 +131,46 @@ export const SubtitlesView = ({msgState}) => {
     );
   };
 
-  const isLink = tagARegEx.test(slide);
   const controls = renderSettings();
 
   return (
-    <div className={classNames("wq-overlay", "overlay-visible", {"is-link": isLink})}>
-      { isLink ? (
-        <div className="subtitle_link" dangerouslySetInnerHTML={{__html: message}}/>
-      ) : (
-        <div className="wq-container">
-          <div className={classNames("question-container")}>
-            <div style={{height: 0, width: "100%", color: "transparent", overflow: "hidden"}}>
-              spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer
-              spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer
-              spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer
-              spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer
-              spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer
-              spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer
-              spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer
-              spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer
-              spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer
-              spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer
-              spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer
-              spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer
-              spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer
-              spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer
-              spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer
-              spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer
-            </div>
-            <Slide
-                content={message}
-                isLtr={isLtr}
-                controls={controls}
-                isQuestion={display_status === MSGS_QUESTION.display_status}
-                slideSize={slideSize}
-                alternatives={wqLangs}
-                switchLang={(l) => messageManager.switchWqLang(l)}
-                overlayVisible={showQuestion}
-                renderer={renderer}
-            />
-            <div className={classNames("show-wq", "ltr", {"overlay-visible": !showQuestion})}>
-              <Button compact icon="eye" title={t("workshop.showQuestion")} onClick={() => setShowQuestion(true)}/>
-            </div>
+    <div className={classNames("wq-overlay", "overlay-visible")}>
+      <div className="wq-container">
+        <div className={classNames("question-container")}>
+          <div style={{height: 0, width: "100%", color: "transparent", overflow: "hidden"}}>
+            spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer
+            spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer
+            spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer
+            spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer
+            spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer
+            spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer
+            spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer
+            spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer
+            spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer
+            spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer
+            spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer
+            spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer
+            spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer
+            spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer
+            spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer
+            spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer spacer
+          </div>
+          <Slide
+              content={message}
+              isLtr={isLtr}
+              controls={controls}
+              isQuestion={display_status === MSGS_QUESTION.display_status}
+              slideSize={slideSize}
+              alternatives={wqLangs}
+              switchLang={(l) => messageManager.switchWqLang(l)}
+              overlayVisible={showQuestion}
+              renderer={renderer}
+          />
+          <div className={classNames("show-wq", "ltr", {"overlay-visible": !showQuestion})}>
+            <Button compact icon="eye" title={t("workshop.showQuestion")} onClick={() => setShowQuestion(true)}/>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };
