@@ -68,6 +68,9 @@
     "build:videoout": "REACT_APP_GALAXY_APP=videoout yarn build",
     "build:qstout": "REACT_APP_GALAXY_APP=qstout yarn build",
     "build:webout": "REACT_APP_GALAXY_APP=webout yarn build",
+    "build:wclient": "REACT_APP_GALAXY_APP=wclient yarn build",
+    "build:wadmin": "REACT_APP_GALAXY_APP=wadmin yarn build",
+    "build:wquad": "REACT_APP_GALAXY_APP=wquad yarn build",
     "deploy": "webpack --mode=production && scripts/deploy.sh"
   },
   "browserslist": {

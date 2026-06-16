@@ -352,11 +352,14 @@ class WebinarClient extends Component {
           }
         });
 
-        // Private chat: messages from operators (admin/root) shown in support tab.
+        // Personal topic (galaxy/users/<id>): chat messages from operators go to
+        // the support tab, everything else is a personal command (e.g. audio-out).
         mqtt.mq.on("MqttPrivateMessage", (data) => {
           let message = JSON.parse(data);
-          if (message?.type === "client-chat" && this.chat) {
-            this.chat.onPrivateMessage(message);
+          if (message?.type === "client-chat") {
+            if (this.chat) this.chat.onPrivateMessage(message);
+          } else {
+            this.handleCmdData(message);
           }
         });
 

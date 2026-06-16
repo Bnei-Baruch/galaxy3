@@ -505,9 +505,16 @@ class AdminClient extends Component {
     if (recipient && command_type === "client-bitrate") cmd.bitrate = value;
 
     log.info("[admin] sending cmd json", cmd);
-    let topic = command_type.match(/^(reload-config|client-reload-all)$/)
-      ? "galaxy/users/broadcast"
-      : "galaxy/room/" + current_room;
+    let topic;
+    if (command_type.match(/^(reload-config|client-reload-all)$/)) {
+      topic = "galaxy/users/broadcast";
+    } else if (command_type === "audio-out" && recipient?.id) {
+      // On-air signal is per-user now: deliver it to the user's personal topic
+      // instead of the whole room.
+      topic = "galaxy/users/" + recipient.id;
+    } else {
+      topic = "galaxy/room/" + current_room;
+    }
     mqtt.send(JSON.stringify(cmd), false, topic);
 
     if (command_type === "audio-out" && !explicitStatus) {
