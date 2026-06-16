@@ -1,4 +1,4 @@
-import React, {Component} from "react";
+import React, {Component, Fragment} from "react";
 import {Grid} from "semantic-ui-react";
 import "./QuadOut.css";
 import "./QuadUsers.scss";
@@ -10,6 +10,11 @@ import {JanusMqtt} from "../../lib/janus-mqtt";
 import version from './Version.js';
 import {MQTT_PWD} from "../../shared/env";
 
+// Retained MQTT topic carrying the broadcast (air) queue as an array of full
+// user objects (each tagged with on_air). Published by AdminClient; consumed
+// here. TODO: keep in sync with AdminClient's AIR_QUEUE_TOPIC.
+const AIR_QUEUE_TOPIC = "galaxy/room/air_queue";
+
 class QuadOut extends Component {
   state = {
     qg: null,
@@ -20,6 +25,7 @@ class QuadOut extends Component {
     shidur_mode: "beyahad",
     round: 0,
     questions: [],
+    air_queue: [],
     quads: [],
     rooms: [],
     user: {
@@ -65,7 +71,13 @@ class QuadOut extends Component {
   initMQTT = (user) => {
     mqtt.init(user, (data) => {
       log.info("[WebOut] mqtt init: ", data);
-      mqtt.watch(() => {});
+      // Retained topic: we get the current air queue immediately on subscribe.
+      mqtt.join(AIR_QUEUE_TOPIC);
+      mqtt.watch((msg, topic) => {
+        if (topic === AIR_QUEUE_TOPIC) {
+          this.setState({air_queue: Array.isArray(msg) ? msg : []});
+        }
+      });
     });
   };
 
@@ -164,10 +176,33 @@ class QuadOut extends Component {
     this.setState({...props});
   };
 
+  // Top strip with the operator-curated air queue. Rendered as its own block
+  // ABOVE the grid (never inside it) so showing/hiding it just shifts the grid
+  // and can't disturb the fixed 2x2 column layout.
+  renderAirQueue = () => {
+    const {air_queue} = this.state;
+    if (!air_queue || air_queue.length === 0) return null;
+    return (
+      <div className="air_queue_strip">
+        {air_queue.map((u, i) => (
+          <div
+            key={u.rfid || u.id || i}
+            className={"air_queue_tile" + (u.on_air ? " air_queue_tile__onair" : "")}
+          >
+            {/* TODO: plug in the user's video (subscribe by rfid/janus/room). */}
+            <div className="air_queue_tile__name">{u.display}</div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   render() {
     let {qg} = this.state;
     return (
-      <Grid columns={2} className="sdi_container">
+      <Fragment>
+        {this.renderAirQueue()}
+        <Grid columns={2} className="sdi_container">
         <Grid.Row className="sdi_top">
           <Grid.Column>
             <QuadUsers
@@ -208,7 +243,8 @@ class QuadOut extends Component {
             />
           </Grid.Column>
         </Grid.Row>
-      </Grid>
+        </Grid>
+      </Fragment>
     );
   }
 }

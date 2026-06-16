@@ -7,6 +7,46 @@ body {
   padding-right: 5rem!important;
 }
 
+.air_queue_strip {
+  display: flex;
+  gap: 8px;
+  width: 1400px;
+  padding: 0.75rem 5rem 0.25rem 1rem;
+  overflow-x: auto;
+  box-sizing: border-box;
+}
+
+.air_queue_tile {
+  flex: 0 0 auto;
+  width: 160px;
+  height: 90px;
+  position: relative;
+  background: #000;
+  border: 2px solid #444;
+  color: #fff;
+  overflow: hidden;
+}
+
+.air_queue_tile__onair {
+  border-color: red;
+  box-shadow: 0 0 6px rgba(255, 0, 0, 0.8);
+}
+
+.air_queue_tile__name {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  font-size: 13px;
+  line-height: 18px;
+  padding: 2px 4px;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .sdi_top {
   padding-top: 1rem!important;
   padding-bottom: 0rem!important;
