@@ -59,6 +59,7 @@
     "start:webout": "REACT_APP_GALAXY_APP=webout yarn start",
     "start:wclient": "REACT_APP_GALAXY_APP=wclient yarn start",
     "start:wadmin": "REACT_APP_GALAXY_APP=wadmin yarn start",
+    "start:wquad": "REACT_APP_GALAXY_APP=wquad yarn start",
     "build": "webpack --mode=production",
     "build:virtual": "REACT_APP_GALAXY_APP=virtual yarn build",
     "build:admin": "REACT_APP_GALAXY_APP=admin yarn build",
