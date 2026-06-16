@@ -2,7 +2,7 @@ import {Janus} from "../lib/janus";
 import {gxycol, trllang, NO_VIDEO_OPTION_VALUE} from "./consts";
 import GxyJanus from "./janus-utils";
 import platform from "platform";
-import AudioStreamVolume from "./AudioStreamVolume";
+import {gainStream, AudioStreamVolume}  from "./AudioStreamVolume";
 
 export default class VirtualStreamingJanus {
   constructor(onInitialized) {
@@ -24,6 +24,7 @@ export default class VirtualStreamingJanus {
     this.trlAudioJanusStream = null;
     this.trlAudioMediaStream = null;
     this.trlAudioContext = null;
+    this.trlAudioGainContext = null;
     // Array of callbacks for cleanup.
     this.trlAudioJanusStreamCleanup = [];
 
@@ -132,26 +133,28 @@ export default class VirtualStreamingJanus {
    * @param {{success: function, error: function}} callbacks
    */
   detachTrlAudio_(callbacks) {
+    const detach = () => {
+      this.trlAudioJanusStream = null;
+      this.trlAudioMediaStream = null;
+      if (this.trlAudioContext) {
+        this.trlAudioContext.close().finally(() => {
+          this.trlAudioContext = null;
+        });
+      }
+      if (this.trlAudioGainContext) {
+        this.trlAudioGainContext.close().finally(() => {
+          this.trlAudioGainContext = null;
+        });
+      }
+    };
     this.trlAudioJanusStreamCleanup.push(() => {
       this.trlAudioJanusStream.detach({
         success: () => {
-          this.trlAudioJanusStream = null;
-          this.trlAudioMediaStream = null;
-          if (this.trlAudioContext) {
-            this.trlAudioContext.close().finally(() => {
-              this.trlAudioContext = null;
-            });
-          }
+          detach();
           callbacks.success();
         },
         error: (error) => {
-          this.trlAudioJanusStream = null;
-          this.trlAudioMediaStream = null;
-          if (this.trlAudioContext) {
-            this.trlAudioContext.close().finally(() => {
-              this.trlAudioContext = null;
-            });
-          }
+          detach();
           callbacks.error(error);
         },
       });
@@ -213,7 +216,13 @@ export default class VirtualStreamingJanus {
       if (prev && next !== prev) {
         Janus.reattachMediaStream(next, prev);
       } else if (this.trlAudioMediaStream) {
-        Janus.attachMediaStream(next, this.trlAudioMediaStream);
+        // Close if context already exist.
+        const closed = !!this.trlAudioGainContext ? this.trlAudioGainContext.close() : Promise.resolve();
+        closed.finally(() => {
+          const [context, gainedStream] = gainStream(this.trlAudioMediaStream, 3);
+          this.trlAudioGainContext = context;
+          Janus.attachMediaStream(next, gainedStream);
+        });
       }
     }
   }
