@@ -10,7 +10,7 @@ import ChatBox from "./components/ChatBox";
 import api from "../../shared/Api";
 import mqtt from "../../shared/mqtt";
 import {JanusMqtt} from "../../lib/janus-mqtt";
-import {SubscriberPlugin} from "../../lib/subscriber-plugin";
+import UserPreview from "./UserPreview";
 import log from "loglevel";
 
 // Retained MQTT topic that carries the whole broadcast (air) queue as an array
@@ -34,11 +34,6 @@ class AdminClient extends Component {
     current_janus: "",
     current_group: "",
     gateways: {},
-    janus: null,
-    subscriber: null,
-    remoteFeed: false,
-    creatingFeed: false,
-    mids: [],
     feed_id: null,
     feed_user: null,
     feed_info: null,
@@ -65,9 +60,6 @@ class AdminClient extends Component {
     command_status: true,
     showConfirmReloadAll: false,
   };
-
-  // rfid of the feed we are currently subscribed to (single video at a time).
-  subscribedFeed = null;
 
   componentWillUnmount() {
     if (this._usersTimer) clearInterval(this._usersTimer);
@@ -249,8 +241,7 @@ class AdminClient extends Component {
             delete gateways[srv];
           });
         }
-        this.subscribedFeed = null;
-        this.setState({subscriber: null, remoteFeed: false, janus: null});
+        this.setState({gateways});
       }
     };
     return new Promise((resolve, reject) => {
@@ -266,6 +257,26 @@ class AdminClient extends Component {
           reject(err);
         });
     });
+  };
+
+  // Admin keeps a single live Janus connection at a time. UserPreview calls this
+  // to get a gateway: switching to a user on the SAME server reuses the existing
+  // connection, switching servers drops the previous one first. Server name comes
+  // from the user object (user.janus).
+  ensureGateway = (server) => {
+    const {gateways, user} = this.state;
+    Object.keys(gateways).forEach((srv) => {
+      if (srv !== server && gateways[srv]) {
+        try {
+          gateways[srv].destroy();
+        } catch (err) {
+          log.warn("[admin] ensureGateway destroy failed:", err && err.message);
+        }
+        delete gateways[srv];
+      }
+    });
+    if (gateways[server]?.isConnected) return Promise.resolve(gateways[server]);
+    return this.initJanus(user, server);
   };
 
   // Pick the user from the list: bind chat/info and start watching their video.
@@ -299,7 +310,6 @@ class AdminClient extends Component {
       current_janus: selected_user.janus || this.state.current_janus,
       current_group: selected_user.group || selected_user.description || this.state.current_group,
     });
-    this.watchUserVideo(selected_user);
   };
 
   // Stable key for matching a user across lists (feed id first, user id fallback).
@@ -351,133 +361,6 @@ class AdminClient extends Component {
     const turningOn = this.state.on_air_id !== key;
     this.setState({on_air_id: turningOn ? key : null}, this.publishAirQueue);
     this.sendRemoteCommand("audio-out", turningOn, u);
-  };
-
-  watchUserVideo = (u) => {
-    if (!u || !u.rfid) {
-      log.warn("[admin] watchUserVideo: user has no rfid (not published yet)", u);
-      return;
-    }
-    const inst = u.janus || this.state.current_janus;
-    if (!inst) {
-      log.warn("[admin] watchUserVideo: no janus instance for user", u);
-      return;
-    }
-
-    // Subscriber-only: we only ever watch one user at a time, so there is no
-    // point keeping connections to multiple Janus servers. If the selected user
-    // lives on a different server than the one we're connected to, drop the old
-    // connection before opening the new one.
-    if (this.subscriberInst && this.subscriberInst !== inst) {
-      this.teardownSubscriber();
-    }
-
-    const {gateways} = this.state;
-    if (gateways[inst]?.isConnected) {
-      this.subscribeUser(u, inst);
-    } else {
-      this.initJanus(this.state.user, inst)
-        .then(() => this.subscribeUser(u, inst))
-        .catch((err) => log.error("[admin] watchUserVideo janus init failed", err));
-    }
-  };
-
-  // Detach the current subscriber and destroy its Janus session/gateway.
-  teardownSubscriber = () => {
-    const {subscriber, gateways} = this.state;
-    const oldInst = this.subscriberInst;
-    const gateway = oldInst ? gateways[oldInst] : null;
-
-    if (subscriber && gateway) {
-      try {
-        gateway.detach(subscriber);
-      } catch (err) {
-        log.warn("[admin] teardownSubscriber detach failed:", err && err.message);
-      }
-    }
-    if (gateway) {
-      gateway.destroy();
-      delete gateways[oldInst];
-    }
-
-    const v = this.refs.remoteVideo;
-    if (v) v.srcObject = null;
-    const a = this.refs.remoteAudio;
-    if (a) a.srcObject = null;
-
-    this.subscribedFeed = null;
-    this.subscriberInst = null;
-    this.setState({subscriber: null, remoteFeed: false, creatingFeed: false, janus: null, gateways});
-  };
-
-  subscribeUser = (u, inst) => {
-    const {current_room, gateways} = this.state;
-    const room = u.room || current_room;
-    const janus = gateways[inst];
-    if (!janus) return;
-
-    // Subscribe to the whole feed (video + audio) by feed id.
-    const subscription = [{feed: u.rfid}];
-
-    let {subscriber, remoteFeed, creatingFeed} = this.state;
-
-    // Already have a live subscriber on this gateway: just switch the feed.
-    if (subscriber && remoteFeed && this.subscriberInst === inst) {
-      if (this.subscribedFeed && this.subscribedFeed !== u.rfid) {
-        subscriber.unsub([{feed: this.subscribedFeed}]);
-      }
-      subscriber.sub(subscription);
-      this.subscribedFeed = u.rfid;
-      return;
-    }
-
-    if (creatingFeed) {
-      setTimeout(() => this.subscribeUser(u, inst), 500);
-      return;
-    }
-
-    subscriber = new SubscriberPlugin();
-    subscriber.onTrack = this.onRemoteTrack;
-    subscriber.onUpdate = this.onUpdateStreams;
-
-    this.setState({creatingFeed: true});
-    janus.attach(subscriber).then((data) => {
-      log.info("[admin] Subscriber Handle: ", data);
-      subscriber
-        .join(subscription, room)
-        .then((joined) => {
-          log.info("[admin] Subscriber join: ", joined);
-          this.onUpdateStreams(joined.streams);
-          this.subscribedFeed = u.rfid;
-          this.subscriberInst = inst;
-          this.setState({subscriber, janus, remoteFeed: true, creatingFeed: false});
-        })
-        .catch((err) => {
-          log.error("[admin] Subscriber join error: ", err);
-          this.setState({creatingFeed: false});
-        });
-    });
-  };
-
-  onUpdateStreams = (streams) => {
-    const mids = Object.assign([], this.state.mids);
-    for (let i in streams) {
-      let mindex = streams[i]["mid"];
-      mids[mindex] = streams[i];
-    }
-    this.setState({mids});
-  };
-
-  onRemoteTrack = (track, stream, on) => {
-    log.info("[admin] >> remote track from feed " + stream.id + ":", track);
-    if (!on) return;
-    if (track.kind === "video") {
-      const remotevideo = this.refs.remoteVideo;
-      if (remotevideo) remotevideo.srcObject = stream;
-    } else if (track.kind === "audio" && this.withAudio()) {
-      const remoteaudio = this.refs.remoteAudio;
-      if (remoteaudio) remoteaudio.srcObject = stream;
-    }
   };
 
   // `target` defaults to the user we are watching (feed_user) but can be any
@@ -687,9 +570,6 @@ class AdminClient extends Component {
       );
     }
 
-    const autoPlay = true;
-    const controls = false;
-
     const q = <Icon color="red" name="help" />;
     const g = <Icon color="blue" name="users" />;
     const cam = <Icon name="video camera" size="small" />;
@@ -797,17 +677,12 @@ class AdminClient extends Component {
 
     const selectedVideo = (
       <div className={classNames("video", {selected: !!feed_id})} key="selected-video">
-        <video
-          ref="remoteVideo"
-          id="remoteVideo"
-          autoPlay={autoPlay}
-          controls={controls}
-          muted={true}
-          playsInline={true}
+        <UserPreview
+          user={feed_user}
+          gateways={this.state.gateways}
+          initJanus={this.ensureGateway}
+          withAudio={this.withAudio()}
         />
-        {this.withAudio() ? (
-          <audio ref="remoteAudio" id="remoteAudio" autoPlay={autoPlay} controls={controls} playsInline={true} />
-        ) : null}
       </div>
     );
 

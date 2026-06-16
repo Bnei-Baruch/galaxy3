@@ -4,6 +4,7 @@ import "./QuadOut.css";
 import "./QuadUsers.scss";
 import api from "../../shared/Api";
 import QuadUsers from "./QuadUsers";
+import UserPreview from "./UserPreview";
 import mqtt from "../../shared/mqtt";
 import log from "loglevel";
 import {JanusMqtt} from "../../lib/janus-mqtt";
@@ -47,6 +48,9 @@ class QuadOut extends Component {
     pnum: {},
     gxy_list: []
   };
+
+  // In-flight Janus init promises keyed by server name (dedup concurrent inits).
+  _initPromises = {};
 
   componentDidMount() {
     log.info(" :: Version :: ", version);
@@ -131,30 +135,44 @@ class QuadOut extends Component {
       log.info("[WebOut] -- NEW SERVERS -- ", added_list);
       uniq_list.map(gxy => {
         if(!gateways[gxy]?.isConnected) {
-          this.initJanus(gxy, uniq_list);
+          this.initJanus(gxy).catch(() => {});
         }
       })
     }
     if(uniq_list) this.cleanSession(uniq_list);
   }
 
+  // Returns a Promise that resolves to a connected gateway. Reused both by the
+  // grid (initServers) and by UserPreview (air-queue tiles) via ensureGateway,
+  // so we cache in-flight inits to avoid opening duplicate sessions per server.
   initJanus = (gxy) => {
+    const {gateways, user} = this.state;
+    if (gateways[gxy]?.isConnected) return Promise.resolve(gateways[gxy]);
+    if (this._initPromises[gxy]) return this._initPromises[gxy];
+
     log.info("["+gxy+"] Janus init")
-    const {user, gateways} = this.state;
-    gateways[gxy] = new JanusMqtt(user, gxy, gxy);
-    gateways[gxy].init().then(data => {
-      log.info("["+gxy+"] Janus init success", data)
-      gateways[gxy].onStatus = (srv, status) => {
-        if (status !== "online") {
-          log.error("["+srv+"] Janus: ", status);
-          setTimeout(() => {
-            this.initJanus(srv);
-          }, 10000)
-        }
+    const janus = new JanusMqtt(user, gxy, gxy);
+    gateways[gxy] = janus;
+    janus.onStatus = (srv, status) => {
+      if (status !== "online") {
+        log.error("["+srv+"] Janus: ", status);
+        delete this._initPromises[srv];
+        setTimeout(() => {
+          this.initJanus(srv);
+        }, 10000)
       }
-    }).catch(err => {
+    };
+    const p = janus.init().then((data) => {
+      log.info("["+gxy+"] Janus init success", data)
+      this.setState({gateways});
+      return janus;
+    }).catch((err) => {
       log.error("["+gxy+"] Janus init", err);
-    })
+      delete this._initPromises[gxy];
+      throw err;
+    });
+    this._initPromises[gxy] = p;
+    return p;
   };
 
   cleanSession = (uniq_list) => {
@@ -189,7 +207,12 @@ class QuadOut extends Component {
             key={u.rfid || u.id || i}
             className={"air_queue_tile" + (u.on_air ? " air_queue_tile__onair" : "")}
           >
-            {/* TODO: plug in the user's video (subscribe by rfid/janus/room). */}
+            <UserPreview
+              user={u}
+              gateways={this.state.gateways}
+              initJanus={this.initJanus}
+              className="air_queue_tile__video"
+            />
             <div className="air_queue_tile__name">{u.display}</div>
           </div>
         ))}

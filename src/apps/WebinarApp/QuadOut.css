@@ -32,6 +32,14 @@ body {
   box-shadow: 0 0 6px rgba(255, 0, 0, 0.8);
 }
 
+.air_queue_tile__video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  background: #000;
+}
+
 .air_queue_tile__name {
   position: absolute;
   left: 0;
