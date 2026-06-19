@@ -15,7 +15,7 @@ const apps = {
   qstout: lazy(() => import('./apps/VideoOutApp/QstOutMqtt')),
   webout: lazy(() => import('./apps/WebOutApp/WebOutMqtt')),
   wclient: lazy(() => import('./apps/WebinarApp/WebinarClient')),
-  wadmin: lazy(() => import('./apps/WebinarApp/AdminClient')),
+  wadmin: lazy(() => import('./apps/WebinarApp/admin/AdminClient')),
   wquad: lazy(() => import('./apps/WebinarApp/QuadOut')),
 };
 

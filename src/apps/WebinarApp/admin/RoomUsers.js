@@ -1,16 +1,14 @@
 import React, {Component, Fragment} from "react";
-import {kc} from "../../components/UserManager";
 import {Button, Confirm, Grid, Header, Icon, Input, List, Pagination, Popup, Segment, Select, Table} from "semantic-ui-react";
 import "./AdminClient.css";
 import "./AdminClientVideo.scss";
 import classNames from "classnames";
 import platform from "platform";
-import AdminLogin from "./components/AdminLogin";
-import ChatBox from "./components/ChatBox";
-import api from "../../shared/Api";
-import mqtt from "../../shared/mqtt";
-import {JanusMqtt} from "../../lib/janus-mqtt";
-import UserPreview from "./UserPreview";
+import ChatBox from "../components/ChatBox";
+import api from "../../../shared/Api";
+import mqtt from "../../../shared/mqtt";
+import {JanusMqtt} from "../../../lib/janus-mqtt";
+import UserPreview from "../UserPreview";
 import log from "loglevel";
 
 // Retained MQTT topic that carries the whole broadcast (air) queue as an array
@@ -18,16 +16,18 @@ import log from "loglevel";
 // list immediately. TODO: replace with the real topic.
 const AIR_QUEUE_TOPIC = "galaxy/room/air_queue";
 
-// Admin/monitoring client for the simplified WebinarApp.
+// Users tab of the WebinarApp admin shell.
 // Scope of this file: everything related to USERS of a single assigned room.
 // - The room is provided by the server via api.fetchAssignedRoom (currently a
 //   stub returning 1051); there is no manual room selection here.
-// - Rooms management (grouping by language, switching, etc.) will live in a
-//   separate file/tab and is intentionally out of scope here.
+// - Rooms management (grouping by language, switching, etc.) lives in the
+//   separate RoomsManager tab and is intentionally out of scope here.
 // - Video is subscriber-only: we never publish. Clicking a user attaches a
 //   Janus subscriber and shows just that user's video. All the data we need
 //   (rfid/feed id, janus/session/handle, extra.streams) comes from the backend.
-class AdminClient extends Component {
+// - `user` (with its resolved `.role`) and MQTT init are owned by the parent
+//   AdminClient shell and passed down via props.
+class RoomUsers extends Component {
   state = {
     bitrate: 64000,
     current_room: "",
@@ -55,11 +55,15 @@ class AdminClient extends Component {
       gateway_feed: "",
       ip_address: "",
     },
-    user: null,
     appInitError: null,
     command_status: true,
     showConfirmReloadAll: false,
   };
+
+  componentDidMount() {
+    // MQTT is already initialised by the AdminClient shell; just start polling.
+    this.pollUsers();
+  }
 
   componentWillUnmount() {
     if (this._usersTimer) clearInterval(this._usersTimer);
@@ -68,7 +72,7 @@ class AdminClient extends Component {
   }
 
   isAllowed = (level) => {
-    const {user} = this.state;
+    const {user} = this.props;
     if (!user) {
       return false;
     }
@@ -86,58 +90,7 @@ class AdminClient extends Component {
     }
   };
 
-  checkPermission = (user) => {
-    const roles = new Set(user.roles || []);
-
-    let role = null;
-    if (roles.has("gxy_root")) {
-      role = "root";
-    } else if (roles.has("gxy_admin")) {
-      role = "admin";
-    } else if (roles.has("gxy_viewer")) {
-      role = "viewer";
-    } else if (roles.has("gxy_notify")) {
-      role = "notify";
-    }
-
-    delete user.roles;
-    user.role = role;
-
-    let gxy_admin = !!role;
-    let gxy_monitor = gxy_admin || kc.hasRealmRole("gxy_support");
-    let gxy_rooms = kc.hasRealmRole("gxy_root");
-    let gxy_notify = kc.hasRealmRole("gxy_notify");
-
-    if (gxy_monitor) {
-      this.setState({gxy_admin, gxy_monitor, gxy_rooms, gxy_notify}, () => {
-        this.initApp(user);
-      });
-    } else {
-      alert("Access denied!");
-      kc.logout();
-    }
-  };
-
   withAudio = () => this.isAllowed("admin");
-
-  initApp = (user) => {
-    mqtt.init(user, (data) => {
-      log.info("[admin] mqtt init: ", data);
-      mqtt.join("galaxy/users/broadcast");
-      mqtt.join("galaxy/users/" + user.id);
-      mqtt.watch(() => {});
-      this.setState({user});
-
-      if (!this._inited) {
-        this._inited = true;
-        this.pollUsers();
-      } else if (this.state.current_room) {
-        // Re-join the selected user's room topics after an MQTT reconnect.
-        mqtt.join("galaxy/room/" + this.state.current_room);
-        mqtt.join("galaxy/room/" + this.state.current_room + "/chat", true);
-      }
-    });
-  };
 
   pollUsers = () => {
     this.fetchUsers();
@@ -264,7 +217,8 @@ class AdminClient extends Component {
   // connection, switching servers drops the previous one first. Server name comes
   // from the user object (user.janus).
   ensureGateway = (server) => {
-    const {gateways, user} = this.state;
+    const {gateways} = this.state;
+    const {user} = this.props;
     Object.keys(gateways).forEach((srv) => {
       if (srv !== server && gateways[srv]) {
         try {
@@ -542,8 +496,8 @@ class AdminClient extends Component {
   };
 
   render() {
+    const {user} = this.props;
     const {
-      user,
       bitrate,
       feed_id,
       feed_info,
@@ -685,8 +639,6 @@ class AdminClient extends Component {
         />
       </div>
     );
-
-    let login = <AdminLogin user={user} checkPermission={this.checkPermission} />;
 
     const infoPopup = (
       <Popup
@@ -943,8 +895,8 @@ class AdminClient extends Component {
       </Grid>
     );
 
-    return <div>{user ? adminContent : login}</div>;
+    return <div>{adminContent}</div>;
   }
 }
 
-export default AdminClient;
+export default RoomUsers;
