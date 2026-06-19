@@ -1,6 +1,6 @@
 import React, {Component} from "react";
 import {Button, Input, Message} from "semantic-ui-react";
-import {Box, Tab, Tabs, TextField, Typography} from "@mui/material";
+import {Badge, Box, Tab, Tabs, TextField, Typography} from "@mui/material";
 import {getDateString, notifyMe} from "../../shared/tools";
 import mqtt from "../../shared/mqtt";
 
@@ -61,6 +61,7 @@ class WebinarChat extends Component {
     q_name: "",
     q_content: "",
     my_questions: [],
+    unread: {chat: 0, operator: 0},
   };
 
   componentDidMount() {
@@ -74,11 +75,18 @@ class WebinarChat extends Component {
   }
 
   componentDidUpdate(prevProps) {
-    if (this.props.visible && !prevProps.visible) this.scrollToBottom();
+    if (this.props.visible && !prevProps.visible) {
+      this.scrollToBottom();
+      // Panel opened -> the currently active tab is now read.
+      this.setState((s) => ({unread: {...s.unread, [s.active_tab]: 0}}));
+    }
     if (this.props.openTab && this.props.openTab !== prevProps.openTab) {
-      this.setState({active_tab: this.props.openTab});
+      this.selectTab(this.props.openTab);
     }
   }
+
+  // Switch tab and clear its unread badge.
+  selectTab = (tab) => this.setState((s) => ({active_tab: tab, unread: {...s.unread, [tab]: 0}}));
 
   onKeyPressed = (e) => {
     if (e.code !== "Enter") return;
@@ -107,6 +115,7 @@ class WebinarChat extends Component {
     if (this.props.visible && this.state.active_tab === tab) {
       this.scrollToBottom();
     } else {
+      this.setState((s) => ({unread: {...s.unread, [tab]: (s.unread[tab] || 0) + 1}}));
       if (isOperator(message.user?.role)) notifyMe("Shidur", message.text, true);
       if (this.props.onNewMsg) this.props.onNewMsg();
     }
@@ -290,16 +299,17 @@ class WebinarChat extends Component {
 
   render() {
     const {t} = this.props;
-    const {active_tab} = this.state;
+    const {active_tab, unread} = this.state;
+    const tabLabel = (text, count) => (
+      <Badge color="error" badgeContent={count} max={99} sx={{"& .MuiBadge-badge": {right: -6, top: 2}}}>
+        {text}
+      </Badge>
+    );
     return (
       <div className="chat-panel" style={{height: "100%", display: "flex", flexDirection: "column"}}>
-        <Tabs
-          value={active_tab}
-          variant="fullWidth"
-          onChange={(e, value) => this.setState({active_tab: value})}
-        >
-          <Tab label={t ? t("oldClient.chat") : "Chat"} value="chat" />
-          <Tab label="Operator" value="operator" />
+        <Tabs value={active_tab} variant="fullWidth" onChange={(e, value) => this.selectTab(value)}>
+          <Tab label={tabLabel(t ? t("oldClient.chat") : "Chat", unread.chat)} value="chat" />
+          <Tab label={tabLabel("Operator", unread.operator)} value="operator" />
           <Tab label={t ? t("oldClient.sendQuestion") : "Question"} value="question" />
         </Tabs>
         <Box style={{flex: 1, minHeight: 0}}>

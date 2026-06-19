@@ -29,6 +29,8 @@ class ChatBox extends Component {
     operator_input: "",
     // {[userId]: {user, text, time}}
     questions: {},
+    // unread counters per vertical section
+    unread: {chat: 0, operator: 0, question: 0},
   };
 
   componentDidMount() {
@@ -91,7 +93,10 @@ class ChatBox extends Component {
 
   onChatMessage = (message) => {
     message.time = getDateString();
-    this.setState((s) => ({chat_msgs: [...s.chat_msgs, message]}));
+    this.setState((s) => ({
+      chat_msgs: [...s.chat_msgs, message],
+      unread: s.active_section === "chat" ? s.unread : {...s.unread, chat: s.unread.chat + 1},
+    }));
   };
 
   sendChat = () => {
@@ -114,10 +119,20 @@ class ChatBox extends Component {
     if (!u?.id) return;
     this.setState((s) => {
       const conversations = {...s.conversations};
-      if (!conversations[u.id]) {
-        conversations[u.id] = {id: u.id, display: u.display || u.username || String(u.id), messages: []};
-      }
-      return {conversations, active_user_id: u.id, active_section: "operator"};
+      const prev = conversations[u.id];
+      conversations[u.id] = prev
+        ? {...prev, unread: 0}
+        : {id: u.id, display: u.display || u.username || String(u.id), messages: [], unread: 0};
+      return {conversations, active_user_id: u.id, active_section: "operator", unread: {...s.unread, operator: 0}};
+    });
+  };
+
+  // Switch the active horizontal dialog tab and clear its unread badge.
+  selectConversation = (id) => {
+    this.setState((s) => {
+      const conv = s.conversations[id];
+      if (!conv) return null;
+      return {active_user_id: id, conversations: {...s.conversations, [id]: {...conv, unread: 0}}};
     });
   };
 
@@ -125,12 +140,14 @@ class ChatBox extends Component {
     message.time = getDateString();
     const {id, display, username} = message.user;
     this.setState((s) => {
-      const conversations = {...s.conversations};
-      const conv = conversations[id]
-        ? {...conversations[id], messages: [...conversations[id].messages, message]}
-        : {id, display: display || username || String(id), messages: [message]};
-      conversations[id] = conv;
-      return {conversations, active_user_id: s.active_user_id || id};
+      const isActiveConv = s.active_section === "operator" && s.active_user_id === id;
+      const prev = s.conversations[id];
+      const conv = prev
+        ? {...prev, messages: [...prev.messages, message], unread: (prev.unread || 0) + (isActiveConv ? 0 : 1)}
+        : {id, display: display || username || String(id), messages: [message], unread: isActiveConv ? 0 : 1};
+      const conversations = {...s.conversations, [id]: conv};
+      const unread = s.active_section === "operator" ? s.unread : {...s.unread, operator: s.unread.operator + 1};
+      return {conversations, active_user_id: s.active_user_id || id, unread};
     });
   };
 
@@ -172,7 +189,23 @@ class ChatBox extends Component {
     const key = target || message.user?.id;
     if (!key) return;
     message.time = message.time || getDateString();
-    this.setState((s) => ({questions: {...s.questions, [key]: message}}));
+    this.setState((s) => ({
+      questions: {...s.questions, [key]: message},
+      unread: s.active_section === "question" ? s.unread : {...s.unread, question: s.unread.question + 1},
+    }));
+  };
+
+  // Switch the active vertical section and clear its unread badge (plus the
+  // currently shown dialog when entering the Operator section).
+  selectSection = (section) => {
+    this.setState((s) => {
+      const unread = {...s.unread, [section]: 0};
+      let conversations = s.conversations;
+      if (section === "operator" && s.active_user_id && conversations[s.active_user_id]) {
+        conversations = {...conversations, [s.active_user_id]: {...conversations[s.active_user_id], unread: 0}};
+      }
+      return {active_section: section, unread, conversations};
+    });
   };
 
   answerQuestion = (key, q) => {
@@ -232,8 +265,13 @@ class ChatBox extends Component {
           {ids.map((id) => {
             const conv = conversations[id];
             return (
-              <Menu.Item key={id} active={id === active_user_id} onClick={() => this.setState({active_user_id: id})}>
+              <Menu.Item key={id} active={id === active_user_id} onClick={() => this.selectConversation(id)}>
                 {conv.display}
+                {conv.unread > 0 ? (
+                  <Label circular color="red" size="mini" style={{marginLeft: "0.5em"}}>
+                    {conv.unread}
+                  </Label>
+                ) : null}
                 <Icon
                   name="close"
                   size="small"
@@ -293,23 +331,39 @@ class ChatBox extends Component {
     );
   };
 
+  sectionItem = (key, icon, label, count) => (
+    <Menu.Item key={key}>
+      <span>
+        <Icon name={icon} />
+        {label}
+      </span>
+      {count > 0 ? (
+        <Label circular color="red" size="mini">
+          {count}
+        </Label>
+      ) : null}
+    </Menu.Item>
+  );
+
   render() {
+    const {unread} = this.state;
     const panes = [
       {
-        menuItem: {key: "chat", icon: "comments", content: "Chat"},
+        menuItem: this.sectionItem("chat", "comments", "Chat", unread.chat),
         render: () => <Tab.Pane>{this.renderChat()}</Tab.Pane>,
       },
       {
-        menuItem: {key: "operator", icon: "user", content: "Operator"},
+        menuItem: this.sectionItem("operator", "user", "Operator", unread.operator),
         render: () => <Tab.Pane>{this.renderOperator()}</Tab.Pane>,
       },
       {
-        menuItem: {key: "question", icon: "question", content: "Question"},
+        menuItem: this.sectionItem("question", "question", "Question", unread.question),
         render: () => <Tab.Pane>{this.renderQuestion()}</Tab.Pane>,
       },
     ];
 
-    const activeIndex = ["chat", "operator", "question"].indexOf(this.state.active_section);
+    const sections = ["chat", "operator", "question"];
+    const activeIndex = sections.indexOf(this.state.active_section);
 
     return (
       <Segment className="chat_segment">
@@ -317,9 +371,7 @@ class ChatBox extends Component {
           menu={{fluid: true, vertical: true, tabular: true}}
           panes={panes}
           activeIndex={activeIndex}
-          onTabChange={(e, {activeIndex}) =>
-            this.setState({active_section: ["chat", "operator", "question"][activeIndex]})
-          }
+          onTabChange={(e, {activeIndex}) => this.selectSection(sections[activeIndex])}
         />
       </Segment>
     );
