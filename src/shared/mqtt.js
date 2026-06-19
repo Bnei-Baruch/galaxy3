@@ -204,6 +204,11 @@ class MqttMsg {
             this.mq.emit("MqttNotificationMessage", data);
           else if (service === "users" && id === "notification_test")
             this.mq.emit("MqttTestMessage", data);
+          else if (service === "users" && id === "chat")
+            this.mq.emit("MqttUsersChatEvent", data);
+          else if (service === "users" && id === "questions")
+            // target = author id (4th segment of galaxy/users/questions/<id>)
+            this.mq.emit("MqttQuestionEvent", data, target);
           else
             this.mq.emit("MqttPrivateMessage", data);
           break;

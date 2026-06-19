@@ -50,7 +50,6 @@ import {AskQuestion, CloseBroadcast, Fullscreen, Mute, MuteVideo} from "./button
 import Settings from "./settings/Settings";
 import SettingsJoined from "./settings/SettingsJoined";
 import {initCrisp, Support} from "./components/Support";
-import SendQuestionContainer from "./components/SendQuestions/container";
 import {getUserRole, userRolesEnum} from "../../shared/enums";
 import QuadStream from "./components/QuadStream";
 import KliOlamiToggle from "./buttons/KliOlamiToggle";
@@ -339,25 +338,27 @@ class WebinarClient extends Component {
         mqtt.join("galaxy/users/notification");
         mqtt.join("galaxy/users/broadcast");
         mqtt.join("galaxy/users/" + user.id);
+        mqtt.join("galaxy/users/chat");
+        mqtt.join("galaxy/users/questions/" + user.id);
 
         mqtt.watch((message) => {
           this.handleCmdData(message);
         });
 
-        // Public chat
-        mqtt.mq.on("MqttChatEvent", (data) => {
+        // Common chat (galaxy/users/chat)
+        mqtt.mq.on("MqttUsersChatEvent", (data) => {
           let json = JSON.parse(data);
           if (json?.type === "client-chat") {
-            this.chat.onChatMessage(json);
+            if (this.chat) this.chat.onChatMessage(json);
           }
         });
 
         // Personal topic (galaxy/users/<id>): chat messages from operators go to
-        // the support tab, everything else is a personal command (e.g. audio-out).
+        // the Operator tab, everything else is a personal command (e.g. audio-out).
         mqtt.mq.on("MqttPrivateMessage", (data) => {
           let message = JSON.parse(data);
           if (message?.type === "client-chat") {
-            if (this.chat) this.chat.onPrivateMessage(message);
+            if (this.chat) this.chat.onOperatorMessage(message);
           } else {
             this.handleCmdData(message);
           }
@@ -709,7 +710,6 @@ class WebinarClient extends Component {
         updateGxyUser(user);
 
         mqtt.join("galaxy/room/" + selected_room);
-        mqtt.join("galaxy/room/" + selected_room + "/chat", true);
         if (isGroup) {
           const bp = videoroom.setBitrate(600000);
           if (bp && typeof bp.catch === "function") {
@@ -798,7 +798,6 @@ class WebinarClient extends Component {
     localStorage.setItem("question", false);
 
     mqtt.exit("galaxy/room/" + room);
-    mqtt.exit("galaxy/room/" + room + "/chat");
 
     if (shidur && !reconnect) {
       JanusStream.destroy();
@@ -1257,34 +1256,22 @@ class WebinarClient extends Component {
   };
 
   renderRightAside = () => {
-    const {t, theme} = this.props;
-    const {user, room, rightAsideName, isRoomChat} = this.state;
+    const {t} = this.props;
+    const {user, room, rightAsideName} = this.state;
 
-    let content;
-    let displayChat = "none";
-
-    if (rightAsideName === "chat" || rightAsideName === "support") {
-      displayChat = "block";
-    }
-
-    if (rightAsideName === "question") {
-      content = <SendQuestionContainer user={user} />;
-    }
+    const chatOpen = rightAsideName === "chat" || rightAsideName === "question";
 
     return (
       <Grid item xs={3} size={3} style={{backgroundColor: this.props.theme.palette.background.paper, display: !rightAsideName ? "none" : undefined}}>
-        {content}
-        <Box style={{display: displayChat, height: "100%"}}>
+        <Box style={{display: chatOpen ? "block" : "none", height: "100%"}}>
           <WebinarChat
             t={t}
             ref={(chat) => {this.chat = chat;}}
-            visible={rightAsideName === "chat"}
+            visible={chatOpen}
             room={room}
             user={user}
-            onCmdMsg={this.handleCmdData}
             onNewMsg={this.onChatMessage}
-            room_chat={isRoomChat}
-            setIsRoomChat={this.setIsRoomChat}
+            openTab={rightAsideName === "question" ? "question" : "chat"}
           />
         </Box>
       </Grid>
@@ -1371,10 +1358,7 @@ class WebinarClient extends Component {
                 <Badge badgeContent={asideMsgCounter.chat} showZero={false} color="error" overlap="circular">
                   <ButtonMD
                     variant={rightAsideName === "chat" ? "contained" : "outlined"}
-                    onClick={() => {
-                      this.toggleRightAside("chat");
-                      this.setState({isRoomChat: true});
-                    }}
+                    onClick={() => this.toggleRightAside("chat")}
                     disableElevation
                   >
                     {t("oldClient.chat")}
@@ -1512,8 +1496,6 @@ class WebinarClient extends Component {
   updateUserRole = () => {
     //getUser(this.checkPermission);
   };
-
-  setIsRoomChat = (isRoomChat) => this.setState({isRoomChat});
 
   setVideos = (videos, isAv1 = this.state.isAv1) => this.setState({videos, isAv1});
 
