@@ -18,7 +18,7 @@ import {useTheme} from "@mui/material/styles";
 import MyMedia from "./MyMedia";
 
 import CheckMySelf from "./CheckMySelf";
-import {vsettings_list} from "../../../shared/consts";
+import {audiog_options2, vsettings_list} from "../../../shared/consts";
 import LogoutDropdown from "./LogoutDropdown";
 import {SelectViewLanguage} from "../components/SelectViewLanguage";
 import {AccountCircle, Mic, Videocam} from "@mui/icons-material";
@@ -27,6 +27,19 @@ import {Support} from "../components/Support";
 import JanusStream from "../../../shared/streaming-utils";
 
 const settingsList = vsettings_list.map(({key, text, value}) => ({key, text, value: JSON.stringify(value)}));
+
+// Broadcast (translation) languages, taken from the streaming list. We only use
+// the first "workshop" section of audiog_options2 (everything before the first
+// divider), i.e. Original + the per-language translation streams.
+const broadcastLanguages = (() => {
+  const out = [];
+  for (const o of audiog_options2) {
+    if (o.divider) break;
+    if (o.header) continue;
+    out.push({key: o.key, value: o.value, text: o.eng_text || o.text});
+  }
+  return out;
+})();
 const mapDevice = ({label, deviceId}) => ({text: label, value: deviceId});
 const mapOption = ({text, value}) => {
   return (
@@ -90,6 +103,8 @@ const Settings = (props) => {
     cammuted,
     toggleUsersDisplays,
     hideUserDisplays,
+    language: broadcastLanguage,
+    setLanguage,
   } = props;
 
   const handleMute = () => {
@@ -194,13 +209,13 @@ const Settings = (props) => {
   const renderUserSettings = () => {
     return (
       <>
-        <Grid item xs={4} size={4}>
+        <Grid item xs={3} size={3}>
           <AccountCircle className={classes.icon} color="action"/>
           <Typography variant="h6" display="inline" style={{verticalAlign: "top"}} color="textPrimary">
             {t("settings.userSettings")}
           </Typography>
         </Grid>
-        <Grid item={true} xs={4} size={4}>
+        <Grid item={true} xs={3} size={3}>
           <TextField
             label={t("settings.screenName")}
             fullWidth={true}
@@ -209,8 +224,27 @@ const Settings = (props) => {
             disabled
           />
         </Grid>
-        <Grid item={true} xs={4} size={4}>
+        <Grid item={true} xs={3} size={3}>
           <SelectViewLanguage/>
+        </Grid>
+        <Grid item={true} xs={3} size={3}>
+          <TextField
+            variant="outlined"
+            fullWidth
+            select
+            label={t("settings.broadcastLanguage")}
+            value={broadcastLanguage || ""}
+            onChange={(e) => {
+              const opt = broadcastLanguages.find((o) => o.value === e.target.value);
+              setLanguage(e.target.value, opt && opt.text);
+            }}
+          >
+            {broadcastLanguages.map(({key, text, value}) => (
+              <MenuItem key={key} value={value}>
+                {text}
+              </MenuItem>
+            ))}
+          </TextField>
         </Grid>
       </>
     );
@@ -286,7 +320,7 @@ const Settings = (props) => {
             color="success"
             classes={{root: classes.submitRoot, disabled: classes.submitDisabled}}
             size="large"
-            disabled={delay || !selectedRoom}
+            disabled={delay || !selectedRoom || !broadcastLanguage}
             onClick={handleInitClient}
           >
             <Typography color="white">{t("oldClient.joinRoom")}</Typography>

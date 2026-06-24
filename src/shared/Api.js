@@ -46,7 +46,10 @@ class Api {
   fetchAssignedRoom = (id) =>
     this.fetchAvailableRooms({with_num_users: true}).then((data) => {
       const rooms = (data && data.rooms) || [];
-      return rooms.find((r) => Number(r.room) === 1051) || {room: 1051, description: "1051"};
+      const r = rooms.find((room) => Number(room.room) === 1051) || rooms[0] || {};
+      // Contract: always resolve to {janus: $SRV, room: $ROOM} (description kept
+      // for the user's group label).
+      return {janus: r.janus || null, room: r.room || 1051, description: r.description || "1051"};
     });
 
   fetchRoom = (id) => this.logAndParse(`fetch room ${id}`, fetch(this.urlFor(`/room/${id}`), this.defaultOptions()));

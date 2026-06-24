@@ -16,7 +16,14 @@ import "./VideoConteiner.scss";
 import "./CustomIcons.scss";
 import "eqcss";
 import WebinarChat from "./WebinarChat";
-import {media_object, sketchesByLang} from "../../shared/consts";
+import {audiog_options2, media_object, sketchesByLang} from "../../shared/consts";
+
+// Resolve the full English language name (e.g. "Hebrew") from a broadcast
+// (translation) stream id, using the shared streaming options list.
+const broadcastLangText = (value) => {
+  const opt = audiog_options2.find((o) => o.value === Number(value));
+  return (opt && opt.eng_text) || String(value);
+};
 import {GEO_IP_INFO, PAY_USER_FEE} from "../../shared/env";
 import platform from "platform";
 import {TopMenu} from "./components/TopMenu";
@@ -94,6 +101,9 @@ class WebinarClient extends Component {
       reconnecting: false,
       room: "",
       selected_room: localStorage.getItem("room") || "",
+      // Broadcast (translation) language chosen before joining; persisted as the
+      // streaming language (vrt_lang). null forces an explicit pick before join.
+      broadcast_language: Number(localStorage.getItem("vrt_lang")) || null,
       videoroom: null,
       myid: null,
       mystream: null,
@@ -303,6 +313,10 @@ class WebinarClient extends Component {
           user.room = room.room;
           user.janus = room.janus;
           user.group = room.description;
+          // Restore previously chosen broadcast language (full name) onto the user.
+          if (this.state.broadcast_language) {
+            user.language = broadcastLangText(this.state.broadcast_language);
+          }
           this.setState({selected_room: room.room, delay: false, user});
           updateSentryUser(user);
           Sentry.setTag("gxy.room", String(room.room));
@@ -1504,6 +1518,20 @@ class WebinarClient extends Component {
     JanusStream.setAudio(audios, text);
   }
 
+  // Broadcast (translation) language picked in Settings before joining. Stores
+  // it on the user object (user.language) and as the streaming language so the
+  // chosen translation drives the stream.
+  setBroadcastLanguage = (value, text) => {
+    const langText = text || broadcastLangText(value);
+    const {user} = this.state;
+    if (user) user.language = langText;
+    localStorage.setItem("vrt_lang", String(value));
+    localStorage.setItem("trl_lang", String(value));
+    localStorage.setItem("vrt_langtext", langText);
+    this.setState({user, broadcast_language: value, audios: {audios: value, text: langText}});
+    JanusStream.setAudio(value, langText);
+  };
+
   render() {
     const {
       show_message,
@@ -1516,6 +1544,7 @@ class WebinarClient extends Component {
       media,
       room,
       selected_room,
+      broadcast_language,
       shidur,
       user,
       videos,
@@ -1602,6 +1631,8 @@ class WebinarClient extends Component {
           <Settings
             user={user}
             selectedRoom={selected_room}
+            language={broadcast_language}
+            setLanguage={this.setBroadcastLanguage}
             initClient={this.initClient.bind(this)}
             isGroup={isGroup}
             setAudioDevice={this.setAudioDevice.bind(this)}
