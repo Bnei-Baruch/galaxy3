@@ -349,17 +349,17 @@ class WebinarClient extends Component {
       } else {
         this.setState({mqttOn: true});
         log.info("[client] MQTT connected", mqtt);
-        mqtt.join("galaxy/users/notification");
-        mqtt.join("galaxy/users/broadcast");
-        mqtt.join("galaxy/users/" + user.id);
-        mqtt.join("galaxy/users/chat");
-        mqtt.join("galaxy/users/questions/" + user.id);
+        mqtt.join("webinar/users/notification");
+        mqtt.join("webinar/users/broadcast");
+        mqtt.join("webinar/users/" + user.id);
+        mqtt.join("webinar/users/chat");
+        mqtt.join("webinar/users/questions/" + user.id);
 
         mqtt.watch((message) => {
           this.handleCmdData(message);
         });
 
-        // Common chat (galaxy/users/chat)
+        // Common chat (webinar/users/chat)
         mqtt.mq.on("MqttUsersChatEvent", (data) => {
           let json = JSON.parse(data);
           if (json?.type === "client-chat") {
@@ -367,7 +367,7 @@ class WebinarClient extends Component {
           }
         });
 
-        // Personal topic (galaxy/users/<id>): chat messages from operators go to
+        // Personal topic (webinar/users/<id>): chat messages from operators go to
         // the Operator tab, everything else is a personal command (e.g. audio-out).
         mqtt.mq.on("MqttPrivateMessage", (data) => {
           let message = JSON.parse(data);
@@ -723,7 +723,7 @@ class WebinarClient extends Component {
         updateSentryUser(user);
         updateGxyUser(user);
 
-        mqtt.join("galaxy/room/" + selected_room);
+        mqtt.join("webinar/room/" + selected_room);
         if (isGroup) {
           const bp = videoroom.setBitrate(600000);
           if (bp && typeof bp.catch === "function") {
@@ -811,7 +811,7 @@ class WebinarClient extends Component {
 
     localStorage.setItem("question", false);
 
-    mqtt.exit("galaxy/room/" + room);
+    mqtt.exit("webinar/room/" + room);
 
     if (shidur && !reconnect) {
       JanusStream.destroy();

@@ -4,7 +4,7 @@ import {Badge, Box, Tab, Tabs, TextField, Typography} from "@mui/material";
 import {getDateString, notifyMe} from "../../shared/tools";
 import mqtt from "../../shared/mqtt";
 
-const COMMON_CHAT_TOPIC = "galaxy/users/chat";
+const COMMON_CHAT_TOPIC = "webinar/users/chat";
 
 const isOperator = (role) => !!role && /^(admin|root)$/.test(role);
 const nameColor = (role) => (isOperator(role) ? "red" : "blue");
@@ -45,11 +45,11 @@ const textWithLinks = (text) => {
 };
 
 // Client-side chat with three tabs:
-//  - Chat:     common chat for everyone (galaxy/users/chat).
+//  - Chat:     common chat for everyone (webinar/users/chat).
 //  - Operator: private dialog with operators. Operator messages arrive on this
-//              user's personal topic (galaxy/users/<id>); replies go back to the
-//              operator that last wrote (galaxy/users/<operatorId>).
-//  - Question: posts a retained question to galaxy/users/questions/<id>.
+//              user's personal topic (webinar/users/<id>); replies go back to the
+//              operator that last wrote (webinar/users/<operatorId>).
+//  - Question: posts a retained question to webinar/users/questions/<id>.
 class WebinarChat extends Component {
   state = {
     active_tab: "chat",
@@ -135,7 +135,7 @@ class WebinarChat extends Component {
     if (operator_input === "" || !operator_from) return;
     const {id, role, display, username} = this.props.user;
     const msg = {user: {id, role, display, username}, type: "client-chat", text: operator_input};
-    mqtt.send(JSON.stringify(msg), false, "galaxy/users/" + operator_from);
+    mqtt.send(JSON.stringify(msg), false, "webinar/users/" + operator_from);
     this.setState((s) => ({operator_msgs: [...s.operator_msgs, {...msg, time: getDateString()}], operator_input: ""}));
   };
 
@@ -149,7 +149,7 @@ class WebinarChat extends Component {
       text: q_content,
       time: getDateString(),
     };
-    mqtt.send(JSON.stringify(msg), true, "galaxy/users/questions/" + id);
+    mqtt.send(JSON.stringify(msg), true, "webinar/users/questions/" + id);
     this.setState((s) => ({my_questions: [...s.my_questions, msg], q_content: ""}));
   };
 

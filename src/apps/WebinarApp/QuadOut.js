@@ -14,7 +14,7 @@ import {MQTT_PWD} from "../../shared/env";
 // Retained MQTT topic carrying the broadcast (air) queue as an array of full
 // user objects (each tagged with on_air). Published by AdminClient; consumed
 // here. TODO: keep in sync with AdminClient's AIR_QUEUE_TOPIC.
-const AIR_QUEUE_TOPIC = "galaxy/room/air_queue";
+const AIR_QUEUE_TOPIC = "webinar/room/air_queue";
 
 class QuadOut extends Component {
   state = {

@@ -73,8 +73,8 @@ class AdminClient extends Component {
   initMQTT = (user) => {
     mqtt.init(user, (data) => {
       log.info("[admin] mqtt init: ", data);
-      mqtt.join("galaxy/users/broadcast");
-      mqtt.join("galaxy/users/" + user.id);
+      mqtt.join("webinar/users/broadcast");
+      mqtt.join("webinar/users/" + user.id);
       mqtt.watch(() => {});
     });
   };

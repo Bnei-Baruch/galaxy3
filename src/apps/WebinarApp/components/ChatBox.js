@@ -3,20 +3,20 @@ import {Button, Icon, Input, Label, Menu, Message, Segment, Tab} from "semantic-
 import {getDateString} from "../../../shared/tools";
 import mqtt from "../../../shared/mqtt";
 
-const COMMON_CHAT_TOPIC = "galaxy/users/chat";
-const QUESTIONS_TOPIC = "galaxy/users/questions/+";
+const COMMON_CHAT_TOPIC = "webinar/users/chat";
+const QUESTIONS_TOPIC = "webinar/users/questions/+";
 
 const isOperator = (role) => !!role && /^(admin|root)$/.test(role);
 const nameColor = (role) => (isOperator(role) ? "red" : "blue");
 
 // Operator-side chat. Three vertical sections:
-//  - Chat:     the common chat for everyone (galaxy/users/chat).
+//  - Chat:     the common chat for everyone (webinar/users/chat).
 //  - Operator: private dialogs with users. Incoming private messages land on
-//              the operator's own personal topic (galaxy/users/<operatorId>,
+//              the operator's own personal topic (webinar/users/<operatorId>,
 //              already subscribed by the AdminClient shell) and are grouped per
 //              user into horizontal, closeable conversation tabs so the operator
 //              can run several dialogs in parallel.
-//  - Question: retained questions from users (galaxy/users/questions/<userId>).
+//  - Question: retained questions from users (webinar/users/questions/<userId>).
 //              Clicking a question opens the matching private dialog to answer.
 class ChatBox extends Component {
   state = {
@@ -158,7 +158,7 @@ class ChatBox extends Component {
 
     const {id, role, display, username} = user;
     const msg = {user: {id, role, display, username}, type: "client-chat", text: operator_input};
-    mqtt.send(JSON.stringify(msg), false, "galaxy/users/" + active_user_id);
+    mqtt.send(JSON.stringify(msg), false, "webinar/users/" + active_user_id);
 
     // Echo into the dialog as an outgoing message.
     const sent = {...msg, time: getDateString()};

@@ -14,7 +14,7 @@ import log from "loglevel";
 // Retained MQTT topic that carries the whole broadcast (air) queue as an array
 // of full user objects, so a late-joining consumer (QuadOut) gets the current
 // list immediately. TODO: replace with the real topic.
-const AIR_QUEUE_TOPIC = "galaxy/room/air_queue";
+const AIR_QUEUE_TOPIC = "webinar/room/air_queue";
 
 // Users tab of the WebinarApp admin shell.
 // Scope of this file: everything related to USERS of a single assigned room.
@@ -237,21 +237,21 @@ class RoomUsers extends Component {
   // Chat and remote commands target the selected user's own room.
   selectUser = (selected_user) => {
     const {feed_user, current_room} = this.state;
-    if (feed_user) mqtt.exit("galaxy/users/" + feed_user.id);
+    if (feed_user) mqtt.exit("webinar/users/" + feed_user.id);
     log.info("[admin] selectUser", selected_user);
     if (!selected_user) return;
 
-    mqtt.join("galaxy/users/" + selected_user.id);
+    mqtt.join("webinar/users/" + selected_user.id);
 
     // Switch room chat/command topics when the selected user is in another room.
     const room = selected_user.room;
     if (room && room !== current_room) {
       if (current_room) {
-        mqtt.exit("galaxy/room/" + current_room);
-        mqtt.exit("galaxy/room/" + current_room + "/chat");
+        mqtt.exit("webinar/room/" + current_room);
+        mqtt.exit("webinar/room/" + current_room + "/chat");
       }
-      mqtt.join("galaxy/room/" + room);
-      mqtt.join("galaxy/room/" + room + "/chat", true);
+      mqtt.join("webinar/room/" + room);
+      mqtt.join("webinar/room/" + room + "/chat", true);
     }
 
     const feed_info = selected_user.system ? platform.parse(selected_user.system) : null;
@@ -344,13 +344,13 @@ class RoomUsers extends Component {
     log.info("[admin] sending cmd json", cmd);
     let topic;
     if (command_type.match(/^(reload-config|client-reload-all)$/)) {
-      topic = "galaxy/users/broadcast";
+      topic = "webinar/users/broadcast";
     } else if (command_type === "audio-out" && recipient?.id) {
       // On-air signal is per-user now: deliver it to the user's personal topic
       // instead of the whole room.
-      topic = "galaxy/users/" + recipient.id;
+      topic = "webinar/users/" + recipient.id;
     } else {
-      topic = "galaxy/room/" + current_room;
+      topic = "webinar/room/" + current_room;
     }
     mqtt.send(JSON.stringify(cmd), false, topic);
 

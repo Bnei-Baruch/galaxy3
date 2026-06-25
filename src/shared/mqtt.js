@@ -179,6 +179,7 @@ class MqttMsg {
         case "subtitles":
           this.mq.emit("MqttSubtitlesEvent", {data, language: id, target});
           break;
+        case "webinar":
         case "galaxy":
           // FIXME: we need send cmd messages to separate topic
           if (service === "room" && target === "chat")

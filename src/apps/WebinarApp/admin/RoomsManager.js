@@ -108,8 +108,8 @@ class RoomsManager extends Component {
     this.setState({user});
     // mqtt.init(user, (data) => {
     //   console.log("[Admin] mqtt init: ", data);
-    //   mqtt.join("galaxy/users/broadcast");
-    //   mqtt.join("galaxy/users/" + user.id);
+    //   mqtt.join("webinar/users/broadcast");
+    //   mqtt.join("webinar/users/" + user.id);
     //   mqtt.watch(() => {});
     //
     //   this.setState({user});
@@ -180,8 +180,8 @@ class RoomsManager extends Component {
 
       videoroom.join(room, user).then(data => {
         log.info('[admin] Joined respond :', data)
-        mqtt.join("galaxy/room/" + room);
-        mqtt.join("galaxy/room/" + room + "/chat", true);
+        mqtt.join("webinar/room/" + room);
+        mqtt.join("webinar/room/" + room + "/chat", true);
         this.makeSubscription(data.publishers, room)
       }).catch(err => {
         log.error('[admin] Join error :', err);
@@ -252,8 +252,8 @@ class RoomsManager extends Component {
   };
 
   switchRoom = (data, current_room) => {
-    mqtt.exit("galaxy/room/" + current_room);
-    mqtt.exit("galaxy/room/" + current_room + "/chat");
+    mqtt.exit("webinar/room/" + current_room);
+    mqtt.exit("webinar/room/" + current_room + "/chat");
     const {janus, videoroom, subscriber, inst} = this.state;
 
     if(subscriber) janus.detach(subscriber)
@@ -461,8 +461,8 @@ class RoomsManager extends Component {
 
     log.info("[admin] sending cmd json", cmd);
     let topic = command_type.match(/^(reload-config|client-reload-all)$/)
-      ? "galaxy/users/broadcast"
-      : "galaxy/room/" + current_room;
+      ? "webinar/users/broadcast"
+      : "webinar/room/" + current_room;
     mqtt.send(JSON.stringify(cmd), false, topic);
 
     if (command_type === "audio-out") {
@@ -472,10 +472,10 @@ class RoomsManager extends Component {
 
   getUserInfo = (selected_user) => {
     const {feed_user} = this.state;
-    if (feed_user) mqtt.exit("galaxy/users/" + feed_user.id);
+    if (feed_user) mqtt.exit("webinar/users/" + feed_user.id);
     log.info("[admin] getUserInfo", selected_user);
     if (selected_user) {
-      mqtt.join("galaxy/users/" + selected_user.id);
+      mqtt.join("webinar/users/" + selected_user.id);
       const feed_info = selected_user.system ? platform.parse(selected_user.system) : null;
       this.setState({feed_id: selected_user.rfid, feed_user: selected_user, feed_info});
     }
