@@ -112,8 +112,10 @@ export const geoInfo = (url, cb) =>
     })
     .catch((ex) => console.log(`get geoInfo`, ex));
 
-export const updateGxyUser = (user) => {
-  mqtt.send(JSON.stringify(user), false, "gxydb/users")
+// `topic` is the user-state DB ingest topic. Defaults to the main "gxydb/users"
+// so existing callers are unaffected; WebinarApp passes its own "wnrdb/users".
+export const updateGxyUser = (user, topic = "gxydb/users") => {
+  mqtt.send(JSON.stringify(user), false, topic)
   // api
   //   .updateUser(user.id, user)
   //   .then((data) => {
@@ -225,10 +227,12 @@ export const isRTLString = (text) => {
   return rtl > ltr;
 };
 
-export const sendUserState = (user) => {
+// `namespace` is the MQTT topic root ("galaxy" for the main apps, "webinar"
+// for WebinarApp). Defaults to "galaxy" so existing callers are unaffected.
+export const sendUserState = (user, namespace = "galaxy") => {
   const {camera, question, rfid, room} = user;
   const msg = {type: "client-state", user: {camera, question, rfid, room}};
-  mqtt.send(JSON.stringify(msg), false, "galaxy/room/" + room);
+  mqtt.send(JSON.stringify(msg), false, namespace + "/room/" + room);
 }
 
 export const createContext = (e) => {

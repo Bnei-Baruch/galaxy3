@@ -2,6 +2,7 @@ import React, {Component, Suspense} from "react";
 import {Tab} from "semantic-ui-react";
 import {kc} from "../../../components/UserManager";
 import mqtt from "../../../shared/mqtt";
+import {USERS_BROADCAST, userTopic} from "../mqttTopics";
 import AdminLogin from "../components/AdminLogin";
 import RoomUsers from "./RoomUsers";
 import RoomsManager from "./RoomsManager";
@@ -73,8 +74,8 @@ class AdminClient extends Component {
   initMQTT = (user) => {
     mqtt.init(user, (data) => {
       log.info("[admin] mqtt init: ", data);
-      mqtt.join("webinar/users/broadcast");
-      mqtt.join("webinar/users/" + user.id);
+      mqtt.join(USERS_BROADCAST);
+      mqtt.join(userTopic(user.id));
       mqtt.watch(() => {});
     });
   };

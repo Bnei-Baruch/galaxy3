@@ -17,6 +17,16 @@ import "./CustomIcons.scss";
 import "eqcss";
 import WebinarChat from "./WebinarChat";
 import {audiog_options2, media_object, sketchesByLang} from "../../shared/consts";
+import {
+  NS,
+  USERS_BROADCAST,
+  USERS_CHAT,
+  USERS_DB,
+  USERS_NOTIFICATION,
+  questionsTopic,
+  roomTopic,
+  userTopic,
+} from "./mqttTopics";
 
 // Resolve the full English language name (e.g. "Hebrew") from a broadcast
 // (translation) stream id, using the shared streaming options list.
@@ -349,11 +359,11 @@ class WebinarClient extends Component {
       } else {
         this.setState({mqttOn: true});
         log.info("[client] MQTT connected", mqtt);
-        mqtt.join("webinar/users/notification");
-        mqtt.join("webinar/users/broadcast");
-        mqtt.join("webinar/users/" + user.id);
-        mqtt.join("webinar/users/chat");
-        mqtt.join("webinar/users/questions/" + user.id);
+        mqtt.join(USERS_NOTIFICATION);
+        mqtt.join(USERS_BROADCAST);
+        mqtt.join(userTopic(user.id));
+        mqtt.join(USERS_CHAT);
+        mqtt.join(questionsTopic(user.id));
 
         mqtt.watch((message) => {
           this.handleCmdData(message);
@@ -721,9 +731,9 @@ class WebinarClient extends Component {
         this.conferenceReconnectAttempts = 0;
         this.setState({user, myid: id, delay: false, sourceLoading: false, reconnecting: false});
         updateSentryUser(user);
-        updateGxyUser(user);
+        updateGxyUser(user, USERS_DB);
 
-        mqtt.join("webinar/room/" + selected_room);
+        mqtt.join(roomTopic(selected_room));
         if (isGroup) {
           const bp = videoroom.setBitrate(600000);
           if (bp && typeof bp.catch === "function") {
@@ -811,7 +821,7 @@ class WebinarClient extends Component {
 
     localStorage.setItem("question", false);
 
-    mqtt.exit("webinar/room/" + room);
+    mqtt.exit(roomTopic(room));
 
     if (shidur && !reconnect) {
       JanusStream.destroy();
@@ -905,8 +915,8 @@ class WebinarClient extends Component {
     this.setState({user, question: !question});
 
     updateSentryUser(user);
-    updateGxyUser(user);
-    sendUserState(user);
+    updateGxyUser(user, USERS_DB);
+    sendUserState(user, NS);
   };
 
   handleAudioOut = (data) => {
@@ -950,8 +960,8 @@ class WebinarClient extends Component {
     user.camera = cameraOn;
     this.setState({user});
     updateSentryUser(user);
-    updateGxyUser(user);
-    sendUserState(user);
+    updateGxyUser(user, USERS_DB);
+    sendUserState(user, NS);
   };
 
   stopLocalMedia = (videoroom) => {

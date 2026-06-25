@@ -10,11 +10,7 @@ import log from "loglevel";
 import {JanusMqtt} from "../../lib/janus-mqtt";
 import version from './Version.js';
 import {MQTT_PWD} from "../../shared/env";
-
-// Retained MQTT topic carrying the broadcast (air) queue as an array of full
-// user objects (each tagged with on_air). Published by AdminClient; consumed
-// here. TODO: keep in sync with AdminClient's AIR_QUEUE_TOPIC.
-const AIR_QUEUE_TOPIC = "webinar/room/air_queue";
+import {AIR_QUEUE} from "./mqttTopics";
 
 class QuadOut extends Component {
   state = {
@@ -76,9 +72,9 @@ class QuadOut extends Component {
     mqtt.init(user, (data) => {
       log.info("[WebOut] mqtt init: ", data);
       // Retained topic: we get the current air queue immediately on subscribe.
-      mqtt.join(AIR_QUEUE_TOPIC);
+      mqtt.join(AIR_QUEUE);
       mqtt.watch((msg, topic) => {
-        if (topic === AIR_QUEUE_TOPIC) {
+        if (topic === AIR_QUEUE) {
           this.setState({air_queue: Array.isArray(msg) ? msg : []});
         }
       });

@@ -2,9 +2,7 @@ import React, {Component} from "react";
 import {Button, Icon, Input, Label, Menu, Message, Segment, Tab} from "semantic-ui-react";
 import {getDateString} from "../../../shared/tools";
 import mqtt from "../../../shared/mqtt";
-
-const COMMON_CHAT_TOPIC = "webinar/users/chat";
-const QUESTIONS_TOPIC = "webinar/users/questions/+";
+import {QUESTIONS_SUB, USERS_CHAT, userTopic} from "../mqttTopics";
 
 const isOperator = (role) => !!role && /^(admin|root)$/.test(role);
 const nameColor = (role) => (isOperator(role) ? "red" : "blue");
@@ -36,8 +34,8 @@ class ChatBox extends Component {
   componentDidMount() {
     if (this.props.onRef) this.props.onRef(this);
 
-    mqtt.join(COMMON_CHAT_TOPIC);
-    mqtt.join(QUESTIONS_TOPIC);
+    mqtt.join(USERS_CHAT);
+    mqtt.join(QUESTIONS_SUB);
 
     this._onCommonChat = (data) => {
       const json = JSON.parse(data);
@@ -79,8 +77,8 @@ class ChatBox extends Component {
     mqtt.mq.removeListener("MqttPrivateMessage", this._onPrivate);
     mqtt.mq.removeListener("MqttQuestionEvent", this._onQuestion);
 
-    mqtt.exit(COMMON_CHAT_TOPIC);
-    mqtt.exit(QUESTIONS_TOPIC);
+    mqtt.exit(USERS_CHAT);
+    mqtt.exit(QUESTIONS_SUB);
   }
 
   onKeyPressed = (e) => {
@@ -106,7 +104,7 @@ class ChatBox extends Component {
 
     const {id, role, display, username} = user;
     const msg = {user: {id, role, display, username}, type: "client-chat", text: chat_input};
-    mqtt.send(JSON.stringify(msg), false, COMMON_CHAT_TOPIC);
+    mqtt.send(JSON.stringify(msg), false, USERS_CHAT);
 
     // Echo our own message (broker won't send it back to us).
     this.onChatMessage({...msg});
@@ -158,7 +156,7 @@ class ChatBox extends Component {
 
     const {id, role, display, username} = user;
     const msg = {user: {id, role, display, username}, type: "client-chat", text: operator_input};
-    mqtt.send(JSON.stringify(msg), false, "webinar/users/" + active_user_id);
+    mqtt.send(JSON.stringify(msg), false, userTopic(active_user_id));
 
     // Echo into the dialog as an outgoing message.
     const sent = {...msg, time: getDateString()};

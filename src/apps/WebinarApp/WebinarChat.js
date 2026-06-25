@@ -3,8 +3,7 @@ import {Button, Input, Message} from "semantic-ui-react";
 import {Badge, Box, Tab, Tabs, TextField, Typography} from "@mui/material";
 import {getDateString, notifyMe} from "../../shared/tools";
 import mqtt from "../../shared/mqtt";
-
-const COMMON_CHAT_TOPIC = "webinar/users/chat";
+import {USERS_CHAT, questionsTopic, userTopic} from "./mqttTopics";
 
 const isOperator = (role) => !!role && /^(admin|root)$/.test(role);
 const nameColor = (role) => (isOperator(role) ? "red" : "blue");
@@ -126,7 +125,7 @@ class WebinarChat extends Component {
     if (chat_input === "") return;
     const {id, role, display, username} = this.props.user;
     const msg = {user: {id, role, display, username}, type: "client-chat", text: chat_input};
-    mqtt.send(JSON.stringify(msg), false, COMMON_CHAT_TOPIC);
+    mqtt.send(JSON.stringify(msg), false, USERS_CHAT);
     this.setState((s) => ({chat_msgs: [...s.chat_msgs, {...msg, time: getDateString()}], chat_input: ""}));
   };
 
@@ -135,7 +134,7 @@ class WebinarChat extends Component {
     if (operator_input === "" || !operator_from) return;
     const {id, role, display, username} = this.props.user;
     const msg = {user: {id, role, display, username}, type: "client-chat", text: operator_input};
-    mqtt.send(JSON.stringify(msg), false, "webinar/users/" + operator_from);
+    mqtt.send(JSON.stringify(msg), false, userTopic(operator_from));
     this.setState((s) => ({operator_msgs: [...s.operator_msgs, {...msg, time: getDateString()}], operator_input: ""}));
   };
 
@@ -149,7 +148,7 @@ class WebinarChat extends Component {
       text: q_content,
       time: getDateString(),
     };
-    mqtt.send(JSON.stringify(msg), true, "webinar/users/questions/" + id);
+    mqtt.send(JSON.stringify(msg), true, questionsTopic(id));
     this.setState((s) => ({my_questions: [...s.my_questions, msg], q_content: ""}));
   };
 

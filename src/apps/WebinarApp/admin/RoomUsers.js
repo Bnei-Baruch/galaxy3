@@ -10,11 +10,7 @@ import mqtt from "../../../shared/mqtt";
 import {JanusMqtt} from "../../../lib/janus-mqtt";
 import UserPreview from "../UserPreview";
 import log from "loglevel";
-
-// Retained MQTT topic that carries the whole broadcast (air) queue as an array
-// of full user objects, so a late-joining consumer (QuadOut) gets the current
-// list immediately. TODO: replace with the real topic.
-const AIR_QUEUE_TOPIC = "webinar/room/air_queue";
+import {AIR_QUEUE, USERS_BROADCAST, roomChatTopic, roomTopic, userTopic} from "../mqttTopics";
 
 // Users tab of the WebinarApp admin shell.
 // Scope of this file: everything related to USERS of a single assigned room.
@@ -237,21 +233,21 @@ class RoomUsers extends Component {
   // Chat and remote commands target the selected user's own room.
   selectUser = (selected_user) => {
     const {feed_user, current_room} = this.state;
-    if (feed_user) mqtt.exit("webinar/users/" + feed_user.id);
+    if (feed_user) mqtt.exit(userTopic(feed_user.id));
     log.info("[admin] selectUser", selected_user);
     if (!selected_user) return;
 
-    mqtt.join("webinar/users/" + selected_user.id);
+    mqtt.join(userTopic(selected_user.id));
 
     // Switch room chat/command topics when the selected user is in another room.
     const room = selected_user.room;
     if (room && room !== current_room) {
       if (current_room) {
-        mqtt.exit("webinar/room/" + current_room);
-        mqtt.exit("webinar/room/" + current_room + "/chat");
+        mqtt.exit(roomTopic(current_room));
+        mqtt.exit(roomChatTopic(current_room));
       }
-      mqtt.join("webinar/room/" + room);
-      mqtt.join("webinar/room/" + room + "/chat", true);
+      mqtt.join(roomTopic(room));
+      mqtt.join(roomChatTopic(room), true);
     }
 
     const feed_info = selected_user.system ? platform.parse(selected_user.system) : null;
@@ -274,7 +270,7 @@ class RoomUsers extends Component {
   publishAirQueue = () => {
     const {air_queue, on_air_id} = this.state;
     const payload = air_queue.map((u) => ({...u, on_air: this.userKey(u) === on_air_id}));
-    mqtt.send(JSON.stringify(payload), true, AIR_QUEUE_TOPIC);
+    mqtt.send(JSON.stringify(payload), true, AIR_QUEUE);
   };
 
   // Add a (hand-raised) user to the operator's broadcast queue. Deduped by
@@ -344,13 +340,13 @@ class RoomUsers extends Component {
     log.info("[admin] sending cmd json", cmd);
     let topic;
     if (command_type.match(/^(reload-config|client-reload-all)$/)) {
-      topic = "webinar/users/broadcast";
+      topic = USERS_BROADCAST;
     } else if (command_type === "audio-out" && recipient?.id) {
       // On-air signal is per-user now: deliver it to the user's personal topic
       // instead of the whole room.
-      topic = "webinar/users/" + recipient.id;
+      topic = userTopic(recipient.id);
     } else {
-      topic = "webinar/room/" + current_room;
+      topic = roomTopic(current_room);
     }
     mqtt.send(JSON.stringify(cmd), false, topic);
 

@@ -30,6 +30,7 @@ import {PublisherPlugin} from "../../../lib/publisher-plugin";
 import {SubscriberPlugin} from "../../../lib/subscriber-plugin";
 import log from "loglevel";
 import {createContext} from "../../../shared/tools";
+import {USERS_BROADCAST, roomChatTopic, roomTopic, userTopic} from "../mqttTopics";
 
 const sortAndFilterFeeds = (feeds) =>
   feeds
@@ -108,7 +109,7 @@ class RoomsManager extends Component {
     this.setState({user});
     // mqtt.init(user, (data) => {
     //   console.log("[Admin] mqtt init: ", data);
-    //   mqtt.join("webinar/users/broadcast");
+    //   mqtt.join(USERS_BROADCAST);
     //   mqtt.join("webinar/users/" + user.id);
     //   mqtt.watch(() => {});
     //
@@ -180,8 +181,8 @@ class RoomsManager extends Component {
 
       videoroom.join(room, user).then(data => {
         log.info('[admin] Joined respond :', data)
-        mqtt.join("webinar/room/" + room);
-        mqtt.join("webinar/room/" + room + "/chat", true);
+        mqtt.join(roomTopic(room));
+        mqtt.join(roomChatTopic(room), true);
         this.makeSubscription(data.publishers, room)
       }).catch(err => {
         log.error('[admin] Join error :', err);
@@ -252,8 +253,8 @@ class RoomsManager extends Component {
   };
 
   switchRoom = (data, current_room) => {
-    mqtt.exit("webinar/room/" + current_room);
-    mqtt.exit("webinar/room/" + current_room + "/chat");
+    mqtt.exit(roomTopic(current_room));
+    mqtt.exit(roomChatTopic(current_room));
     const {janus, videoroom, subscriber, inst} = this.state;
 
     if(subscriber) janus.detach(subscriber)
@@ -461,8 +462,8 @@ class RoomsManager extends Component {
 
     log.info("[admin] sending cmd json", cmd);
     let topic = command_type.match(/^(reload-config|client-reload-all)$/)
-      ? "webinar/users/broadcast"
-      : "webinar/room/" + current_room;
+      ? USERS_BROADCAST
+      : roomTopic(current_room);
     mqtt.send(JSON.stringify(cmd), false, topic);
 
     if (command_type === "audio-out") {
@@ -472,10 +473,10 @@ class RoomsManager extends Component {
 
   getUserInfo = (selected_user) => {
     const {feed_user} = this.state;
-    if (feed_user) mqtt.exit("webinar/users/" + feed_user.id);
+    if (feed_user) mqtt.exit(userTopic(feed_user.id));
     log.info("[admin] getUserInfo", selected_user);
     if (selected_user) {
-      mqtt.join("webinar/users/" + selected_user.id);
+      mqtt.join(userTopic(selected_user.id));
       const feed_info = selected_user.system ? platform.parse(selected_user.system) : null;
       this.setState({feed_id: selected_user.rfid, feed_user: selected_user, feed_info});
     }
