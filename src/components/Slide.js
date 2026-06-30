@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import markdownit from "markdown-it";
 import "./slide.scss";
 import {useTranslation} from "react-i18next";
@@ -79,7 +79,7 @@ export const Slide = ({ content, isLtr, isQuestion, controls, slideSize, alterna
   const slideRef = useRef();  // slide-content
   const blueStripeRef = useRef();
   const greyStripeRef = useRef();
-  const md = createMarkdownit();
+  const md = useMemo(() => createMarkdownit(), []);
   const backgroundColor = "#01cd27";
   const {t, i18n: {language: uiLang}} = useTranslation();
 
