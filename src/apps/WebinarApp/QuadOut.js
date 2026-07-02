@@ -10,7 +10,7 @@ import log from "loglevel";
 import {JanusMqtt} from "../../lib/janus-mqtt";
 import version from './Version.js';
 import {MQTT_PWD} from "../../shared/env";
-import {AIR_QUEUE} from "./mqttTopics";
+import {AIR_QUEUE, JANUS_NS} from "./mqttTopics";
 
 class QuadOut extends Component {
   state = {
@@ -147,7 +147,7 @@ class QuadOut extends Component {
     if (this._initPromises[gxy]) return this._initPromises[gxy];
 
     log.info("["+gxy+"] Janus init")
-    const janus = new JanusMqtt(user, gxy, gxy);
+    const janus = new JanusMqtt(user, gxy, gxy, JANUS_NS);
     gateways[gxy] = janus;
     janus.onStatus = (srv, status) => {
       if (status !== "online") {

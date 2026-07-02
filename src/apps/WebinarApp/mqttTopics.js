@@ -26,3 +26,9 @@ export const AIR_QUEUE = `${NS}/room/air_queue`;
 // --- user DB ingest ---------------------------------------------------------
 // WebinarApp users are ingested into the webinar DB, not the main one.
 export const USERS_DB = "wnrdb/users";
+
+// --- Janus gateway topic prefix ---------------------------------------------
+// WebinarApp talks to Janus over its own topic root (januswnr/<srv>/from-janus,
+// .../to-janus, .../status) instead of the shared "janus". The gateway backend
+// must publish under the same prefix, and shared/mqtt.js watch() routes it.
+export const JANUS_NS = "januswnr";

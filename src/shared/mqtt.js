@@ -213,6 +213,7 @@ class MqttMsg {
           else
             this.mq.emit("MqttPrivateMessage", data);
           break;
+        case "januswnr":
         case "janus":
           const json = JSON.parse(data)
           const mit = json?.session_id || packet?.properties?.userProperties?.mit || service

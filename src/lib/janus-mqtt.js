@@ -3,14 +3,15 @@ import mqtt from "../shared/mqtt";
 import log from "loglevel";
 
 export class JanusMqtt {
-  constructor(user, srv, userId) {
+  constructor(user, srv, userId, prefix = "janus") {
     this.user = user
     this.srv = srv
     this.userId = userId;
     this.mit = null;
-    this.rxTopic = 'janus/' + srv + '/from-janus'
-    this.txTopic = 'janus/' + srv + '/to-janus'
-    this.stTopic = 'janus/' + srv + '/status'
+    this.prefix = prefix;
+    this.rxTopic = prefix + '/' + srv + '/from-janus'
+    this.txTopic = prefix + '/' + srv + '/to-janus'
+    this.stTopic = prefix + '/' + srv + '/status'
     this.isConnected = false
     this.onStatus = null
     this.sessionId = undefined

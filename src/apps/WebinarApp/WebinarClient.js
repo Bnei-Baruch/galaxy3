@@ -18,6 +18,7 @@ import "eqcss";
 import WebinarChat from "./WebinarChat";
 import {audiog_options2, media_object, sketchesByLang} from "../../shared/consts";
 import {
+  JANUS_NS,
   NS,
   USERS_BROADCAST,
   USERS_CHAT,
@@ -430,7 +431,7 @@ class WebinarClient extends Component {
     if (this.state.janus) {
       this.state.janus.destroy();
     }
-    api.fetchGxyServer(user).then((data) => {
+    api.fetchWnrServer(user).then((data) => {
       log.info("[client] Got Gxy Server: ", data);
       user.janus = data.janus;
       this.initJanus(user);
@@ -555,7 +556,7 @@ class WebinarClient extends Component {
 
   initJanus = (user) => {
     setSentryTag(user.janus)
-    let janus = new JanusMqtt(user, user.janus, mqtt.clientId);
+    let janus = new JanusMqtt(user, user.janus, mqtt.clientId, JANUS_NS);
     janus.onStatus = (srv, status) => {
       if (status === "offline") {
         log.warn("[client] Janus Server - " + srv + " - Offline, attempting silent reconnect");

@@ -100,6 +100,10 @@ class Api {
     return this.logAndParse(`fetch str server for: ${data}`, fetch(this.urlFor(`/v2/room_server`), options));
   };
 
+  fetchWnrServer = (data) => {
+    const options = this.makeOptions("POST", data);
+    return this.logAndParse(`fetch str server for: ${data}`, fetch(this.urlFor(`/v2/room_server/webinar`), options));
+  };
 
   // Admin API
 

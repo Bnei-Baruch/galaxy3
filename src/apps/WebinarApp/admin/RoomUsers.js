@@ -10,7 +10,7 @@ import mqtt from "../../../shared/mqtt";
 import {JanusMqtt} from "../../../lib/janus-mqtt";
 import UserPreview from "../UserPreview";
 import log from "loglevel";
-import {AIR_QUEUE, USERS_BROADCAST, roomChatTopic, roomTopic, userTopic} from "../mqttTopics";
+import {AIR_QUEUE, JANUS_NS, USERS_BROADCAST, roomChatTopic, roomTopic, userTopic} from "../mqttTopics";
 
 // Users tab of the WebinarApp admin shell.
 // Scope of this file: everything related to USERS of a single assigned room.
@@ -180,7 +180,7 @@ class RoomUsers extends Component {
   initJanus = (user, gxy) => {
     log.info("[" + gxy + "] Janus init");
     const {gateways} = this.state;
-    gateways[gxy] = new JanusMqtt(user, gxy, gxy);
+    gateways[gxy] = new JanusMqtt(user, gxy, gxy, JANUS_NS);
     gateways[gxy].onStatus = (srv, status) => {
       if (status !== "online") {
         log.error("[" + srv + "] Janus: ", status);

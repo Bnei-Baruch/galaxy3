@@ -30,7 +30,7 @@ import {PublisherPlugin} from "../../../lib/publisher-plugin";
 import {SubscriberPlugin} from "../../../lib/subscriber-plugin";
 import log from "loglevel";
 import {createContext} from "../../../shared/tools";
-import {USERS_BROADCAST, roomChatTopic, roomTopic, userTopic} from "../mqttTopics";
+import {JANUS_NS, USERS_BROADCAST, roomChatTopic, roomTopic, userTopic} from "../mqttTopics";
 
 const sortAndFilterFeeds = (feeds) =>
   feeds
@@ -138,7 +138,7 @@ class RoomsManager extends Component {
     log.info("["+gxy+"] Janus init")
     const {gateways} = this.state;
     //const token = ConfigStore.globalConfig.gateways.rooms[gxy].token
-    gateways[gxy] = new JanusMqtt(user, gxy, gxy);
+    gateways[gxy] = new JanusMqtt(user, gxy, gxy, JANUS_NS);
     log.info("["+gxy+"] Janus init", gateways[gxy])
     gateways[gxy].onStatus = (srv, status) => {
       if (status !== "online") {
