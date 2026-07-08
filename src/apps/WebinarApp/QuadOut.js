@@ -57,6 +57,8 @@ class QuadOut extends Component {
   }
 
   componentWillUnmount() {
+    clearInterval(this._roomsTimer);
+    clearInterval(this._pageTimer);
     Object.values(this.state.gateways).forEach((x) => x.destroy());
   }
 
@@ -83,7 +85,16 @@ class QuadOut extends Component {
 
   pollRooms = () => {
     this.fetchRooms();
-    setInterval(this.fetchRooms, 10 * 1000);
+    this._roomsTimer = setInterval(this.fetchRooms, 10 * 1000);
+    // Rotate pages when there are more groups than fit on screen (16).
+    this._pageTimer = setInterval(this.rotatePage, 60 * 1000);
+  };
+
+  rotatePage = () => {
+    const {groups, round} = this.state;
+    const pages = Math.max(1, Math.ceil(groups.length / 16));
+    const next = (round + 1) % pages;
+    if (next !== round) this.setState({round: next});
   };
 
   fetchRooms = () => {
@@ -102,18 +113,21 @@ class QuadOut extends Component {
           this.setState({shidur_mode: ""});
         }
 
-        groups = rooms.filter((r) => r.users.filter((r) => r.camera).length > 1);
+        // Show a room if at least one participant has the camera on.
+        groups = rooms.filter((r) => r.users.filter((r) => r.camera).length > 0);
 
-        let quads = [
-          ...this.col1.state.vquad,
-          ...this.col2.state.vquad,
-          ...this.col3.state.vquad,
-          ...this.col4.state.vquad,
-        ];
-        let quads_list = quads.filter(k => k)
-        if(quads_list.length > 0) this.initServers(quads_list);
+        // If the group count shrank and the current page is past the end of the
+        // list, fall back to the first page.
+        let round = this.state.round;
+        if (round * 16 >= groups.length) round = 0;
 
-        this.setState({quads, rooms, groups, disabled_rooms, region_groups});
+        // Visible page = 16 groups starting at round * 16. Slot layout is
+        // deterministic (see QuadUsers), so servers are computed here directly,
+        // without reading the child columns' state.
+        let quads = groups.slice(round * 16, round * 16 + 16);
+        if (quads.length > 0) this.initServers(quads);
+
+        this.setState({quads, rooms, groups, round, disabled_rooms, region_groups});
       })
       .catch((err) => {
         log.error("[WebOut] error fetching active rooms", err);

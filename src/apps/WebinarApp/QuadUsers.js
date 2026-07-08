@@ -1,98 +1,28 @@
 import React, {Component} from "react";
 import {Segment} from "semantic-ui-react";
-import log from "loglevel";
 import QuadJanus from "./QuadJanus";
 
+// Screen = 16 slots (4 columns x 4 quads). Deterministic layout: global slot N
+// shows groups[page * 16 + N], so a single group can never land in two slots —
+// no duplication across columns. A column owns 4 consecutive slots:
+// base = page * 16 + (col - 1) * 4.
 class QuadUsers extends Component {
-  state = {
-    col: null,
-    vquad: [null, null, null, null],
-  };
-
-  componentDidMount() {
-    let {index} = this.props;
-    let col = index === 0 ? 1 : index === 4 ? 2 : index === 8 ? 3 : index === 12 ? 4 : null;
-    this.setState({col});
-    this.autoSwitch(0);
-    setTimeout(() => {
-      this.switchFour();
-    }, col * 1000);
-  }
-
-  autoSwitch = (i) => {
-    i++;
-    setTimeout(() => {
-      const {col} = this.state;
-      if (col === i) this.switchFour();
-      if (i === 4) i = 0;
-      this.autoSwitch(i);
-    }, 60 * 1000);
-  };
-
-  quadGroup = (queue) => {
-    let {groups} = this.props;
-    let group = groups[queue];
-    if (group && group.users) {
-      //delete group.users;
-      group.queue = queue;
-      return group;
-    } else {
-      return null;
-    }
-  };
-
-  switchFour = () => {
-    let {groups_queue, groups, round, pnum} = this.props;
-    let {vquad, col} = this.state;
-
-    for (let i = 0; i < 4; i++) {
-      // Don't switch if nobody in queue
-      if (i === groups.length) {
-        log.info("[WebOut] Queue is END");
-        break;
-      }
-
-      if (groups_queue >= groups.length) {
-        // End round here!
-        log.info("[WebOut] -- ROUND END --");
-        groups_queue = 0;
-        round++;
-        this.props.setProps({groups_queue, round});
-      }
-
-      vquad[i] = this.quadGroup(groups_queue);
-      groups_queue++;
-      pnum[vquad[i].room] ? pnum[vquad[i].room]++ : (pnum[vquad[i].room] = 1);
-      this.props.setProps({groups_queue, pnum});
-    }
-    this.setState({vquad});
-
-    // Disable queue until program full
-    if (groups.length < 4) {
-      this.props.setProps({groups_queue: 0});
-    }
-  };
-
-  toFullGroup = (i, g) => {
-    this.setState({fullscr: true, full_feed: i});
-  };
-
-  toFourGroup = (i, g) => {
-    this.setState({fullscr: false, full_feed: null});
-  };
-
   render() {
-    const {col, full_feed, fullscr, vquad = [null, null, null, null]} = this.state;
-    const {roomsStatistics = {}, qst} = this.props;
+    const {index, groups = [], round = 0, roomsStatistics = {}, qst} = this.props;
 
-    let program = vquad.map((g, i) => {
+    // Column number (1..4) derived from the start index passed by QuadOut.
+    const col = index === 0 ? 1 : index === 4 ? 2 : index === 8 ? 3 : index === 12 ? 4 : 1;
+    const base = round * 16 + (col - 1) * 4;
+
+    let program = [0, 1, 2, 3].map((i) => {
+      const g = groups[base + i] || null;
       let qst_group = g && g.room === qst?.room;
       let qst_mark = "";
       let name = "";
       if (g) {
         name = g.description;
         if (g.questions) {
-          let className = fullscr ? "qst_fullscreentitle" : "qst_title";
+          let className = "qst_title";
           if (!roomsStatistics[g.room] || roomsStatistics[g.room]["on_air"] === 0) {
             className += ` ${className}__first_time`;
           }
@@ -101,20 +31,9 @@ class QuadUsers extends Component {
       }
 
       return (
-        <div
-          className={
-            fullscr && full_feed === i
-              ? "video_full"
-              : fullscr && full_feed !== i
-              ? "hidden"
-              : qst_group
-              ? "usersvideo_qst"
-              : "usersvideo_box"
-          }
-          key={"pr" + i}
-        >
+        <div className={qst_group ? "usersvideo_qst" : "usersvideo_box"} key={"pr" + i}>
           {qst_mark}
-          <div className={fullscr ? "fullscrvideo_title" : "video_title"}>{name}</div>
+          <div className="video_title">{name}</div>
           <QuadJanus key={"q" + i} g={g} q={i} col={col} index={i} {...this.props} />
         </div>
       );
