@@ -181,7 +181,7 @@ export class JanusMqtt {
         transaction: transactionId
       })
 
-      if(type === "keepalive" && this.user.role === "user" && this.txTopic.match('gxy')) {
+      if(type === "keepalive" && this.user.role === "user" && this.txTopic.match(/gxy|wnr/)) {
         request.user = this.user
       }
 
