@@ -298,7 +298,7 @@ class JanusStream {
       };
       this.janus.attach(this.videoQuadStream).then((data) => {
         log.debug("[shidur] attach quad", data);
-        this.videoQuadStream.watch(102).then((stream) => {
+        this.videoQuadStream.watch(104).then((stream) => {
           callback(stream);
           this._markRecovered("quad");
         }).catch((err) => log.debug("[shidur] quad watch failed:", err && err.message));

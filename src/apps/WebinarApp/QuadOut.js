@@ -208,8 +208,7 @@ class QuadOut extends Component {
   // ABOVE the grid (never inside it) so showing/hiding it just shifts the grid
   // and can't disturb the fixed 2x2 column layout.
   renderAirQueue = () => {
-    const {air_queue} = this.state;
-    if (!air_queue || air_queue.length === 0) return null;
+    const {air_queue = []} = this.state;
     return (
       <div className="air_queue_strip">
         {air_queue.map((u, i) => (
