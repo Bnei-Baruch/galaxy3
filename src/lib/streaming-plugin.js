@@ -128,10 +128,17 @@ export class StreamingPlugin extends EventEmitter {
     } catch (_) { return; }
     if (!transceiver || !transceiver.receiver) return;
     transceiver.receiver.getStats().then(stats => {
+      let inboundLevel = null;
       stats.forEach(res => {
-        if(!res || res.kind !== "audio") return;
-        result(res.audioLevel ? res.audioLevel : 0);
+        if (!res || res.kind !== "audio") return;
+        // Only "inbound-rtp" reliably carries a live audioLevel; other audio-kind
+        // stat types (e.g. remote-inbound-rtp) can report undefined/0 and, if
+        // iterated after the real one, would silently clobber a correct reading.
+        if (res.type === "inbound-rtp") {
+          inboundLevel = res.audioLevel;
+        }
       });
+      result(inboundLevel ? inboundLevel : 0);
     }).catch(() => { /* getStats not available / track gone */ });
   }
 
