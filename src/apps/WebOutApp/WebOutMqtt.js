@@ -41,6 +41,7 @@ class WebOutApp extends Component {
     roomsStatistics: {},
     reinit_inst: null,
     pnum: {},
+    gxy_list: []
   };
 
   componentDidMount() {
@@ -48,7 +49,7 @@ class WebOutApp extends Component {
     this.initApp();
     setTimeout(() => {
       this.fetchRooms()
-    },1000)
+    },3000)
   }
 
   componentWillUnmount() {
@@ -75,8 +76,18 @@ class WebOutApp extends Component {
           this.setState({shidur_mode: ""});
         }
 
-        groups = rooms.filter((r) => r.users.filter((r) => r.camera).length > 3);
-        this.setState({rooms, groups, disabled_rooms, region_groups});
+        groups = rooms.filter((r) => r.users.filter((r) => r.camera).length > 1);
+
+        let quads = [
+          ...this.col1.state.vquad,
+          ...this.col2.state.vquad,
+          ...this.col3.state.vquad,
+          ...this.col4.state.vquad,
+        ];
+        let quads_list = quads.filter(k => k)
+        if(quads_list.length > 0) this.initServers(quads_list);
+
+        this.setState({quads, rooms, groups, disabled_rooms, region_groups});
       })
       .catch((err) => {
         log.error("[WebOut] error fetching active rooms", err);
@@ -91,7 +102,7 @@ class WebOutApp extends Component {
     api.fetchConfig().then(data => {
       ConfigStore.setGlobalConfig(data);
       GxyJanus.setGlobalConfig(data);
-    }).then(() => this.initGateways(user))
+    }).then(() => this.initMQTT(user))
       .then(this.pollRooms)
       .catch((err) => {
         log.error("[WebOut] error initializing app", err);
@@ -99,28 +110,63 @@ class WebOutApp extends Component {
       });
   };
 
-  initGateways = (user) => {
+  initMQTT = (user) => {
     mqtt.init(user, (data) => {
       log.info("[WebOut] mqtt init: ", data);
       mqtt.watch(() => {});
-      Object.keys(ConfigStore.globalConfig.gateways.rooms).forEach(gxy => {
-        this.initJanus(user, gxy)
-      })
     });
   };
 
-  initJanus = (user, gxy) => {
+  initServers = (quads_list) => {
+    const {gateways, gxy_list} = this.state;
+    //let quads_list = [...qids.q1.vquad, ...qids.q2.vquad, ...qids.q3.vquad, ...qids.q4.vquad];
+    let Janus_list = quads_list.map(k => k.janus);
+    let uniq_list = [...new Set(Janus_list)];
+    let added_list = uniq_list.filter(x => !gxy_list.includes(x));
+    this.setState({gxy_list: uniq_list});
+    if(added_list.length > 0) {
+      log.info("[WebOut] -- NEW SERVERS -- ", added_list);
+      uniq_list.map(gxy => {
+        if(!gateways[gxy]?.isConnected) {
+          this.initJanus(gxy, uniq_list);
+        }
+      })
+    }
+    if(uniq_list) this.cleanSession(uniq_list);
+  }
+
+  initJanus = (gxy) => {
     log.info("["+gxy+"] Janus init")
-    const {gateways} = this.state;
+    const {user, gateways} = this.state;
     const token = ConfigStore.globalConfig.gateways.rooms[gxy].token
     gateways[gxy] = new JanusMqtt(user, gxy, gxy);
     gateways[gxy].init(token).then(data => {
       log.info("["+gxy+"] Janus init success", data)
+      gateways[gxy].onStatus = (srv, status) => {
+        if (status !== "online") {
+          log.error("["+srv+"] Janus: ", status);
+          setTimeout(() => {
+            this.initJanus(srv);
+          }, 10000)
+        }
+      }
     }).catch(err => {
-      log.error("["+gxy+"] Janus init error: ", err);
-      setTimeout(() => {
-        this.initJanus(user, gxy);
-      }, 10000)
+      log.error("["+gxy+"] Janus init", err);
+    })
+  };
+
+  cleanSession = (uniq_list) => {
+    log.info("[WebOut] -- uniq_list -- ", uniq_list)
+    const {gateways} = this.state;
+    Object.keys(gateways).forEach(key => {
+      const session = gateways[key];
+      const sessionEmpty = Object.keys(session.pluginHandles).length === 0;
+      const gxyOnProgram = uniq_list.find(g => g === key);
+      if(sessionEmpty && !gxyOnProgram) {
+        log.info("[WebOut] -- CLEAN SERVER -- ", key)
+        session.destroy();
+        delete gateways[key]
+      }
     })
   }
 
@@ -138,9 +184,7 @@ class WebOutApp extends Component {
               index={0}
               qst={qg}
               {...this.state}
-              ref={(col1) => {
-                this.col1 = col1;
-              }}
+              ref={(col1) => {this.col1 = col1;}}
               setProps={this.setProps}
             />
           </Grid.Column>
@@ -149,9 +193,7 @@ class WebOutApp extends Component {
               index={4}
               qst={qg}
               {...this.state}
-              ref={(col2) => {
-                this.col2 = col2;
-              }}
+              ref={(col2) => {this.col2 = col2;}}
               setProps={this.setProps}
             />
           </Grid.Column>
@@ -162,9 +204,7 @@ class WebOutApp extends Component {
               index={8}
               qst={qg}
               {...this.state}
-              ref={(col3) => {
-                this.col3 = col3;
-              }}
+              ref={(col3) => {this.col3 = col3;}}
               setProps={this.setProps}
             />
           </Grid.Column>
@@ -173,9 +213,7 @@ class WebOutApp extends Component {
               index={12}
               qst={qg}
               {...this.state}
-              ref={(col4) => {
-                this.col4 = col4;
-              }}
+              ref={(col4) => {this.col4 = col4;}}
               setProps={this.setProps}
             />
           </Grid.Column>

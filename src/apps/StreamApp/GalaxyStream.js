@@ -43,7 +43,7 @@ class GalaxyStream extends Component {
       console.log("[mqtt] init: ", data);
       mqtt.watch();
 
-      let Janus = new JanusMqtt(user, 'str1')
+      let Janus = new JanusMqtt(user, 'str1', mqtt.clientId)
       let videoStream = new StreamingPlugin();
 
       Janus.init().then(data => {
@@ -99,7 +99,7 @@ class GalaxyStream extends Component {
           audio.srcObject = stream;
         })
       })
-      let id = trllang[localStorage.getItem("gxy_langtext")] || 301;
+      let id = trllang[localStorage.getItem("gxy_langtext")] || 401;
       //this.initTranslationStream(id);
     }
   };

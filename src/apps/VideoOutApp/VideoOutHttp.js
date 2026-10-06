@@ -8,7 +8,6 @@ import {API_BACKEND_PASSWORD, API_BACKEND_USERNAME} from "../../shared/env";
 import GxyJanus from "../../shared/janus-utils";
 import VideoHandleHttp from "./VideoHandleHttp";
 import VideoOutQuad from "./VideoOutQuad";
-import {captureException} from "../../shared/sentry";
 import mqtt from "../../shared/mqtt";
 
 class VideoOutHttp extends Component {
@@ -47,7 +46,6 @@ class VideoOutHttp extends Component {
         })
         .catch((err) => {
           console.error("[SDIOut] error fetching quad state", err);
-          captureException(err, {source: "SDIOut"});
         });
 
       api
@@ -57,7 +55,6 @@ class VideoOutHttp extends Component {
         })
         .catch((err) => {
           console.error("[SDIOut] error fetching rooms statistics", err);
-          captureException(err, {source: "SDIOut"});
         });
     }, 1000);
     this.initApp();
@@ -79,7 +76,6 @@ class VideoOutHttp extends Component {
       .catch((err) => {
         console.error("[SDIOut] error initializing app", err);
         this.setState({appInitError: err});
-        captureException(err, {source: "SDIOut"});
       });
   };
 

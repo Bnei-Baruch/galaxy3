@@ -181,6 +181,54 @@ $vh: 9;
   .video_full &{
     justify-content: center;
   }
+
+  // Group layout. Sizes are proportional (percentages of the room cell) so the
+  // grid fits both the small program quads and the fullscreen view, instead of
+  // the fixed SDI pixel sizes which overflowed and clipped regular users.
+  &.has-group {
+    flex-wrap: wrap !important;
+    gap: 2px !important;
+    align-content: center;
+    align-items: center;
+    justify-content: center;
+
+    .video {
+      flex: initial !important;
+      height: auto !important;
+    }
+
+    // Single group: full-width top row, takes most of the height.
+    .video--group {
+      flex: 0 0 100% !important;
+      width: 100% !important;
+      height: 66% !important;
+      margin-left: auto;
+      margin-right: auto;
+
+      // Two groups: share the top row side by side.
+      &.video--group--multiple {
+        flex: 0 0 calc(50% - 2px) !important;
+        width: calc(50% - 2px) !important;
+        height: 50% !important;
+        margin: 0;
+      }
+    }
+
+    // Group is the only visible video → fill the whole cell.
+    .video--group.video--alone {
+      flex: 1 1 auto !important;
+      width: 100% !important;
+      height: 100% !important;
+      margin: 0 !important;
+    }
+
+    // Regular users (max 4 by JS) share one row below the group.
+    .video:not(.video--group) {
+      flex: 0 0 calc(25% - 2px) !important;
+      width: calc(25% - 2px) !important;
+      height: 33% !important;
+    }
+  }
 }
 .no-of-videos- {
   &1 {

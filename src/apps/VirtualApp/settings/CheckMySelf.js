@@ -30,10 +30,16 @@ const CheckMySelf = () => {
   const [processType, setProcesstype] = useState();
 
   useEffect(() => {
-    micVolume(devices.audio.context);
+    // Save the caller's micLevel so we can restore it when this panel closes.
+    const prevMicLevel = devices.micLevel;
+    micVolume();
     return () => {
-      if (devices.audio.context) devices.audio.context.suspend();
-      devices.micLevel = null;
+      // Restore the previous meter callback (e.g. the main VU meter in the toolbar).
+      devices.micLevel = prevMicLevel;
+      // Re-suspend only if the user was intentionally muted before opening settings.
+      if (devices.micMuted && devices.audio.context) {
+        devices.audio.context.suspend();
+      }
     };
   }, []); // eslint-disable-line  react-hooks/exhaustive-deps
 

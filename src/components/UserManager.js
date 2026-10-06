@@ -1,10 +1,11 @@
 import Keycloak from "keycloak-js";
 import api from "../shared/Api";
+import {AUTH_URL} from "../shared/env";
 
 const logging = new URLSearchParams(window.location.search).has('loglevel');
 
 const userManagerConfig = {
-  url: "https://accounts.kab.info/auth",
+  url: `${AUTH_URL}`,
   realm: "main",
   clientId: "galaxy",
 };

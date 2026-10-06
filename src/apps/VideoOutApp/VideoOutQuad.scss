@@ -49,15 +49,16 @@
   // line-height: 1.3285em;
   position: absolute;
   // right: 65px;
-  line-height: 100px;;
-  right:2px;
-  top:2px;
+  line-height: 100px;
+  height: 100px;
+  right: 10px;
+  top: 6px;
   color: #FFF;
   text-align: center;
   font-size: 75px;
   background-color: #2185d0;
   // width: auto;
-  padding: 10px 50px 0px;
+  padding: 0px 50px;
   // float: right !important;
   z-index: 2;
 }
@@ -69,25 +70,29 @@
 .fullscrvideo_title {
   // font-family: "Liberation Serif";
   // line-height: 1.2285em;
-  position: relative;
-  // right: 0;
-  // left:0;
-  margin: 0 2px;
+  position: absolute;
+  top: 0;
+  left: 2px;
+  right: 2px;
+  margin: 0;
   color: #FFF;
+  text-align: center;
 
   font-size: 112.5px;
   line-height: 150px;
+  height: 150px;
   background-color: #2185d0;
-  text-align:left;
   // width: auto;
   padding: 0px 30px;
   // float: right !important;
   z-index: 2;
-  + .vclient__main-wrapper {
-    // background:red;
-    height: calc(100% - 150px);
-    //margin-top:60px;
-  }
+}
+
+.video_full .vclient__main-wrapper {
+  // background:red;
+  height: calc(100% - 150px) !important;
+  top: 150px !important;
+  position: absolute !important;
 }
 
 .next_button {
@@ -154,11 +159,11 @@
   height: 100px;
   // padding: 0px 5px;
   // float: right!important;
-  right: 2px;
-  top: 2px;
+  right: 10px;
+  top: 6px;
   z-index: 2;
   + .video_title {
-    right: 101px;
+    right: 110px;
   }
   &__first_time {
     color: red;
@@ -181,15 +186,15 @@
   width: 150px;
   // padding: 0px 5px;
   // float: left !important;
-  right: 2px;
+  right: 10px;
   top: 0;
   z-index: 2;
   + .fullscrvideo_title {
-    margin-right:62px;
+    margin-right: 160px;
   }
   &__first_time {
-    color: white;
-    background-color: #21ba45;
+    color: red;
+    background-color: yellow;
   }
 }
 

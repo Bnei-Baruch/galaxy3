@@ -52,7 +52,7 @@ class AdminRootMqtt extends Component {
     feed_user: null,
     feeds: [],
     gateways: {},
-    gatewaysInitialized: false,
+    gatewaysInitialized: true,
     mids: [],
     muted: true,
     myid: null,
@@ -104,38 +104,41 @@ class AdminRootMqtt extends Component {
   withAudio = () => this.isAllowed("admin");
 
   initApp = (user) => {
-    mqtt.init(user, (data) => {
-      console.log("[Admin] mqtt init: ", data);
-      mqtt.join("galaxy/users/broadcast");
-      mqtt.join("galaxy/users/" + user.id);
-      mqtt.watch(() => {});
-
-      this.setState({user});
-      updateSentryUser(user);
-
-      api
-        .fetchConfig()
-        .then((data) => {
-          ConfigStore.setGlobalConfig(data);
-          this.setState({
-            premodStatus: ConfigStore.dynamicConfig(ConfigStore.PRE_MODERATION_KEY) === "true",
-          });
-          GxyJanus.setGlobalConfig(data);
-        })
-        .then(() => this.setState({gatewaysInitialized: true}))
-        .then(this.pollRooms)
-        .catch((error) => {
-          log.error("[admin] error initializing app", error);
-          this.setState({appInitError: error});
-        });
-    });
+    this.pollRooms()
+    this.setState({user});
+    // mqtt.init(user, (data) => {
+    //   console.log("[Admin] mqtt init: ", data);
+    //   mqtt.join("galaxy/users/broadcast");
+    //   mqtt.join("galaxy/users/" + user.id);
+    //   mqtt.watch(() => {});
+    //
+    //   this.setState({user});
+    //   updateSentryUser(user);
+    //
+    //   api
+    //     .fetchConfig()
+    //     .then((data) => {
+    //       ConfigStore.setGlobalConfig(data);
+    //       this.setState({
+    //         premodStatus: ConfigStore.dynamicConfig(ConfigStore.PRE_MODERATION_KEY) === "true",
+    //       });
+    //       GxyJanus.setGlobalConfig(data);
+    //     })
+    //     .then(() => this.setState({gatewaysInitialized: true}))
+    //     .then(this.pollRooms)
+    //     .catch((error) => {
+    //       log.error("[admin] error initializing app", error);
+    //       this.setState({appInitError: error});
+    //     });
+    // });
   };
 
   initJanus = (user, gxy) => {
     log.info("["+gxy+"] Janus init")
     const {gateways} = this.state;
-    const token = ConfigStore.globalConfig.gateways.rooms[gxy].token
+    //const token = ConfigStore.globalConfig.gateways.rooms[gxy].token
     gateways[gxy] = new JanusMqtt(user, gxy, gxy);
+    log.info("["+gxy+"] Janus init", gateways[gxy])
     gateways[gxy].onStatus = (srv, status) => {
       if (status !== "online") {
         log.error("["+srv+"] Janus: ", status);
@@ -151,7 +154,7 @@ class AdminRootMqtt extends Component {
       }
     }
     return new Promise((resolve, reject) => {
-      gateways[gxy].init(token).then(janus => {
+      gateways[gxy].init().then(janus => {
         log.info("["+gxy+"] Janus init success", janus)
         resolve(janus);
       }).catch(err => {
@@ -394,8 +397,8 @@ class AdminRootMqtt extends Component {
         const users_count = data.map((r) => r.num_users).reduce((su, cur) => su + cur, 0);
         for (let i = 0; i < data.length; i++) {
           for (let j = 0; j < data[i]["users"].length; j++) {
-            if (data[i]["users"][j]["system"] === "iOS") ios_count++;
-            if (data[i]["users"][j]["system"] === "Android") android_count++;
+            if (data[i]["users"][j]["system"].match(/^(ios)/)) ios_count++;
+            if (data[i]["users"][j]["system"].match(/^(android)/)) android_count++;
           }
         }
         web_count = users_count - (ios_count + android_count);
@@ -487,17 +490,17 @@ class AdminRootMqtt extends Component {
           .fetchHandleInfo(janus, session, handle)
           .then((data) => {
             log.debug("[admin] Publisher info", data);
-            const m0 = data.info.webrtc.media[0];
-            const m1 = data.info.webrtc.media[1];
+            const m0 = data.webrtc.media[0];
+            const m1 = data.webrtc.media[1];
             let video = null;
             let audio = null;
             if (m0 && m1) {
-              audio = data.info.webrtc.media[0].rtcp.main;
-              video = data.info.webrtc.media[1].rtcp.main;
+              audio = data.webrtc.media[0].rtcp.main;
+              video = data.webrtc.media[1].rtcp.main;
             } else if (m0.type === "audio") {
-              audio = data.info.webrtc.media[0].rtcp.main;
+              audio = data.webrtc.media[0].rtcp.main;
             } else if (m0.type === "video") {
-              video = data.info.webrtc.media[0].rtcp.main;
+              video = data.webrtc.media[0].rtcp.main;
             }
             this.setState({feed_rtcp: {video, audio}});
           })

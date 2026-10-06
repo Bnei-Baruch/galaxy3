@@ -6,10 +6,6 @@
   display: flex;
   @include wq-visibility;
 
-  &.is-link {
-    align-items: flex-end;
-  }
-
   .not-attached &,
   .layout--double &,
   .layout--equal &,
@@ -261,18 +257,6 @@
         border-bottom-left-radius: 4px;
       }
     }
-  }
-
-  .subtitle_link {
-    height: fit-content;
-    width: fit-content;
-    background: #FFFFFF;
-    margin: 0 auto 48px;
-    border-radius: 16px;
-    padding: 0.5em 1em;
-    font-size: 2em;
-    border: 1px solid #0d71bb;
-    text-decoration: underline;
   }
 
   .ui.compact.button {

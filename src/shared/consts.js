@@ -11,8 +11,8 @@ export const NOTRL_STREAM_ID = 64;
 
 export const SHIDUR_ID = "4ab867e5-46f9-47b9-bd6d-47a6df784d92";
 export const SNDMAN_ID = "720f133f-b8e2-49a8-a148-7bd80763ae55";
-export const SDIOUT_ID = "91966d26-0777-4179-9773-d7cd5456a5ed";
-export const QSTOUT_ID = "91966d26-0777-4179-9773-d7cd5456a6ed";
+export const SDIOUT_ID = "91966d26-0777-4179-9773-d7cd54sdiout";
+export const QSTOUT_ID = "91966d26-0777-4179-9773-d7cd54qstout";
 export const STORAN_ID = "28c8d37e-d86f-4c8c-9f89-f3b92e81f13e";
 export const AUDOUT_ID = "91966d26-0777-4179-9773-d7cd5456a5ao";
 
@@ -77,7 +77,7 @@ export const audiog_options2 = [
   {key: 6, value: 6, icon: "group", eng_text: "Spanish", text: "Español", langKey: "es"},
   {key: 5, value: 5, icon: "group", eng_text: "French", text: "Français"},
   {key: 8, value: 8, icon: "group", eng_text: "Italian", text: "Italiano"},
-  {key: 7, value: 7, icon: "group", eng_text: "German", text: "Deutsch"},
+  {key: 7, value: 7, icon: "group", eng_text: "German", text: "Deutsch", langKey: "de"},
   {key: 9, value: 700, icon: "group", eng_text: "Turkish", text: "Türkçe", langKey: "tr"},
   {key: 10, value: 701, icon: "group", eng_text: "Portuguese", text: "Português"},
   {key: 11, value: 702, icon: "group", eng_text: "Bulgarian", text: "Български"},
@@ -152,6 +152,7 @@ export const audiog_options2 = [
   },
   {key: "heru", value: 10, icon: "group", eng_text: "Heb-Rus", text: "Русский-עברית", langKey: "ru"},
   {key: "heen", value: 17, icon: "group", eng_text: "Heb-Eng", text: "English-עברית", langKey: "en"},
+  {key: "hede", value: 18, icon: "group", eng_text: "Heb-Ger", text: "Deutsch-עברית", langKey: "de"},
 ];
 export const audiog_options = [
   {key: 101, value: 101, text: "Workshop", disabled: true, icon: "tags", selected: true},
@@ -230,6 +231,7 @@ export const audiog_options = [
   {key: 99, value: 99, text: "Special", disabled: true, icon: "tags", selected: true},
   {key: "heru", value: 10, text: "Heb-Rus"},
   {key: "heen", value: 17, text: "Heb-Eng"},
+  {key: "hede", value: 18, text: "Heb-Ger"},
 ];
 
 export const gxycol = [0, 201, 203, 202, 204];
@@ -271,8 +273,9 @@ export const trllang = {
   Greek: 333,
   Tagalog: 334,
   Azerbaijani: 335,
-  "Heb-Eng": 303,
-  "Heb-Rus": 302,
+  "Heb-Eng": 403,
+  "Heb-Rus": 402,
+  "Heb-Ger": 407,
 };
 export const LANGUAGES = [
   {code: "ab", name: "Abkhaz", nativeName: "аҧсуа"},

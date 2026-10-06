@@ -19,21 +19,28 @@ const dark = createTheme(
         main: green[500],
       }
     },
-    overrides: {
+    components: {
       MuiButton: {
-        root: {
-          "&.donate": {
-            background: grey[100],
-            color: grey[900],
-            "& > span": {
-              color: red[500],
-              margin: "0 .5em",
+        styleOverrides: {
+          root: {
+            "&.donate": {
+              background: grey[100],
+              color: grey[900],
+              "& > span": {
+                color: red[500],
+                margin: "0 .5em",
+              },
             },
           },
         },
-        border: {
-          color: "white",
-        },
+        variants: [
+          {
+            props: { variant: 'outlined' },
+            style: {
+              borderColor: "white",
+            },
+          },
+        ],
       },
     },
   }

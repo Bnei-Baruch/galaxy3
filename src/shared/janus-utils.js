@@ -46,7 +46,14 @@ class GxyJanus extends EventTarget {
     };
   };
 
-  static gatewayNames = (type = "rooms") => Object.keys(GxyJanus.globalConfig.gateways[type]);
+  static gatewayNames = (type = "rooms") => {
+    // Defensive: callers (e.g. shidur fallback path) may invoke this before
+    // globalConfig has been fetched. Returning [] avoids the noisy
+    // "Cannot read properties of undefined (reading '<type>')" TypeError.
+    const gateways = GxyJanus.globalConfig && GxyJanus.globalConfig.gateways;
+    if (!gateways || !gateways[type]) return [];
+    return Object.keys(gateways[type]);
+  };
 
   static makeGateways = (type = "rooms") =>
     GxyJanus.gatewayNames(type).reduce((obj, name) => {

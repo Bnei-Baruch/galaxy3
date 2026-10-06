@@ -296,7 +296,7 @@ export default class VirtualStreamingJanus {
               this.initVideoStream(this.janus);
             }
             this.initAudioStream(this.janus);
-            let id = trllang[localStorage.getItem("vrt_langtext")] || 301;
+            let id = trllang[localStorage.getItem("vrt_langtext")] || 401;
             this.initTranslationStream(id);
           },
           error: (err) => {
@@ -315,7 +315,7 @@ export default class VirtualStreamingJanus {
   }
 
   // iceRestart = () => {
-  //   let id = trllang[localStorage.getItem("vrt_langtext")] || 301;
+  //   let id = trllang[localStorage.getItem("vrt_langtext")] || 401;
   //   if (this.videoJanusStream)
   //     this.videoJanusStream.send({message: {request: "watch", id: this.videos, restart: true}});
   //   if (this.audioJanusStream)

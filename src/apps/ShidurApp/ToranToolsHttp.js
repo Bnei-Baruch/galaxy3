@@ -4,7 +4,6 @@ import "./ToranTools.scss";
 import PreviewPanelHttp from "./PreviewPanelHttp";
 import api from "../../shared/Api";
 import {RESET_VOTE} from "../../shared/env";
-import {captureException} from "../../shared/sentry";
 import mqtt from "../../shared/mqtt";
 import {short_regions} from "../../shared/consts";
 import log from "loglevel";
@@ -238,7 +237,6 @@ class ToranToolsHttp extends Component {
   resetRoomsStatistics = () => {
     api.adminResetRoomsStatistics().catch((err) => {
       console.error("[Shidur] [Toran] error resetting rooms statistics", err);
-      captureException(err, {source: "Shidur"});
       alert("Error resetting rooms statistics");
     });
   };
@@ -349,7 +347,7 @@ class ToranToolsHttp extends Component {
     });
 
     let question_list = questions.map((data, i) => {
-      const {room, num_users, description, questions, extra} = data;
+      const {room, cam_users, description, questions, extra} = data;
       const qs = !roomsStatistics[room] || roomsStatistics[room]["on_air"] === 0;
       const next = data.description === next_group;
       const active = group && group.room === room;
@@ -373,7 +371,7 @@ class ToranToolsHttp extends Component {
           <Table.Cell width={1}>{pn}</Table.Cell>
           <Table.Cell width={5}>{description}&nbsp;&nbsp;{vip}</Table.Cell>
           <Table.Cell width={1}>{p}</Table.Cell>
-          <Table.Cell width={1}>{num_users}</Table.Cell>
+          <Table.Cell width={1}>{cam_users}</Table.Cell>
           <Table.Cell width={1}>{questions && qs ? qf : questions ? q : ""}</Table.Cell>
         </Table.Row>
       );
@@ -381,7 +379,7 @@ class ToranToolsHttp extends Component {
 
 
     let rooms_list = pre_groups.map((data, i) => {
-      const {room, num_users, description, questions} = data;
+      const {room, cam_users, description, questions} = data;
       const qs = !roomsStatistics[room] || roomsStatistics[room]["on_air"] === 0;
       const active = group && group.room === room;
       const pr = false;
@@ -402,14 +400,14 @@ class ToranToolsHttp extends Component {
         >
           <Table.Cell width={5}>{description}</Table.Cell>
           <Table.Cell width={1}>{p}</Table.Cell>
-          <Table.Cell width={1}>{num_users}</Table.Cell>
+          <Table.Cell width={1}>{cam_users}</Table.Cell>
           <Table.Cell width={1}>{questions && qs ? qf : questions ? q : ""}</Table.Cell>
         </Table.Row>
       );
     });
 
     let groups_list = groups.map((data, i) => {
-      const {room, num_users, description, questions, extra} = data;
+      const {room, cam_users, description, questions, extra} = data;
       const qs = !roomsStatistics[room] || roomsStatistics[room]["on_air"] === 0;
       const next = data.description === next_group;
       const active = group && group.room === room;
@@ -433,14 +431,14 @@ class ToranToolsHttp extends Component {
           <Table.Cell width={1}>{pn}</Table.Cell>
           <Table.Cell width={5}>{description}&nbsp;&nbsp;{vip}</Table.Cell>
           <Table.Cell width={1}>{p}</Table.Cell>
-          <Table.Cell width={1}>{num_users}</Table.Cell>
+          <Table.Cell width={1}>{cam_users}</Table.Cell>
           <Table.Cell width={1}>{questions && qs ? qf : questions ? q : ""}</Table.Cell>
         </Table.Row>
       );
     });
 
     let groups_region_list = region_groups.map((data, i) => {
-      const {room, num_users, description, questions, extra} = data;
+      const {room, cam_users, description, questions, extra} = data;
       const qs = !roomsStatistics[room] || roomsStatistics[room]["on_air"] === 0;
       const next = data.description === next_group;
       const active = group && group.room === room;
@@ -466,14 +464,14 @@ class ToranToolsHttp extends Component {
           <Table.Cell width={1}>{pn}</Table.Cell>
           <Table.Cell width={5}>{description}&nbsp;&nbsp;{vip}</Table.Cell>
           <Table.Cell width={1}>{p}</Table.Cell>
-          <Table.Cell width={1}>{num_users}</Table.Cell>
+          <Table.Cell width={1}>{cam_users}</Table.Cell>
           <Table.Cell width={1}>{questions && qs ? qf : questions ? q : ""}</Table.Cell>
         </Table.Row>
       );
     });
 
     let disabled_list = disabled_rooms.map((data, i) => {
-      const {room, num_users, description, questions} = data;
+      const {room, cam_users, description, questions} = data;
       const qs = !roomsStatistics[room] || roomsStatistics[room]["on_air"] === 0;
       return (
         <Table.Row
@@ -483,14 +481,14 @@ class ToranToolsHttp extends Component {
           onContextMenu={(e) => this.restoreRoom(e, data, i)}
         >
           <Table.Cell width={5}>{description}</Table.Cell>
-          <Table.Cell width={1}>{num_users}</Table.Cell>
+          <Table.Cell width={1}>{cam_users}</Table.Cell>
           <Table.Cell width={1}>{questions && qs ? qf : questions ? q : ""}</Table.Cell>
         </Table.Row>
       );
     });
 
     let vip1_list = vip1_rooms.map((data, i) => {
-      const {room, num_users, description, questions} = data;
+      const {room, cam_users, description, questions} = data;
       const qs = !roomsStatistics[room] || roomsStatistics[room]["on_air"] === 0;
       const pn = (<Label circular content={pnum[room]} />);
       return (
@@ -502,14 +500,14 @@ class ToranToolsHttp extends Component {
         >
           <Table.Cell width={1}>{pn}</Table.Cell>
           <Table.Cell width={5}>{description}</Table.Cell>
-          <Table.Cell width={1}>{num_users}</Table.Cell>
+          <Table.Cell width={1}>{cam_users}</Table.Cell>
           <Table.Cell width={1}>{questions && qs ? qf : questions ? q : ""}</Table.Cell>
         </Table.Row>
       );
     });
 
     let vip2_list = vip2_rooms.map((data, i) => {
-      const {room, num_users, description, questions} = data;
+      const {room, cam_users, description, questions} = data;
       const qs = !roomsStatistics[room] || roomsStatistics[room]["on_air"] === 0;
       const pn = (<Label circular content={pnum[room]} />);
       return (
@@ -521,14 +519,14 @@ class ToranToolsHttp extends Component {
         >
           <Table.Cell width={1}>{pn}</Table.Cell>
           <Table.Cell width={5}>{description}</Table.Cell>
-          <Table.Cell width={1}>{num_users}</Table.Cell>
+          <Table.Cell width={1}>{cam_users}</Table.Cell>
           <Table.Cell width={1}>{questions && qs ? qf : questions ? q : ""}</Table.Cell>
         </Table.Row>
       );
     });
 
     let vip3_list = vip3_rooms.map((data, i) => {
-      const {room, num_users, description, questions} = data;
+      const {room, cam_users, description, questions} = data;
       const qs = !roomsStatistics[room] || roomsStatistics[room]["on_air"] === 0;
       const pn = (<Label circular content={pnum[room]} />);
       return (
@@ -540,14 +538,14 @@ class ToranToolsHttp extends Component {
         >
           <Table.Cell width={1}>{pn}</Table.Cell>
           <Table.Cell width={5}>{description}</Table.Cell>
-          <Table.Cell width={1}>{num_users}</Table.Cell>
+          <Table.Cell width={1}>{cam_users}</Table.Cell>
           <Table.Cell width={1}>{questions && qs ? qf : questions ? q : ""}</Table.Cell>
         </Table.Row>
       );
     });
 
     let vip4_list = vip4_rooms.map((data, i) => {
-      const {room, num_users, description, questions} = data;
+      const {room, cam_users, description, questions} = data;
       const qs = !roomsStatistics[room] || roomsStatistics[room]["on_air"] === 0;
       const pn = (<Label circular content={pnum[room]} />);
       return (
@@ -559,14 +557,14 @@ class ToranToolsHttp extends Component {
         >
           <Table.Cell width={1}>{pn}</Table.Cell>
           <Table.Cell width={5}>{description}</Table.Cell>
-          <Table.Cell width={1}>{num_users}</Table.Cell>
+          <Table.Cell width={1}>{cam_users}</Table.Cell>
           <Table.Cell width={1}>{questions && qs ? qf : questions ? q : ""}</Table.Cell>
         </Table.Row>
       );
     });
 
     let vip5_list = vip5_rooms.map((data, i) => {
-      const {room, num_users, description, questions} = data;
+      const {room, cam_users, description, questions} = data;
       const qs = !roomsStatistics[room] || roomsStatistics[room]["on_air"] === 0;
       const pn = (<Label circular content={pnum[room]} />);
       return (
@@ -578,14 +576,14 @@ class ToranToolsHttp extends Component {
         >
           <Table.Cell width={1}>{pn}</Table.Cell>
           <Table.Cell width={5}>{description}</Table.Cell>
-          <Table.Cell width={1}>{num_users}</Table.Cell>
+          <Table.Cell width={1}>{cam_users}</Table.Cell>
           <Table.Cell width={1}>{questions && qs ? qf : questions ? q : ""}</Table.Cell>
         </Table.Row>
       );
     });
 
     let groups_user_list = group_user.map((data, i) => {
-      const {room, num_users, description, questions} = data;
+      const {room, cam_users, description, questions} = data;
       const qs = !roomsStatistics[room] || roomsStatistics[room]["on_air"] === 0;
       const pn = (<Label circular content={pnum[room]} />);
       return (
@@ -597,7 +595,7 @@ class ToranToolsHttp extends Component {
         >
           <Table.Cell width={1}>{pn}</Table.Cell>
           <Table.Cell width={5}>{description}</Table.Cell>
-          <Table.Cell width={1}>{num_users}</Table.Cell>
+          <Table.Cell width={1}>{cam_users}</Table.Cell>
           <Table.Cell width={1}>{questions && qs ? qf : questions ? q : ""}</Table.Cell>
         </Table.Row>
       );

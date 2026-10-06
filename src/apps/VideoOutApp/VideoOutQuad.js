@@ -33,7 +33,7 @@ class VideoOutQuad extends Component {
         name = g.description;
         if (g.questions) {
           let className = fullscr ? "qst_fullscreentitle" : "qst_title";
-          if (!roomsStatistics[g.room] || roomsStatistics[g.room]["on_air"] === 0) {
+          if (!roomsStatistics[g.room] || roomsStatistics[g.room]["on_air"] === 0 || g.room === 3495) {
             className += ` ${className}__first_time`;
           }
           qst_mark = <div className={className}>?</div>;

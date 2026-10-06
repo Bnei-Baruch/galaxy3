@@ -1,5 +1,6 @@
 import React, {Component, Fragment} from "react";
 import classNames from "classnames";
+import {CircularProgress} from "@mui/material";
 import {Dropdown, Grid, Header, Icon, Image, Label, Radio} from "semantic-ui-react";
 import NewWindow from "@hinaser/react-new-window";
 import {audiog_options2, NO_VIDEO_OPTION_VALUE, NOTRL_STREAM_ID} from "../../shared/consts";
@@ -18,33 +19,99 @@ class VirtualStreaming extends Component {
     user: {},
     cssFixInterval: null,
     talking: false,
+    showControls: true,
+    reconnecting: false,
   };
+
+  hideControlsTimer = null;
 
   constructor(props) {
     super(props);
     this.handleFullScreenChange = this.handleFullScreenChange.bind(this);
-    this.toggleIsAv1 = this.toggleIsAv1.bind(this)
+    this.toggleIsAv1 = this.toggleIsAv1.bind(this);
+    this.handleUserActivity = this.handleUserActivity.bind(this);
   }
 
   videoRef(ref) {
-    JanusStream.attachVideoStream(ref);
+    if (ref && ref !== this.videoElement) {
+      this.videoElement = ref;
+      JanusStream.attachVideoStream(ref);
+    }
   }
 
   setVideoWrapperRef(ref) {
     if (ref && ref !== this.videoWrapper) {
+      // Remove old event listeners if videoWrapper changed
+      if (this.videoWrapper) {
+        const oldDoc = this.videoWrapper.ownerDocument;
+        const oldWindow = oldDoc.defaultView;
+        oldWindow.removeEventListener("resize", this.handleFullScreenChange);
+        oldDoc.removeEventListener('mousemove', this.handleUserActivity);
+        oldDoc.removeEventListener('mousedown', this.handleUserActivity);
+        oldDoc.removeEventListener('keydown', this.handleUserActivity);
+        oldDoc.removeEventListener('touchstart', this.handleUserActivity);
+      }
+      
       this.videoWrapper = ref;
-      this.videoWrapper.ownerDocument.defaultView.removeEventListener("resize", this.handleFullScreenChange);
-      this.videoWrapper.ownerDocument.defaultView.addEventListener("resize", this.handleFullScreenChange);
+      const newDoc = this.videoWrapper.ownerDocument;
+      const newWindow = newDoc.defaultView;
+      
+      // Add event listeners to the correct window/document
+      newWindow.addEventListener("resize", this.handleFullScreenChange);
+      newDoc.addEventListener('mousemove', this.handleUserActivity);
+      newDoc.addEventListener('mousedown', this.handleUserActivity);
+      newDoc.addEventListener('keydown', this.handleUserActivity);
+      newDoc.addEventListener('touchstart', this.handleUserActivity);
     }
   }
 
   handleFullScreenChange() {
-    this.setState({fullScreen: isFullScreen(this.videoWrapper)});
+    const isNowFullScreen = isFullScreen(this.videoWrapper);
+    this.setState({fullScreen: isNowFullScreen});
+    
+    // Show controls and start hide timer whenever fullscreen changes
+    this.showControlsTemporarily();
+  }
+
+  handleUserActivity() {
+    // Always auto-hide controls in all modes (inline, detached, fullscreen)
+    this.showControlsTemporarily();
+  }
+
+  showControlsTemporarily() {
+    this.setState({showControls: true});
+    this.clearHideTimer();
+    // Hide controls after 5 seconds of inactivity in all modes
+    this.hideControlsTimer = setTimeout(() => {
+      this.setState({showControls: false});
+    }, 5000);
+  }
+
+  clearHideTimer() {
+    if (this.hideControlsTimer) {
+      clearTimeout(this.hideControlsTimer);
+      this.hideControlsTimer = null;
+    }
   }
 
   componentDidMount() {
     JanusStream.onTalking((talking) => this.setState({talking}));
+    JanusStream.onReconnecting = () => this.setState({reconnecting: true});
+    JanusStream.onReconnectSuccess = () => this.setState({reconnecting: false});
     //this.setState({ cssFixInterval: setInterval(() => this.cssFix(), 500) });
+    
+    // Event listeners will be added in setVideoWrapperRef when the ref is set
+    // This ensures they're added to the correct document (parent or new window)
+    
+    // Start hide timer on mount (works for all modes)
+    this.showControlsTemporarily();
+  }
+
+  componentDidUpdate(prevProps) {
+    // Start hide timer when switching between attached/detached modes
+    if (prevProps.attached !== this.props.attached) {
+      this.showControlsTemporarily();
+    }
   }
 
   cssFix() {
@@ -60,8 +127,22 @@ class VirtualStreaming extends Component {
   }
 
   componentWillUnmount() {
+    JanusStream.onReconnecting = null;
+    JanusStream.onReconnectSuccess = null;
     if (this.state.cssFixInterval) {
       clearInterval(this.state.cssFixInterval);
+    }
+    this.clearHideTimer();
+    
+    // Remove event listeners from the correct document
+    if (this.videoWrapper) {
+      const doc = this.videoWrapper.ownerDocument;
+      const win = doc.defaultView;
+      win.removeEventListener("resize", this.handleFullScreenChange);
+      doc.removeEventListener('mousemove', this.handleUserActivity);
+      doc.removeEventListener('mousedown', this.handleUserActivity);
+      doc.removeEventListener('keydown', this.handleUserActivity);
+      doc.removeEventListener('touchstart', this.handleUserActivity);
     }
   }
 
@@ -116,12 +197,13 @@ class VirtualStreaming extends Component {
 
   render() {
     const {attached, closeShidur, t, videos, layout, audios, setAudio, isDoubleSize, isAv1} = this.props;
-    const {room, talking} = this.state;
+    const {room, talking, showControls, reconnecting} = this.state;
 
     if (!room) {
       return <b> :: THIS PAGE CAN NOT BE OPENED DIRECTLY ::</b>;
     }
     const isOnFullScreen = isFullScreen(this.videoWrapper);
+    const shouldHideCursor = !showControls && (isOnFullScreen || !attached);
 
     const video_options = getVideoOptionsByIsAv1(isAv1).current;
     const video_option = video_options.find((option) => option.value === videos);
@@ -129,15 +211,37 @@ class VirtualStreaming extends Component {
     const playerLang = audio_option.langKey || audio_option.key;
     const inLine = (
       <div
-        className={classNames("video video--broadcast", {"is-double-size": isDoubleSize, "not-attached": !attached})}
+        className={classNames("video video--broadcast", {
+          "is-double-size": isDoubleSize, 
+          "not-attached": !attached
+        })}
         key="v1"
         ref={(ref) => this.setVideoWrapperRef(ref)}
         id="video1"
         style={{height: !attached ? "100%" : null, width: !attached ? "100%" : null}}
       >
+        {reconnecting && (
+          <div style={{
+            position: "absolute", top: 0, left: 0, width: "100%", height: "100%",
+            background: "rgba(0,0,0,0.78)", zIndex: 2,
+            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+            gap: "10px", color: "#fff", textAlign: "center", padding: "8px",
+          }}>
+            <CircularProgress size={28} style={{color: "#ffb300"}} />
+            <span style={{fontWeight: 700, fontSize: "1.5em", lineHeight: 1.3}}>
+              {t("oldClient.reconnectingTitle")}
+            </span>
+            {/* <span style={{fontSize: "1.2em", opacity: 0.85, lineHeight: 1.3}}>
+              {t("oldClient.reconnectingHint")}
+            </span> */}
+          </div>
+        )}
         <div className="video__overlay">
-          <div className={`activities ${isOnFullScreen || !attached ? "on_full_browser" : ""}`}>
-            <div className="controls">
+          <div className={classNames("activities", {
+            "on_full_browser": isOnFullScreen || !attached,
+            "hide-cursor": shouldHideCursor
+          })}>
+            <div className={classNames("controls", {"controls--hidden": !showControls})}>
               <div className="controls__top">
                 <button>
                   <Icon name="close" onClick={closeShidur}/>

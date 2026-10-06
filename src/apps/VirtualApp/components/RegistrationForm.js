@@ -208,10 +208,10 @@ export const RegistrationForm = ({
 
   const renderForm = () => (
     <Grid container spacing={3} p={3}>
-      <Grid item md={6} xs={12}>
+      <Grid item md={6} xs={12} size={{md: 6, xs: 12}}>
         {renderCountries()}
       </Grid>
-      <Grid item md={6} xs={12}>
+      <Grid item md={6} xs={12} size={{md: 6, xs: 12}}>
         <TextField
           label={t("onboarding.registration.groupCity")}
           variant="outlined"
@@ -221,13 +221,13 @@ export const RegistrationForm = ({
           required
           error={errors.city} />
       </Grid>
-      <Grid item md={6} xs={12}>
+      <Grid item md={6} xs={12} size={{md: 6, xs: 12}}>
         {renderGender()}
       </Grid>
-      <Grid item md={6} xs={12}>
+      <Grid item md={6} xs={12} size={{md: 6, xs: 12}}>
         {renderLanguages()}
       </Grid>
-      <Grid item md={6} xs={12}>
+      <Grid item md={6} xs={12} size={{md: 6, xs: 12}}>
         <TextField
           label={t("onboarding.registration.telephone")}
           variant="outlined"
@@ -237,7 +237,7 @@ export const RegistrationForm = ({
           required
           error={errors.telephone} />
       </Grid>
-      <Grid item md={6} xs={12}>
+      <Grid item md={6} xs={12} size={{md: 6, xs: 12}}>
         <TextField
           label={t("onboarding.registration.selectGroup")}
           variant="outlined"
@@ -245,7 +245,7 @@ export const RegistrationForm = ({
           value={ten}
           fullWidth />
       </Grid>
-      <Grid item xs={12}>
+      <Grid item xs={12} size={12}>
         <TextField
           label={t("onboarding.registration.aboutYou")}
           variant="outlined"

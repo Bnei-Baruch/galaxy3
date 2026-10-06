@@ -30,6 +30,7 @@ export const MONITOR_SRV = process.env.REACT_APP_MONITOR_SRV;
 
 export const ADMIN_SECRET = process.env.REACT_APP_ADMIN_SECRET;
 export const ADMIN_SRV_STR1 = process.env.REACT_APP_ADMIN_SRV_STR1;
+export const MQTT_PWD = process.env.REACT_APP_MQTT_PWD;
 
 export const STUDY_MATERIALS = process.env.REACT_APP_STUDY_MATERIALS;
 export const JANUS_ADMIN_GXY = process.env.REACT_APP_JANUS_ADMIN_GXY;
@@ -44,6 +45,8 @@ export const REGISTRATION_FORM_FIELDS = process.env.REACT_APP_REGISTRATION_FORM_
 
 export const MQTT_URL = process.env.REACT_APP_MQTT_URL;
 export const MSG_URL = process.env.REACT_APP_MSG_URL;
+export const AUTH_URL = process.env.REACT_APP_AUTH_URL;
+export const VH_URL = process.env.REACT_APP_VH_URL;
 
 export const GET_WORKSHOP_QUESTIONS = process.env.REACT_APP_GET_WORKSHOP_QUESTIONS;
 export const WEB_SOCKET_WORKSHOP_QUESTION = process.env.REACT_APP_WEB_SOCKET_WORKSHOP_QUESTION;
@@ -53,3 +56,6 @@ export const PAY_USER_FEE = process.env.REACT_APP_PAY_USER_FEE;
 export const MOBILE_APK_URL = process.env.REACT_APP_MOBILE_APK_URL;
 export const GOOGLE_PLAY_URL = process.env.REACT_APP_GOOGLE_PLAY_URL;
 export const APP_STORE_URL = process.env.REACT_APP_APP_STORE_URL;
+
+export const PAY_USER_PROFILE = "https://kli.one/dash/profile";
+

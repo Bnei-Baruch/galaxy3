@@ -3,7 +3,6 @@ import {Segment, Icon, Button} from "semantic-ui-react";
 import "./QuadPanel.scss";
 import JanusHandleHttp from "./JanusHandleHttp";
 import api from "../../shared/Api";
-import {captureException} from "../../shared/sentry";
 import mqtt from "../../shared/mqtt";
 
 class QuadPanelHttp extends Component {
@@ -114,7 +113,6 @@ class QuadPanelHttp extends Component {
     this.setState({vquad});
     api.updateQuad(col, {vquad}).catch((err) => {
       console.error("[Shidur] error updating quad state", col, err);
-      captureException(err, {source: "Shidur"});
     });
   };
 
@@ -153,7 +151,6 @@ class QuadPanelHttp extends Component {
 
     api.updateQuad(col, {vquad}).catch((err) => {
       console.error("[Shidur] error updating quad state", col, err);
-      captureException(err, {source: "Shidur"});
     });
   };
 
@@ -172,7 +169,6 @@ class QuadPanelHttp extends Component {
 
     api.updateQuad(col, {vquad}).catch((err) => {
       console.error("[Shidur] error updating quad state", col, err);
-      captureException(err, {source: "Shidur"});
     });
   };
 

@@ -109,12 +109,12 @@ const SettingsJoined = (props) => {
 
   const renderHeader = () => (
     <>
-      <Grid item xs={11}>
+      <Grid item xs={11} size={11}>
         <Typography variant="h5" display="block" color="textPrimary">
           {t("oldClient.settings")}
         </Typography>
       </Grid>
-      <Grid item xs={1}>
+      <Grid item xs={1} size={1}>
         <IconButton onClick={closeModal} color="primary" size="large">
           <Close />
         </IconButton>
@@ -125,13 +125,13 @@ const SettingsJoined = (props) => {
   const renderUserSettings = () => {
     return (
       <>
-        <Grid item xs={4}>
+        <Grid item xs={4} size={4}>
           <AccountCircle className={classes.icon} color="action" />
           <Typography variant="h6" display="inline" style={{verticalAlign: "top"}} color="textPrimary">
             {t("settings.userSettings")}
           </Typography>
         </Grid>
-        <Grid item={true} xs={4}>
+        <Grid item={true} xs={4} size={4}>
           <TextField
             label={t("settings.screenName")}
             fullWidth={true}
@@ -141,7 +141,7 @@ const SettingsJoined = (props) => {
             color="primary"
           />
         </Grid>
-        <Grid item={true} xs={4}>
+        <Grid item={true} xs={4} size={4}>
           <SelectViewLanguage />
         </Grid>
       </>
@@ -151,13 +151,13 @@ const SettingsJoined = (props) => {
   const renderSubtitleSettings = () => {
     return (
       <>
-        <Grid item={true} xs={4}>
+        <Grid item={true} xs={4} size={4}>
           <Computer className={classes.icon} color="action" />
           <Typography variant="h6" display="inline" style={{verticalAlign: "top"}} color="textPrimary">
             {t("settings.subtitlesSettings")}
           </Typography>
         </Grid>
-        <Grid item={true} xs={4}>
+        <Grid item={true} xs={4} size={4}>
           <TextField
             variant="outlined"
             fullWidth
@@ -176,7 +176,7 @@ const SettingsJoined = (props) => {
             ))}
           </TextField>
         </Grid>
-        <Grid item={true} xs={4}>
+        <Grid item={true} xs={4} size={4}>
           <TextField
             variant="outlined"
             fullWidth
@@ -202,15 +202,15 @@ const SettingsJoined = (props) => {
   const renderMediaSettings = () => {
     return (
       <>
-        <Grid item xs={6}>
+        <Grid item xs={6} size={6}>
           <Grid container spacing={4}>
-            <Grid item xs={12}>
+            <Grid item xs={12} size={12}>
               <Videocam className={classes.icon} color="action" />
               <Typography variant="h6" display="inline" style={{verticalAlign: "top"}} color="textPrimary">
                 {t("settings.cameraSettings")}
               </Typography>
             </Grid>
-            <Grid item xs={6}>
+            <Grid item xs={6} size={6}>
               <Tooltip title={videoLabel} arrow>
                 <TextField
                   label={t("settings.cameraSource")}
@@ -222,7 +222,7 @@ const SettingsJoined = (props) => {
                 />
               </Tooltip>
             </Grid>
-            <Grid item xs={6}>
+            <Grid item xs={6} size={6}>
               <Tooltip title={settingsLabel} arrow>
                 <TextField
                   label={t("settings.cameraQuality")}
@@ -234,20 +234,20 @@ const SettingsJoined = (props) => {
                 />
               </Tooltip>
             </Grid>
-            <Grid item xs={12}>
+            <Grid item xs={12} size={12}>
               <MyMedia video={{stream: video.stream}} />
             </Grid>
           </Grid>
         </Grid>
-        <Grid item xs={6}>
+        <Grid item xs={6} size={6}>
           <Grid container spacing={4}>
-            <Grid item xs={12}>
+            <Grid item xs={12} size={12}>
               <Mic className={classes.icon} color="action" />
               <Typography variant="h6" display="inline" style={{verticalAlign: "top"}} color="textPrimary">
                 {t("settings.microphoneSettings")}
               </Typography>
             </Grid>
-            <Grid item xs={12}>
+            <Grid item xs={12} size={12}>
               <Tooltip title={audioLabel} arrow>
                 <TextField
                   variant="outlined"
@@ -261,7 +261,7 @@ const SettingsJoined = (props) => {
                 </TextField>
               </Tooltip>
             </Grid>
-            <Grid item xs={12}>
+            <Grid item xs={12} size={12}>
               <CheckMySelf />
             </Grid>
           </Grid>
@@ -281,7 +281,7 @@ const SettingsJoined = (props) => {
         <Divider variant="fullWidth" sx={{width: "100%", marginTop: "2em"}} />
         {renderMediaSettings()}
 
-        <Grid item xs={12}>
+        <Grid item xs={12} size={12}>
           <FormControlLabel
             label={<Typography color="textPrimary">{t("oldClient.audioMode")}</Typography>}
             control={<Checkbox checked={!!isAudioMode} onChange={handleAudioModeChange} name="isAudioMode" />}
@@ -295,7 +295,7 @@ const SettingsJoined = (props) => {
             control={<Checkbox checked={hideUserDisplays} onChange={handleUsersDisplays} name="hideDisplays" color="primary"/>}
           />
         </Grid>
-        <Grid item xs={12}>
+        <Grid item xs={12} size={12}>
           <Button
             variant="contained"
             color="success"
