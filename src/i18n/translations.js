@@ -274,6 +274,14 @@ export const resources = {
         toComplete: "TO COMPLETE REGISTRATION",
         completed: "Your registration is completed and will be verified soon. Meanwhile you can watch the broadcast.",
       },
+      mobileApp: {
+        title: "Galaxy mobile app",
+        text: "For the best experience on your phone, install the Galaxy mobile app.",
+        googlePlay: "Google Play",
+        appStore: "App Store",
+        downloadApk: "Download APK",
+        continueBrowser: "Continue in browser",
+      },
       temp: {
         linkToCongress: "convention site",
       },
@@ -555,6 +563,14 @@ export const resources = {
         manageFontSize: "Cambiar el tamaño de la fuente",
         inProcess: "En proceso… Disponible en",
       },
+      mobileApp: {
+        title: "Aplicación móvil Galaxy",
+        text: "Para una mejor experiencia en tu teléfono, instala la aplicación móvil Galaxy.",
+        googlePlay: "Google Play",
+        appStore: "App Store",
+        downloadApk: "Descargar APK",
+        continueBrowser: "Continuar en el navegador",
+      },
       temp: {
         linkToCongress: "sitio del congreso",
       },
@@ -827,6 +843,14 @@ export const resources = {
         youRegisteredAsGuestLink: "אנא השלם את תהליך ההרשמה.",
         toComplete: "להשלים את ההרשמה",
         completed: "הרשמתך הושלמה ותאושר בקרוב. בינתיים תוכל לצפות בשידור החי.",
+      },
+      mobileApp: {
+        title: "אפליקציית Galaxy לנייד",
+        text: "לחוויה הטובה ביותר בטלפון, התקינו את אפליקציית Galaxy לנייד.",
+        googlePlay: "Google Play",
+        appStore: "App Store",
+        downloadApk: "הורדת APK",
+        continueBrowser: "המשך בדפדפן",
       },
       temp: {
         linkToCongress: "אתר הכנס",
@@ -1105,6 +1129,14 @@ export const resources = {
         youRegisteredAsGuestLink: "Пожалуйста, завершите регистрацию.",
         toComplete: "ЗАВЕРШИТЬ РЕГИСТРАЦИЮ",
         completed: "Ваша регистрация завершена и скоро будет проверена. А пока вы можете смотреть трансляцию.",
+      },
+      mobileApp: {
+        title: "Мобильное приложение Galaxy",
+        text: "Для удобной работы с телефона установите мобильное приложение Galaxy.",
+        googlePlay: "Google Play",
+        appStore: "App Store",
+        downloadApk: "Скачать APK",
+        continueBrowser: "Продолжить в браузере",
       },
       temp: {
         linkToCongress: "сайт конгресса",

@@ -68,6 +68,7 @@ import log from "loglevel";
 import Donations from "./buttons/Donations";
 import version from './Version.js';
 import {PopUp} from "./components/PopUp"
+import {MobileAppPopup} from "./components/MobileAppPopup";
 import {BroadcastNotification} from "./components/BroadcastNotification";
 import GlobalOptions, {GlobalOptionsContext} from "./components/GlobalOptions/GlobalOptions";
 import ShowSelfBtn from "./buttons/ShowSelfBtn";
@@ -1700,6 +1701,7 @@ class VirtualMqttClient extends Component {
     return (
       <Fragment>
         <PopUp show={show_notification} setClose={() => this.setState({show_notification: false})}/>
+        <MobileAppPopup/>
         <BroadcastNotification show={show_message} msg={broadcast_message} setClose={() => this.setState({show_message: false})} />
         {user?.allowed && Boolean(room) && (
           <SettingsJoined
