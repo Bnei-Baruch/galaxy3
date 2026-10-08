@@ -1,4 +1,6 @@
 import React, {Component, Fragment} from "react";
+import {createPortal} from "react-dom";
+import {CacheProvider} from "@emotion/react";
 import classNames from "classnames";
 import {Icon, Popup} from "semantic-ui-react";
 import {
@@ -36,6 +38,8 @@ import {
 } from "../../shared/MonitoringData";
 import api from "../../shared/Api";
 import VirtualStreaming from "./VirtualStreaming";
+import PipContent from "./PipContent";
+import {closePipWindow, getPipCache, getPipWindow, isPipSupported, openPipWindow, setOnPipClose} from "./PipWindow";
 import JanusStream from "../../shared/streaming-utils";
 import {kc} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
@@ -144,6 +148,8 @@ class VirtualMqttClient extends Component {
       numberOfVirtualUsers: localStorage.getItem("number_of_virtual_users") || "1",
       currentLayout: localStorage.getItem("currentLayout") || "split",
       attachedSource: true,
+      pipOpen: false,
+      pipView: "shidur",
       sourceLoading: true,
       appInitError: null,
       keepalive: null,
@@ -189,10 +195,14 @@ class VirtualMqttClient extends Component {
     document.addEventListener('mousedown', this.handleUserActivityForBars);
     document.addEventListener('keydown', this.handleUserActivityForBars);
     document.addEventListener('touchstart', this.handleUserActivityForBars);
+
+    this.registerAutoPip();
   }
 
   componentWillUnmount() {
     this.clearHideBarsTimer();
+    this.unregisterAutoPip();
+    closePipWindow();
 
     // Remove fullscreen listeners
     document.removeEventListener('fullscreenchange', this.handleAppFullScreenChange);
@@ -1381,6 +1391,71 @@ class VirtualMqttClient extends Component {
     }
   };
 
+  openPip = async () => {
+    if (this.state.pipOpen) return;
+    try {
+      await openPipWindow({width: 725, height: 480});
+      setOnPipClose(() => this.setState({pipOpen: false}));
+      this.setState({pipOpen: true});
+    } catch (e) {
+      log.error("[client] Failed to open picture-in-picture window", e);
+    }
+  };
+
+  // Chrome opens PiP automatically on tab switch while camera/mic is captured (HTTPS only)
+  registerAutoPip = () => {
+    if (!isPipSupported() || !("mediaSession" in navigator)) return;
+    try {
+      navigator.mediaSession.setActionHandler("enterpictureinpicture", () => {
+        if (!this.state.room || !this.state.attachedSource) return;
+        this.openPip();
+      });
+    } catch (e) {
+      // enterpictureinpicture action is not supported
+    }
+  };
+
+  unregisterAutoPip = () => {
+    try {
+      navigator.mediaSession?.setActionHandler("enterpictureinpicture", null);
+    } catch (e) {
+    }
+  };
+
+  renderPip = () => {
+    const {pipOpen, pipView, room, shidur, feeds, muteOtherCams, user, muted, cammuted} = this.state;
+    if (!pipOpen) return null;
+
+    const pipFeeds = sortAndFilterFeeds(feeds).map((feed) => ({
+      id: feed.id,
+      name: feed.display.display,
+      cammute: feed.cammute || muteOtherCams,
+      talking: feed.talking,
+      getStream: () => this.refs["remoteVideo" + feed.id]?.srcObject,
+    }));
+
+    const content = (
+      <PipContent
+        view={pipView}
+        setView={(view) => this.setState({pipView: view})}
+        shidurOn={room !== "" && shidur}
+        getShidurStream={() => JanusStream.videoMediaStream}
+        feeds={pipFeeds}
+        local={{
+          name: user ? user.username : "",
+          muted,
+          cammuted,
+        }}
+        getLocalStream={() => this.refs.localVideo?.srcObject}
+        micMute={this.micMute}
+        backToTab={closePipWindow}
+      />
+    );
+
+    const pipWindow = getPipWindow();
+    return pipWindow ? createPortal(<CacheProvider value={getPipCache()}>{content}</CacheProvider>, pipWindow.document.body) : null;
+  };
+
   renderLocalMedia = (width, height, index, isGroup) => {
     const {user, cammuted, question, muted, reconnecting} = this.state;
     const userName = user ? user.username : "";
@@ -1943,6 +2018,7 @@ class VirtualMqttClient extends Component {
       source = (
         <VirtualStreaming
           attached={attachedSource}
+          openPip={this.openPip}
           closeShidur={this.toggleShidur}
           setVideo={this.setVideos.bind(this)}
           setDetached={() => {
@@ -2020,6 +2096,7 @@ class VirtualMqttClient extends Component {
 
     return (
       <Fragment>
+        {this.renderPip()}
         <PopUp show={show_notification} setClose={() => this.setState({show_notification: false})}/>
         <BroadcastNotification show={show_message} msg={broadcast_message} setClose={() => this.setState({show_message: false})} />
         <CountrySelectionDialog
