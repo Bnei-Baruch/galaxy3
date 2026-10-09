@@ -193,7 +193,7 @@ class QstOutMqtt extends Component {
                   ) : qg ? (
                     <Fragment>
                       {/*{group && group.questions ? <div className="qst_fullscreentitle">?</div> : ""}*/}
-                      <div className="fullscrvideo_title">{name}</div>
+                      <div className="fullscrvideo_title" style={{textAlign: "center"}}>{name}</div>
                       <VideoHandleMqtt key={"q5"} g={qg} index={13} col={5} q={5} qst_group={true} user={user} gateways={gateways} onUserJoined={this.refreshProgram} {...this.state} />
                     </Fragment>
                   ) : (
