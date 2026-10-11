@@ -1394,7 +1394,7 @@ class VirtualMqttClient extends Component {
   openPip = async () => {
     if (this.state.pipOpen) return;
     try {
-      await openPipWindow({width: 725, height: 480});
+      await openPipWindow({width: 363, height: 240});
       setOnPipClose(() => this.setState({pipOpen: false}));
       this.setState({pipOpen: true});
     } catch (e) {
