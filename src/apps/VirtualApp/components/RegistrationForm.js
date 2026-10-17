@@ -13,6 +13,7 @@ const fetchCountriesByLang = (lang = "en") => {
   countries.registerLocale(require(`i18n-iso-countries/langs/en.json`));
   if (lang !== "en") countries.registerLocale(require(`i18n-iso-countries/langs/${lang}.json`));
   countryById = countries.getNames(lang, { select: "official" });
+  if (lang === "en") countryById.TW = "Taiwan";
   return Object.keys(countryById);
 };
 
@@ -186,7 +187,7 @@ export const RegistrationForm = ({
 
   const buildRequestBody = () => {
     const body = new FormData();
-    body.set(REGISTRATION_FORM_FIELDS.country, countries.getName(country, "en", { select: "official" }));
+    body.set(REGISTRATION_FORM_FIELDS.country, country === "TW" ? "Taiwan" : countries.getName(country, "en", { select: "official" }));
     body.set(REGISTRATION_FORM_FIELDS.city, city);
     body.set(REGISTRATION_FORM_FIELDS.aboutYou, aboutYou);
     body.set(REGISTRATION_FORM_FIELDS.gender, gender);
