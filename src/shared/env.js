@@ -52,5 +52,10 @@ export const GET_WORKSHOP_QUESTIONS = process.env.REACT_APP_GET_WORKSHOP_QUESTIO
 export const WEB_SOCKET_WORKSHOP_QUESTION = process.env.REACT_APP_WEB_SOCKET_WORKSHOP_QUESTION;
 
 export const PAY_USER_FEE = process.env.REACT_APP_PAY_USER_FEE;
+
+export const MOBILE_APK_URL = process.env.REACT_APP_MOBILE_APK_URL;
+export const GOOGLE_PLAY_URL = process.env.REACT_APP_GOOGLE_PLAY_URL;
+export const APP_STORE_URL = process.env.REACT_APP_APP_STORE_URL;
+
 export const PAY_USER_PROFILE = "https://kli.one/dash/profile";
 
