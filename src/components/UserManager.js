@@ -16,6 +16,7 @@ const initOptions = {
   flow: "standard",
   pkceMethod: "S256",
   enableLogging: logging,
+  logoutMethod: "POST",
 };
 
 export const kc = new Keycloak(userManagerConfig);
