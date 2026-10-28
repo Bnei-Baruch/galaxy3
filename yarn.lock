@@ -4645,10 +4645,10 @@ keyboard-key@^1.1.0:
   resolved "https://registry.yarnpkg.com/keyboard-key/-/keyboard-key-1.1.0.tgz#6f2e8e37fa11475bb1f1d65d5174f1b35653f5b7"
   integrity sha512-qkBzPTi3rlAKvX7k0/ub44sqOfXeLc/jcnGGmj5c7BJpU8eDrEVPyhCvNYAaoubbsLm9uGWwQJO1ytQK1a9/dQ==
 
-keycloak-js@26.1.5:
-  version "26.1.5"
-  resolved "https://registry.yarnpkg.com/keycloak-js/-/keycloak-js-26.1.5.tgz#a5b593d754d66c9230ac23bcda054eabd02835e1"
-  integrity sha512-5m8DQceKgBD+iVyy8GYeOiH3Hu12q6azAxhBRabVnZANt5BEi9r/qEXyOeye9yzrjqPF6RlH48TTTYNd1iXZMQ==
+keycloak-js@26.2.4:
+  version "26.2.4"
+  resolved "https://registry.yarnpkg.com/keycloak-js/-/keycloak-js-26.2.4.tgz#b96ff33ed08ff6fd8d1e09d9e5055c7b3f2fa918"
+  integrity sha512-PnXpR3ubETGOt0B/Qt2lxmPbkZr5bc3vlQsOqDoTPPQsZRp7JjhTKxlJ187uWh8qJhvBab6Gsjb06a8ayOPfuw==
 
 kind-of@^3.0.2, kind-of@^3.0.3, kind-of@^3.2.0:
   version "3.2.2"
