@@ -4,10 +4,7 @@ import log from "loglevel";
 import mqtt from "../shared/mqtt";
 import {STUN_SRV_GXY} from "../shared/env";
 import {isMusic} from "./music-mode";
-
-// Music mode: high-quality stereo Opus for live music (see music-mode.js).
-const OPUS_MUSIC_FMTP = "stereo=1;sprop-stereo=1;maxaveragebitrate=256000;maxplaybackrate=48000;useinbandfec=1;usedtx=0";
-const AUDIO_MAX_BITRATE = 256000;
+import {AUDIO_MAX_BITRATE, OPUS_MUSIC_FMTP} from "../shared/consts";
 
 const musicSdp = (sdp) => {
   if (!isMusic()) return sdp;
@@ -157,7 +154,9 @@ export class PublisherPlugin extends EventEmitter {
             const jsep = json.jsep
             log.info('[publisher] Configure respond: ', param)
             resolve(data)
-            this.pc.setRemoteDescription(jsep).then(() => setAudioMaxBitrate(this.pc))
+            this.pc.setRemoteDescription(jsep).then(() => setAudioMaxBitrate(this.pc)).catch(error => {
+              log.warn("[publisher] setRemoteDescription failed:", error && error.message);
+            })
           }).catch(error => {
             reject(error)
           })
