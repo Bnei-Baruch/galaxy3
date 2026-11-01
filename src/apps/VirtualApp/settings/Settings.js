@@ -26,6 +26,7 @@ import {AccountCircle, Mic, Videocam} from "@mui/icons-material";
 import {ThemeContext} from "../components/ThemeSwitcher/ThemeSwitcher";
 import {Support} from "../components/Support";
 import JanusStream from "../../../shared/streaming-utils";
+import {isMusic, setMusicEnabled} from "../../../lib/music-mode";
 
 const settingsList = vsettings_list.map(({key, text, value}) => ({key, text, value: JSON.stringify(value)}));
 const mapDevice = ({label, deviceId}) => ({text: label, value: deviceId});
@@ -68,6 +69,7 @@ const roomDescriptionById = new Map();
 const Settings = (props) => {
   const {classes} = useStyles();
   const [shidurMuted, setShidurMuted] = useState(JanusStream.audioElement.muted)
+  const [musicMode, setMusicMode] = useState(isMusic())
 
   const {t, i18n: {language}} = useTranslation();
   const {palette: {background: {paper}}} = useTheme();
@@ -203,9 +205,25 @@ const Settings = (props) => {
 
   const handleAudioModeChange = () => audioModeChange();
 
-  const handleGroup = () => handleGroupChange();
+  const handleGroup = () => {
+    // Music mode is only for groups: unchecking Group switches it off and restores the speech mic
+    if (isGroup && musicMode) {
+      setMusicEnabled(false);
+      setMusicMode(false);
+      setAudioDevice(audioDevice);
+    }
+    handleGroupChange();
+  };
 
   const handleUsersDisplays = () => toggleUsersDisplays()
+
+  // Music mode changes how the mic is captured, so re-acquire it with the new constraints
+  const handleMusicMode = (e) => {
+    const on = e.target.checked;
+    setMusicEnabled(on);
+    setMusicMode(on);
+    setAudioDevice(audioDevice);
+  };
 
   const handleRoomChange = (e, op) => {
     if (!op?.room) return;
@@ -321,6 +339,10 @@ const Settings = (props) => {
           <FormControlLabel
             label={<Typography color="textPrimary">Group</Typography>}
             control={<Checkbox checked={isGroup} onChange={handleGroup} name="isGroup" color="primary"/>}
+          />
+          <FormControlLabel
+            label={<Typography color="textPrimary">{t("oldClient.musicMode")}</Typography>}
+            control={<Checkbox checked={isGroup && musicMode} disabled={!isGroup} onChange={handleMusicMode} name="musicMode" color="primary"/>}
           />
           <FormControlLabel
             label={<Typography color="textPrimary">{t("oldClient.hideDisplays")}</Typography>}

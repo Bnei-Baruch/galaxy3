@@ -26,6 +26,7 @@ import CheckMySelf from "./CheckMySelf";
 import {SelectViewLanguage} from "../components/SelectViewLanguage";
 import {ThemeContext} from "../components/ThemeSwitcher/ThemeSwitcher";
 import {SUBTITLE_LANG, WQ_LANG} from "../subtitles/SubtitlesContainer";
+import {isMusic, setMusicEnabled} from "../../../lib/music-mode";
 
 const mapDevice = ({label, deviceId}) => ({text: label, value: deviceId});
 const mapOption = ({text, value}) => {
@@ -70,6 +71,7 @@ const SettingsJoined = (props) => {
 
   const [subtitleWQ, setSubtitleWQ] = useState(localStorage.getItem(WQ_LANG));
   const [subtitleMQTT, setSubtitleMQTT] = useState(localStorage.getItem(SUBTITLE_LANG));
+  const [musicMode, setMusicMode] = useState(isMusic());
 
   const {
     audio,
@@ -80,6 +82,7 @@ const SettingsJoined = (props) => {
     userDisplay,
     audioModeChange,
     isAudioMode,
+    isGroup,
     setAudioDevice,
     audioDevice = audio.devices[0]?.deviceId,
     hideUserDisplays,
@@ -96,6 +99,11 @@ const SettingsJoined = (props) => {
 
   const handleAudioChange = (e) => setAudioDevice(e.target.value);
 
+  // Music mode is only for groups; the client switches it off when Group is turned off
+  useEffect(() => {
+    if (!isGroup) setMusicMode(false);
+  }, [isGroup]);
+
   useEffect(() => {
     const op = audiog_options2.find((op) => op.value === audios);
     const key = op.langKey || "en";
@@ -106,6 +114,15 @@ const SettingsJoined = (props) => {
   const handleAudioModeChange = () => audioModeChange();
 
   const handleUsersDisplays = () => toggleUsersDisplays()
+
+  // Re-acquire the mic with the new constraints; setAudioDevice also swaps the track
+  // on the publisher and renegotiates, so the new Opus settings take effect in the room.
+  const handleMusicMode = (e) => {
+    const on = e.target.checked;
+    setMusicEnabled(on);
+    setMusicMode(on);
+    setAudioDevice(audio_device);
+  };
 
   const renderHeader = () => (
     <>
@@ -293,6 +310,10 @@ const SettingsJoined = (props) => {
           <FormControlLabel
             label={<Typography color="textPrimary">{t("oldClient.hideDisplays")}</Typography>}
             control={<Checkbox checked={hideUserDisplays} onChange={handleUsersDisplays} name="hideDisplays" color="primary"/>}
+          />
+          <FormControlLabel
+            label={<Typography color="textPrimary">{t("oldClient.musicMode")}</Typography>}
+            control={<Checkbox checked={!!isGroup && musicMode} disabled={!isGroup} onChange={handleMusicMode} name="musicMode" color="primary"/>}
           />
         </Grid>
         <Grid item xs={12} size={12}>

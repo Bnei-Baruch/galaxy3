@@ -3,6 +3,40 @@ import {EventEmitter} from "events";
 import log from "loglevel";
 import mqtt from "../shared/mqtt";
 import {STUN_SRV_GXY} from "../shared/env";
+import {isMusic, startAudioStats} from "./music-mode";
+
+// Music mode: high-quality stereo Opus for live music (see music-mode.js).
+const OPUS_MUSIC_FMTP = "stereo=1;sprop-stereo=1;maxaveragebitrate=256000;maxplaybackrate=48000;useinbandfec=1;usedtx=0";
+const AUDIO_MAX_BITRATE = 256000;
+
+const musicSdp = (sdp) => {
+  if (!isMusic()) return sdp;
+  const m = /a=rtpmap:(\d+) opus\/48000\/2/.exec(sdp);
+  if (!m) return sdp;
+  const pt = m[1];
+  const fmtp = new RegExp("a=fmtp:" + pt + " [^\\r\\n]*");
+  const line = "a=fmtp:" + pt + " minptime=10;" + OPUS_MUSIC_FMTP;
+  if (fmtp.test(sdp)) return sdp.replace(fmtp, line);
+  return sdp.replace(m[0], m[0] + "\r\n" + line);
+};
+
+const setAudioMaxBitrate = (pc) => {
+  const music = isMusic();
+  // nothing to undo if music mode was never applied on this connection
+  if (!music && !pc.__musicBitrate) return;
+  try {
+    const sender = pc.getSenders().find(s => s.track && s.track.kind === "audio");
+    if (!sender) return;
+    const params = sender.getParameters();
+    if (!params.encodings || !params.encodings.length) params.encodings = [{}];
+    if (music) params.encodings[0].maxBitrate = AUDIO_MAX_BITRATE;
+    else delete params.encodings[0].maxBitrate;
+    pc.__musicBitrate = music;
+    sender.setParameters(params).catch(e => log.warn("[publisher] audio setParameters failed:", e && e.message));
+  } catch (e) {
+    log.warn("[publisher] audio setParameters error:", e && e.message);
+  }
+};
 
 export class PublisherPlugin extends EventEmitter {
   constructor (list = [{urls: STUN_SRV_GXY}]) {
@@ -112,8 +146,10 @@ export class PublisherPlugin extends EventEmitter {
         }
 
         this.initPcEvents()
+        startAudioStats(this.pc, 'pub')
 
         this.pc.createOffer().then((offer) => {
+          offer = {type: offer.type, sdp: musicSdp(offer.sdp)}
           this.pc.setLocalDescription(offer)
           const jsep = {type: offer.type, sdp: offer.sdp}
           const body = {request: 'configure', video: !!video, audio: !!audio}
@@ -122,7 +158,7 @@ export class PublisherPlugin extends EventEmitter {
             const jsep = json.jsep
             log.info('[publisher] Configure respond: ', param)
             resolve(data)
-            this.pc.setRemoteDescription(jsep)
+            this.pc.setRemoteDescription(jsep).then(() => setAudioMaxBitrate(this.pc))
           }).catch(error => {
             reject(error)
           })
@@ -245,6 +281,7 @@ export class PublisherPlugin extends EventEmitter {
 
     const run = this.pc.createOffer().then((offer) => {
       if (!this.pc) return;
+      offer = {type: offer.type, sdp: musicSdp(offer.sdp)}
       this.pc.setLocalDescription(offer).catch(error => {
         log.warn("[publisher] setLocalDescription failed:", error && error.message);
       })
@@ -254,7 +291,7 @@ export class PublisherPlugin extends EventEmitter {
         const jsep = json && json.jsep
         log.info('[publisher] Configure respond: ', param)
         if (this.pc && jsep) {
-          return this.pc.setRemoteDescription(jsep).then(e => log.info(e)).catch(error => {
+          return this.pc.setRemoteDescription(jsep).then(e => { log.info(e); setAudioMaxBitrate(this.pc) }).catch(error => {
             log.warn("[publisher] setRemoteDescription failed:", error && error.message);
           })
         }

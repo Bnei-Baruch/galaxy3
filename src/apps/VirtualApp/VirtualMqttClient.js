@@ -70,6 +70,7 @@ import Typography from "@mui/material/Typography";
 import ThemeSwitcher from "./components/ThemeSwitcher/ThemeSwitcher";
 import mqtt from "../../shared/mqtt";
 import devices from "../../lib/devices";
+import {isMusic, setMusicEnabled} from "../../lib/music-mode";
 import {JanusMqtt} from "../../lib/janus-mqtt";
 import {PublisherPlugin} from "../../lib/publisher-plugin";
 import {SubscriberPlugin} from "../../lib/subscriber-plugin";
@@ -110,6 +111,8 @@ setLinkSnapshotProvider(() => monitoringData.getLinkSnapshot());
 class VirtualMqttClient extends Component {
   constructor(props) {
     super(props);
+    // Music mode is only for groups and isGroup starts false, so always start with it off
+    setMusicEnabled(false);
     const isAv1 = getIsAv1FromLocalstorage()
     const videos = getVideosFromLocalstorage(isAv1)
 
@@ -1136,6 +1139,12 @@ class VirtualMqttClient extends Component {
       const isGroup = bitrate !== 64000;
       user.extra.isGroup = isGroup;
       this.setState({isGroup, user});
+      // Music mode is only for groups: switch it off (and restore the speech mic) when leaving group
+      if (!isGroup && isMusic()) {
+        setMusicEnabled(false);
+        const {media} = this.state;
+        if (media?.audio?.device) this.setAudioDevice(media.audio.device);
+      }
       if (videoroom) {
         const bp = videoroom.setBitrate(bitrate);
         if (bp && typeof bp.catch === "function") {
@@ -2118,6 +2127,7 @@ class VirtualMqttClient extends Component {
             isAudioMode={muteOtherCams}
             audioDevice={media.audio?.device}
             setAudioDevice={this.setAudioDevice.bind(this)}
+            isGroup={isGroup}
             audios={audios.audios}
             hideUserDisplays={hideUserDisplays}
             toggleUsersDisplays={this.toggleUsersDisplays.bind(this)}
