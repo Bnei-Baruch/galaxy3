@@ -4,6 +4,17 @@ import log from "loglevel";
 import mqtt from "../shared/mqtt";
 import {STUN_SRV_GXY} from "../shared/env";
 
+// Declare stereo on every audio m-line so the browser decodes stereo Opus (music mode senders)
+// instead of downmixing to mono. Mono senders are unaffected.
+const stereoSdp = (sdp) => sdp.split("\r\nm=").map((section) => {
+  if (!section.startsWith("audio")) return section;
+  const m = /a=rtpmap:(\d+) opus\/48000\/2/.exec(section);
+  if (!m) return section;
+  const fmtp = new RegExp("a=fmtp:" + m[1] + " [^\\r\\n]*");
+  if (!fmtp.test(section)) return section.replace(m[0], m[0] + "\r\na=fmtp:" + m[1] + " stereo=1");
+  return section.replace(fmtp, (line) => /(^|[ ;])stereo=1/.test(line) ? line : line + ";stereo=1");
+}).join("\r\nm=");
+
 export class SubscriberPlugin extends EventEmitter {
   constructor (list = [{urls: STUN_SRV_GXY}]) {
     super()
@@ -136,16 +147,7 @@ export class SubscriberPlugin extends EventEmitter {
       return this.pc.createAnswer()
     }).then(answer => {
       if (!answer || !this.pc) return;
-      // Declare stereo so the browser decodes stereo Opus (music mode senders) instead of
-      // downmixing to mono. Mono senders are unaffected.
-      const m = /a=rtpmap:(\d+) opus\/48000\/2/.exec(answer.sdp);
-      if (m) {
-        const pt = m[1];
-        const fmtp = new RegExp("a=fmtp:" + pt + " [^\\r\\n]*");
-        const line = "a=fmtp:" + pt + " minptime=10;useinbandfec=1;stereo=1;sprop-stereo=1;maxplaybackrate=48000";
-        const sdp = fmtp.test(answer.sdp) ? answer.sdp.replace(fmtp, line) : answer.sdp.replace(m[0], m[0] + "\r\n" + line);
-        answer = {type: answer.type, sdp};
-      }
+      answer = {type: answer.type, sdp: stereoSdp(answer.sdp)};
       log.debug('[subscriber] Answer created', answer)
       this.pc.setLocalDescription(answer).then(data => {
         log.debug('[subscriber] setLocalDescription', data)
