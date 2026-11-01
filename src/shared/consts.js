@@ -6,8 +6,8 @@ export const GROUPS_ROOM = 1234;
 export const LOST_CONNECTION = "Lost connection to the server (is it down?)";
 
 // Music mode: high-quality stereo Opus for live music (see lib/music-mode.js)
-export const OPUS_MUSIC_FMTP = "stereo=1;sprop-stereo=1;maxaveragebitrate=256000;maxplaybackrate=48000;useinbandfec=1;usedtx=0";
 export const AUDIO_MAX_BITRATE = 128000;
+export const OPUS_MUSIC_FMTP = `stereo=1;sprop-stereo=1;maxaveragebitrate=${AUDIO_MAX_BITRATE};maxplaybackrate=48000;useinbandfec=1;usedtx=0`;
 
 export const USERNAME_ALREADY_EXIST_ERROR_CODE = 420;
 export const ALREADY_IN_ROOM_ERROR_CODE = 421;
