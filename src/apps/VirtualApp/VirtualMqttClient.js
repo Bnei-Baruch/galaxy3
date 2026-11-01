@@ -111,8 +111,6 @@ setLinkSnapshotProvider(() => monitoringData.getLinkSnapshot());
 class VirtualMqttClient extends Component {
   constructor(props) {
     super(props);
-    // Music mode is only for groups and isGroup starts false, so always start with it off
-    setMusicEnabled(false);
     const isAv1 = getIsAv1FromLocalstorage()
     const videos = getVideosFromLocalstorage(isAv1)
 

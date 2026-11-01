@@ -3,7 +3,6 @@ import {EventEmitter} from "events";
 import log from "loglevel";
 import mqtt from "../shared/mqtt";
 import {STUN_SRV_GXY} from "../shared/env";
-import {startAudioStats} from "./music-mode";
 
 export class SubscriberPlugin extends EventEmitter {
   constructor (list = [{urls: STUN_SRV_GXY}]) {
@@ -101,7 +100,6 @@ export class SubscriberPlugin extends EventEmitter {
         if(data) {
           resolve(data);
           this.initPcEvents();
-          startAudioStats(this.pc, 'sub:' + (this.subTo || this.id));
         }
 
         if(json?.jsep) {

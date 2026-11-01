@@ -3,7 +3,7 @@ import {EventEmitter} from "events";
 import log from "loglevel";
 import mqtt from "../shared/mqtt";
 import {STUN_SRV_GXY} from "../shared/env";
-import {isMusic, startAudioStats} from "./music-mode";
+import {isMusic} from "./music-mode";
 
 // Music mode: high-quality stereo Opus for live music (see music-mode.js).
 const OPUS_MUSIC_FMTP = "stereo=1;sprop-stereo=1;maxaveragebitrate=256000;maxplaybackrate=48000;useinbandfec=1;usedtx=0";
@@ -146,7 +146,6 @@ export class PublisherPlugin extends EventEmitter {
         }
 
         this.initPcEvents()
-        startAudioStats(this.pc, 'pub')
 
         this.pc.createOffer().then((offer) => {
           offer = {type: offer.type, sdp: musicSdp(offer.sdp)}
