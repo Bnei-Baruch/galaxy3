@@ -1,5 +1,6 @@
 import workerUrl from 'worker-plugin/loader!./volmeter-processor';
 import log from "loglevel";
+import {isMusic} from "./music-mode";
 
 class LocalDevices {
   constructor() {
@@ -173,7 +174,18 @@ class LocalDevices {
     } else if (video && !videoid) {
       video = {width, height, frameRate: {ideal, min: 1}};
     }
-    audio = audioid ? {noiseSuppression: true, deviceId: {exact: audioid}} : audio;
+    // Music mode: raw stereo capture for live music, see music-mode.js
+    if (isMusic()) {
+      if (audio) {
+        audio = {
+          echoCancellation: false, noiseSuppression: false, autoGainControl: false, voiceIsolation: false,
+          channelCount: 2, sampleRate: 48000,
+          ...(audioid ? {deviceId: {exact: audioid}} : {}),
+        };
+      }
+    } else {
+      audio = audioid ? {noiseSuppression: true, deviceId: {exact: audioid}} : audio;
+    }
     return navigator.mediaDevices
       .getUserMedia({audio, video})
       .then((data) => [data, null])
