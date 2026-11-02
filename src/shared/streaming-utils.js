@@ -13,6 +13,9 @@ const TRL_GAIN_DB = 10;
 const dbToGain = (db) => Math.pow(10, db / 20);
 // Low-cut before the gain/limiter so rumble/hum isn't amplified or tripping the limiter.
 const TRL_LOWCUT_HZ = 130;
+// Broadcasting (not just asking) client, set via ?broadcaster URL param.
+// Rav is not ducked under the translator for such client.
+const IS_BROADCASTER = new URLSearchParams(window.location.search).has("broadcaster");
 
 class JanusStream {
   constructor() {
@@ -571,7 +574,9 @@ class JanusStream {
       this.mixvolume = this.audioElement.muted ? 0 : this.audioElement.volume;
       this.trlBoostElement.volume = this.mixvolume;
     }
-    if (volume > 0.02) {
+    if (IS_BROADCASTER) {
+      // No ducking for broadcaster, only keep translator volume in sync with user volume.
+    } else if (volume > 0.02) {
       // If translator is talking we want to reduce Rav to 5%.
       // NOTE: this threshold is against an AnalyserNode RMS reading (0..1ish),
       // a different scale than the old getStats()-based audioLevel - needs its
