@@ -61,6 +61,7 @@ import Settings from "./settings/Settings";
 import SettingsJoined from "./settings/SettingsJoined";
 import StudyMaterialsWidget from "./components/StudyMaterialsWidget";
 import {initCrisp, Support} from "./components/Support";
+import {CookieSettings} from "../../components/CookieSettings";
 import SendQuestionContainer from "./components/SendQuestions/container";
 import {getUserRole, userRolesEnum} from "../../shared/enums";
 import QuadStream from "./components/QuadStream";
@@ -1801,6 +1802,7 @@ class VirtualMqttClient extends Component {
             </>)
           }
 
+          <CookieSettings />
           <Support />
           <Donations />
         </Toolbar>
