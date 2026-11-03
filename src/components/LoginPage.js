@@ -9,6 +9,7 @@ import {Profile} from "./Profile";
 import internet from "./internet.png";
 import "./LoginPage.css";
 import {PAY_USER_FEE} from "../shared/env";
+import {CookieSettings} from "./CookieSettings";
 
 class LoginPage extends Component {
   state = {
@@ -101,6 +102,9 @@ class LoginPage extends Component {
               <Button basic fluid onClick={() => window.open("https://helpcenter.kli.one/", "_blank")}>
                 {t("loginPage.support")}
               </Button>
+            </Menu.Item>
+            <Menu.Item>
+              <CookieSettings/>
             </Menu.Item>
           </Menu.Menu>
         </Menu>
