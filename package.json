@@ -50,6 +50,7 @@
   },
   "scripts": {
     "start": "webpack-dev-server --mode=development --no-open --hot",
+    "start:galaxy": "REACT_APP_GALAXY_APP=galaxy yarn start",
     "start:virtual": "REACT_APP_GALAXY_APP=virtual yarn start",
     "start:admin": "REACT_APP_GALAXY_APP=admin yarn start",
     "start:shidur": "REACT_APP_GALAXY_APP=shidur yarn start",
@@ -59,6 +60,7 @@
     "start:webout": "REACT_APP_GALAXY_APP=webout yarn start",
     "build": "webpack --mode=production",
     "build:virtual": "REACT_APP_GALAXY_APP=virtual yarn build",
+    "build:galaxy": "REACT_APP_GALAXY_APP=galaxy yarn build",
     "build:admin": "REACT_APP_GALAXY_APP=admin yarn build",
     "build:shidur": "REACT_APP_GALAXY_APP=shidur yarn build",
     "build:audioout": "REACT_APP_GALAXY_APP=audioout yarn build",
