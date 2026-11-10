@@ -10,7 +10,8 @@ import {
   getIsAv1FromLocalstorage,
   getVideosFromLocalstorage,
   notifyMe,
-  sendUserState,
+  // TODO(metadata): restore if client-state is still needed (mobile client)
+  // sendUserState,
   updateGxyUser,
 } from "../../shared/tools";
 import "./VirtualClient.scss";
@@ -605,6 +606,7 @@ class VirtualMqttClient extends Component {
     videoroom.subTo = this.makeSubscription;
     videoroom.unsubFrom = this.unsubscribeFrom;
     videoroom.talkEvent = this.handleTalking;
+    videoroom.metaEvent = this.handleMetadata;
     videoroom.iceFailed = this.iceFailed;
 
     let subscriber = new SubscriberPlugin();
@@ -949,7 +951,10 @@ class VirtualMqttClient extends Component {
       }
       feed.audio = !!streams.find((a) => a.type === "audio" && a.codec === "opus");
       feed.data = !!streams.find((d) => d.type === "data");
-      feed.cammute = !feed.video;
+      // Initial state comes with the feed itself (Janus publisher metadata),
+      // later changes arrive via handleMetadata.
+      feed.cammute = !feed.video || feed.metadata?.camera === false;
+      feed.question = !!feed.metadata?.question;
 
       const prevFeed = prevFeedsMap.get(feed.id);
       const prevVideo = !!prevFeed && prevFeed.streams?.find((v) => v.type === "video" && v.codec === "h264");
@@ -972,13 +977,15 @@ class VirtualMqttClient extends Component {
     this.setState({feeds: sortAndFilterFeeds(feeds)});
     if (subscription.length > 0) {
       this.subscribeTo(subscription);
+      // TODO(metadata): replaced by Janus publisher metadata. Kept for the mobile
+      // client (still relies on client-state); remove once it's migrated.
       // Send question event for new feed, by notifying all room.
       // FIXME: Can this be done by notifying only the joined feed?
-      setTimeout(() => {
-        if (this.state.question || this.state.cammuted) {
-          sendUserState(this.state.user);
-        }
-      }, 3000);
+      // setTimeout(() => {
+      //   if (this.state.question || this.state.cammuted) {
+      //     sendUserState(this.state.user);
+      //   }
+      // }, 3000);
     }
   };
 
@@ -1092,6 +1099,19 @@ class VirtualMqttClient extends Component {
     }
   };
 
+  // Janus notified that another publisher changed its metadata (see updateMetadata).
+  handleMetadata = (id, metadata) => {
+    this.userState({...metadata, rfid: id});
+  };
+
+  // Publish our current user state to the room via Janus publisher metadata.
+  updateMetadata = (user) => {
+    const {videoroom} = this.state;
+    if (!videoroom) return;
+    videoroom.updateMetadata(user)
+      .catch((err) => log.warn("[client] updateMetadata failed:", err?.data?.error || err?.message || err));
+  };
+
   userState = (user) => {
     const {feeds} = this.state;
     const {camera, question, rfid} = user;
@@ -1147,9 +1167,12 @@ class VirtualMqttClient extends Component {
       this.handleAudioOut(data);
     } else if (type === "client-reload-all") {
       window.location.reload();
-    } else if (type === "client-state") {
-      this.userState(data.user);
     }
+    // TODO(metadata): replaced by Janus metadata event (handleMetadata).
+    // Kept for the mobile client; remove once it's migrated.
+    // else if (type === "client-state") {
+    //   this.userState(data.user);
+    // }
   };
 
   makeDelay = () => {
@@ -1174,7 +1197,9 @@ class VirtualMqttClient extends Component {
 
     updateSentryUser(user);
     updateGxyUser(user);
-    sendUserState(user);
+    this.updateMetadata(user);
+    // TODO(metadata): kept for the mobile client (client-state); remove once migrated.
+    // sendUserState(user);
   };
 
   handleAudioOut = (data) => {
@@ -1219,7 +1244,9 @@ class VirtualMqttClient extends Component {
     this.setState({user});
     updateSentryUser(user);
     updateGxyUser(user);
-    sendUserState(user);
+    this.updateMetadata(user);
+    // TODO(metadata): kept for the mobile client (client-state); remove once migrated.
+    // sendUserState(user);
   };
 
   stopLocalMedia = (videoroom) => {
