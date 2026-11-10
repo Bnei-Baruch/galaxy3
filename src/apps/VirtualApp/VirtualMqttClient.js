@@ -82,6 +82,8 @@ import {MobileAppPopup} from "./components/MobileAppPopup";
 import {BroadcastNotification} from "./components/BroadcastNotification";
 import GlobalOptions, {GlobalOptionsContext} from "./components/GlobalOptions/GlobalOptions";
 import ShowSelfBtn from "./buttons/ShowSelfBtn";
+import ScreenShare from "./buttons/ScreenShare";
+import ScreenShareView from "./components/ScreenShareView";
 import OnboardingDoor from "./components/OnboardingDoor.js";
 import {CountrySelectionDialog, SKIP_COUNTRY_DIALOG_KEY} from "./components/CountrySelectionDialog.js";
 
@@ -102,6 +104,16 @@ const sortAndFilterFeeds = (feeds) =>
     });
 
 const userFeeds = (feeds) => feeds.filter((feed) => feed.display.role === userRolesEnum.user);
+
+// Screen share is published as a separate VideoRoom participant with this display role.
+// Shidur / AudioOut / VideoOut / WebOut only handle role "user" feeds, so they ignore it.
+const SCREEN_ROLE = "screen";
+const parseDisplay = (display) => {
+  if (typeof display !== "string") return display || {};
+  try { return JSON.parse(display); } catch (_) { return {}; }
+};
+const isScreenFeed = (feed) => parseDisplay(feed.display).role === SCREEN_ROLE;
+const isScreenShareSupported = () => !!(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia);
 const monitoringData = new MonitoringData();
 // Wire MonitoringData -> Sentry so captureNetworkEvent can pull a connection
 // snapshot (rtt/jitter/loss/category/iceCandidate/...) at the moment of failure.
@@ -172,7 +184,19 @@ class VirtualMqttClient extends Component {
       showBars: true,
       barsAnimatingOut: false,
       showCountryDialog: false,
+      // Screen share
+      screenSharing: false, // we are publishing our screen
+      screenFeed: null,     // the screen feed currently shared in the room (ours or someone else's)
+      screenStream: null,   // remote MediaStream of screenFeed
+      panelSource: null,    // while screenFeed exists: "screen" | "broadcast" - what the broadcast panel shows
     };
+
+    // Screen share runtime (not rendered)
+    this.screenroom = null;      // our screen PublisherPlugin
+    this.screenCapture = null;   // our getDisplayMedia stream
+    this.screenFeedId = null;    // our screen feed id in the room
+    this.screenFeed = null;      // sync mirror of state.screenFeed
+    this.preScreenState = null;  // panel state saved when entering screen mode
 
     this.hideBarsTimer = null;
     this.conferenceReconnectAttempts = 0;
@@ -809,6 +833,8 @@ class VirtualMqttClient extends Component {
         log.info("[client] Pulbishers list: ", data.publishers);
 
         this.makeSubscription(data.publishers);
+        // Rejoined after a reconnect and the screen share is gone meanwhile.
+        if (this.preScreenState && !this.screenFeed) this.exitScreenMode();
 
         // Safety watchdog: publish() resolves once the SDP answer is sent,
         // but the publisher can still fail to actually start sending media
@@ -883,6 +909,22 @@ class VirtualMqttClient extends Component {
   resetClient = (reconnect, callback) => {
     let {janus, room, shidur} = this.state;
 
+    // Screen share: our screen publisher dies with the session anyway.
+    this.stopScreenShare();
+    this.screenFeedId = null;
+    this.screenFeed = null;
+    const preScreenState = this.preScreenState;
+    // On reconnect keep preScreenState: rejoin re-detects the screen feed or exits screen mode.
+    if (!reconnect) this.preScreenState = null;
+    const screenReset = {screenFeed: null, screenStream: null, panelSource: null};
+    if (!reconnect && preScreenState) {
+      // Restore the panel state for the next room (broadcast is started by initClient).
+      screenReset.shidur = preScreenState.shidur;
+      screenReset.isKliOlamiShown = preScreenState.isKliOlamiShown;
+      screenReset.currentLayout = preScreenState.currentLayout;
+      shidur = shidur || preScreenState.shidur;
+    }
+
     if (this._publisherWatchdog) {
       clearTimeout(this._publisherWatchdog);
       this._publisherWatchdog = null;
@@ -926,14 +968,257 @@ class VirtualMqttClient extends Component {
       room: reconnect ? room : "",
       chatMessagesCount: 0,
       isSettings: false,
-      sourceLoading: true
+      sourceLoading: true,
+      ...screenReset,
     });
 
     if (typeof callback === "function") callback();
   }
 
+  // ---------------------------------------------------------------------------
+  // Screen share
+  //
+  // Our screen is published by a second PublisherPlugin (this.screenroom) that
+  // joins the same room as a separate participant with display.role "screen".
+  // Camera and microphone stay untouched. Everybody (including us) detects the
+  // screen feed in makeSubscription and switches the broadcast panel to it:
+  // broadcast and quad are turned off and restored when the screen feed leaves.
+  // Only one screen share per room: if two start at the same time, the one that
+  // started earlier (display.timestamp) wins and the other stops itself.
+  // ---------------------------------------------------------------------------
+
+  startScreenShare = async () => {
+    const {t} = this.props;
+    const {janus, user, room} = this.state;
+    if (!janus || !room || this.screenroom || this.screenFeed) return;
+    if (!user || user.role === userRolesEnum.ghost || !isScreenShareSupported()) return;
+
+    let capture;
+    try {
+      capture = await navigator.mediaDevices.getDisplayMedia({
+        video: {frameRate: {ideal: 10, max: 15}, width: {max: 1920}, height: {max: 1080}},
+        audio: {
+          echoCancellation: false, noiseSuppression: false, autoGainControl: false,
+          // Chromium: don't capture the audio played by this tab (the room itself).
+          restrictOwnAudio: true,
+        },
+        systemAudio: "include",
+      });
+    } catch (err) {
+      log.info("[screen] getDisplayMedia cancelled/failed:", err && err.name);
+      return;
+    }
+
+    // Somebody may have started sharing (or we left) while the picker was open.
+    if (this.screenFeed || !this.state.janus || this.state.janus !== janus || this.screenroom) {
+      capture.getTracks().forEach((tr) => tr.stop());
+      if (this.screenFeed) alert(t("oldClient.screenShareTaken", {name: this.screenFeed.display?.display || ""}));
+      return;
+    }
+
+    const vTrack = capture.getVideoTracks()[0];
+    const aTrack = capture.getAudioTracks()[0];
+    if (!vTrack) {
+      capture.getTracks().forEach((tr) => tr.stop());
+      return;
+    }
+    try { vTrack.contentHint = "detail"; } catch (_) { /* not supported */ }
+    // Browser's own "Stop sharing" button.
+    vTrack.onended = () => this.stopScreenShare();
+
+    const screenroom = new PublisherPlugin();
+    screenroom.subTo = () => {};
+    screenroom.unsubFrom = () => {};
+    screenroom.talkEvent = () => {};
+    // Screen connection problems must not trigger a full room reconnect.
+    screenroom.iceFailed = () => {
+      if (this.screenroom !== screenroom) return;
+      log.warn("[screen] screen publisher connection failed, stopping screen share");
+      this.stopScreenShare();
+    };
+
+    this.screenroom = screenroom;
+    this.screenCapture = capture;
+    this.setState({screenSharing: true});
+
+    try {
+      await janus.attach(screenroom);
+      if (this.screenroom !== screenroom) return;
+      const d = {
+        id: user.id, timestamp: Date.now(), role: SCREEN_ROLE,
+        display: user.username, is_group: false, is_desktop: true,
+      };
+      const meta = {owner: user.id, rfid: user.rfid, display: user.username};
+      const data = await screenroom.join(room, d, meta);
+      if (this.screenroom !== screenroom) return;
+      this.screenFeedId = data && data.id;
+      await screenroom.publish(new MediaStream([vTrack]), aTrack ? new MediaStream([aTrack]) : null);
+      log.info("[screen] screen share published, feed:", this.screenFeedId, "audio:", !!aTrack);
+    } catch (err) {
+      log.error("[screen] screen share failed:", err);
+      if (this.screenroom === screenroom) {
+        this.stopScreenShare();
+        alert(t("oldClient.screenShareFailed"));
+      }
+    }
+  };
+
+  stopScreenShare = () => {
+    const screenroom = this.screenroom;
+    const capture = this.screenCapture;
+    this.screenroom = null;
+    this.screenCapture = null;
+
+    if (capture) {
+      capture.getTracks().forEach((tr) => {
+        tr.onended = null;
+        try { tr.stop(); } catch (_) { /* already stopped */ }
+      });
+    }
+
+    if (screenroom) {
+      const janus = screenroom.janus;
+      let done = false;
+      const detach = () => {
+        if (done) return;
+        done = true;
+        if (janus) {
+          janus.detach(screenroom).catch((err) => log.debug("[screen] detach failed:", err && err.message));
+        } else {
+          screenroom.detach();
+        }
+      };
+      // leave() is best-effort: don't wait for a slow ack more than 3s.
+      setTimeout(detach, 3000);
+      const lp = screenroom.roomId ? screenroom.leave() : null;
+      if (lp && typeof lp.then === "function") {
+        lp.then(detach, detach);
+      } else {
+        detach();
+      }
+    }
+
+    if (this.state.screenSharing) this.setState({screenSharing: false});
+  };
+
+  // A screen feed appeared in the room (from makeSubscription).
+  handleScreenFeed = (feed) => {
+    const {t} = this.props;
+    feed.display = parseDisplay(feed.display);
+    const current = this.screenFeed;
+    if (current && current.id === feed.id) return;
+
+    if (current) {
+      // Two simultaneous shares: the one that started first wins.
+      const ts = (f) => f.display?.timestamp || 0;
+      const newWins = ts(feed) < ts(current) || (ts(feed) === ts(current) && String(feed.id) < String(current.id));
+      const loser = newWins ? current : feed;
+      const winner = newWins ? feed : current;
+      if (loser.id === this.screenFeedId && this.screenroom) {
+        log.info("[screen] another screen share started first, stopping ours");
+        this.stopScreenShare();
+        alert(t("oldClient.screenShareTaken", {name: winner.display?.display || ""}));
+      }
+      if (!newWins) return;
+      this.unsubscribeScreenFeed(current);
+    }
+
+    log.info("[screen] screen feed in room:", feed.id, feed.display);
+    this.screenFeed = feed;
+    this.setState({screenFeed: feed, screenStream: null});
+    this.enterScreenMode();
+
+    // Our own screen: nothing to subscribe to (we show a notice instead of a preview).
+    if (feed.id === this.screenFeedId) return;
+    const subscription = (feed.streams || [])
+      .filter((st) => (st.type === "video" && st.codec === "h264") || (st.type === "audio" && st.codec === "opus"))
+      .map((st) => ({feed: feed.id, mid: st.mid}));
+    if (subscription.length > 0) this.subscribeTo(subscription);
+  };
+
+  unsubscribeScreenFeed = (feed) => {
+    const {remoteFeed, subscriber} = this.state;
+    if (!feed || feed.id === this.screenFeedId || !remoteFeed || !subscriber) return;
+    const p = subscriber.unsub([{feed: feed.id}]);
+    if (p && typeof p.catch === "function") {
+      p.catch((err) => log.debug("[screen] unsub failed:", err && err.message));
+    }
+  };
+
+  // The screen feed left the room.
+  clearScreenFeed = () => {
+    const feed = this.screenFeed;
+    if (!feed) return;
+    log.info("[screen] screen feed left:", feed.id);
+    this.unsubscribeScreenFeed(feed);
+    if (feed.id === this.screenFeedId) this.screenFeedId = null;
+    this.screenFeed = null;
+    this.setState({screenFeed: null, screenStream: null, panelSource: null});
+    this.exitScreenMode();
+  };
+
+  // Show the shared screen in the broadcast panel: broadcast and quad off, split layout.
+  enterScreenMode = () => {
+    if (this.preScreenState) {
+      // Already in screen mode (another screen feed or rejoin after reconnect).
+      this.setState({panelSource: this.state.shidur ? "broadcast" : "screen"});
+      return;
+    }
+    const {shidur, isKliOlamiShown, currentLayout} = this.state;
+    this.preScreenState = {shidur, isKliOlamiShown, currentLayout};
+    if (shidur) JanusStream.toggle("shidur");
+    this.setState({
+      shidur: false,
+      isKliOlamiShown: false,
+      currentLayout: "split", // not persisted, restored on exit
+      attachedSource: true,
+      panelSource: "screen",
+    });
+  };
+
+  // Restore the panel state saved in enterScreenMode.
+  exitScreenMode = () => {
+    const prev = this.preScreenState;
+    if (!prev) return;
+    this.preScreenState = null;
+    const {shidur, room, currentLayout} = this.state;
+    const update = {isKliOlamiShown: prev.isKliOlamiShown, panelSource: null};
+    // The user may have changed the layout meanwhile - keep his choice then.
+    if (currentLayout === "split") update.currentLayout = prev.currentLayout;
+    // If the user switched back to the broadcast during the share, it's already on.
+    if (prev.shidur && !shidur && room !== "") {
+      JanusStream.initStreaming();
+      update.shidur = true;
+    }
+    this.setState(update);
+  };
+
+  // Somebody else shares and we watch the broadcast: switch the panel to the screen.
+  showSharedScreen = () => {
+    if (!this.screenFeed) return;
+    if (this.state.shidur) {
+      this.toggleShidur();
+    } else {
+      this.setState({panelSource: "screen"});
+    }
+  };
+
+  handleScreenShareButton = () => {
+    const {screenSharing, screenFeed, panelSource} = this.state;
+    if (screenSharing) {
+      this.stopScreenShare();
+    } else if (screenFeed) {
+      if (panelSource !== "screen") this.showSharedScreen();
+    } else {
+      this.startScreenShare();
+    }
+  };
+
   makeSubscription = (newFeeds) => {
     log.info("[client] makeSubscription", newFeeds);
+    // Screen share feeds are not room participants: handle them separately.
+    newFeeds.filter(isScreenFeed).forEach(this.handleScreenFeed);
+    newFeeds = newFeeds.filter((feed) => !isScreenFeed(feed));
     const subscription = [];
     const {feeds: prevFeeds, muteOtherCams} = this.state;
     const prevFeedsMap = new Map(prevFeeds.map((f) => [f.id, f]));
@@ -1047,6 +1332,11 @@ class VirtualMqttClient extends Component {
     let mid = track.id;
     let feed = stream.id;
     log.info("[client] >> This track is coming from feed " + feed + ":", mid, track);
+    if (on && this.screenFeed && String(this.screenFeed.id) === String(feed)) {
+      // Audio and video of the screen feed share one MediaStream, played by ScreenShareView.
+      this.setState({screenStream: stream});
+      return;
+    }
     if (on) {
       if (track.kind === "audio") {
         log.debug("[client] Created remote audio stream:", stream);
@@ -1065,6 +1355,9 @@ class VirtualMqttClient extends Component {
   unsubscribeFrom = (ids, onlyVideo) => {
     const {feeds} = this.state;
     const idsSet = new Set(ids);
+    if (!onlyVideo && this.screenFeed && idsSet.has(this.screenFeed.id)) {
+      this.clearScreenFeed();
+    }
     const streams = [];
     feeds
       .filter((feed) => idsSet.has(feed.id))
@@ -1324,6 +1617,8 @@ class VirtualMqttClient extends Component {
   toggleShidur = () => {
     const {shidur} = this.state;
     const stateUpdate = {shidur: !shidur};
+    // While a screen is shared, the panel shows either the broadcast or the screen.
+    if (this.screenFeed) stateUpdate.panelSource = shidur ? "screen" : "broadcast";
     if (shidur) {
       JanusStream.toggle('shidur');
       this.setState(stateUpdate);
@@ -1594,7 +1889,14 @@ class VirtualMqttClient extends Component {
       media,
       isKliOlamiShown,
       mqttOn,
+      screenSharing,
+      screenFeed,
+      panelSource,
     } = this.state;
+
+    let screenShareMode = "start";
+    if (screenSharing) screenShareMode = "stop";
+    else if (screenFeed) screenShareMode = panelSource === "screen" ? "busy" : "show";
 
     return (
       <AppBar position="static" color="default">
@@ -1619,6 +1921,14 @@ class VirtualMqttClient extends Component {
               disabled={room === "" || sourceLoading}
             />
             <ShowSelfBtn/>
+            {(isScreenShareSupported() || screenFeed) && (
+              <ScreenShare
+                mode={screenShareMode}
+                name={screenFeed?.display?.display}
+                action={this.handleScreenShareButton}
+                disabled={room === "" || sourceLoading || user?.role === userRolesEnum.ghost || (screenShareMode === "start" && !isScreenShareSupported())}
+              />
+            )}
             <Layout
               t={t}
               active={layout}
@@ -1864,11 +2174,30 @@ class VirtualMqttClient extends Component {
     );
   };
 
+  isScreenShown = () => {
+    const {room, screenFeed, panelSource} = this.state;
+    return !!room && !!screenFeed && panelSource === "screen";
+  };
+
   renderNewVersionContent = (layout, isDeb, source, otherFeedHasQuestion, noOfVideos, remoteVideos) => {
     const {i18n} = this.props;
-    const {attachedSource, chatVisible, room, shidur, user, rightAsideName, leftAsideSize, leftAsideName, isKliOlamiShown, kliOlamiAttached} = this.state;
+    const {attachedSource, chatVisible, room, shidur, user, rightAsideName, leftAsideSize, leftAsideName, isKliOlamiShown, kliOlamiAttached, screenFeed, screenStream} = this.state;
 
     const notApproved = user && user.role !== userRolesEnum.user;
+
+    // Shared screen replaces the broadcast (and quad) in the broadcast panel.
+    const showScreen = this.isScreenShown();
+    const screenView = showScreen && (
+      <ScreenShareView
+        key="screen"
+        stream={screenStream}
+        isMine={!!screenFeed && screenFeed.id === this.screenFeedId}
+        name={screenFeed?.display?.display}
+        onStop={this.stopScreenShare}
+        isDoubleSize={"double" === layout}
+      />
+    );
+    const panelContent = showScreen ? screenView : source;
 
     const kliOlami = !!room && isKliOlamiShown && (
       <QuadStream
@@ -1879,8 +2208,8 @@ class VirtualMqttClient extends Component {
       />
     );
 
-    const noBroadcastPanel = layout !== "split" ||
-      (((room === "" || !shidur) || !attachedSource) && (!isKliOlamiShown || !kliOlamiAttached));
+    const noBroadcastPanel = layout !== "split" || (!showScreen &&
+      (((room === "" || !shidur) || !attachedSource) && (!isKliOlamiShown || !kliOlamiAttached)));
 
     return (
       <div className={classNames("vclient", {
@@ -1903,8 +2232,8 @@ class VirtualMqttClient extends Component {
                   vclient__main-wrapper
                   no-of-videos-${noOfVideos}
                   layout--${layout}
-                  broadcast--${(room !== "" && shidur) ? "on" : "off"}
-                  broadcast--${!attachedSource ? "popup" : "inline"}
+                  broadcast--${(room !== "" && shidur) || showScreen ? "on" : "off"}
+                  broadcast--${!attachedSource && !showScreen ? "popup" : "inline"}
                   kli-olami--${isKliOlamiShown ? "on" : "off"}
                   kli-olami--${!kliOlamiAttached ? "popup" : "inline"}
                   ${noBroadcastPanel ? "no-broadcast-panel" : ""}
@@ -1912,15 +2241,15 @@ class VirtualMqttClient extends Component {
             >
               <div className="broadcast-panel">
                 <div className="broadcast__wrapper">
-                  {layout === "split" && !notApproved && source}
-                  {layout === "split" && !notApproved && kliOlami}
+                  {layout === "split" && !notApproved && panelContent}
+                  {layout === "split" && !notApproved && !showScreen && kliOlami}
                 </div>
               </div>
 
               <div className="videos-panel">
                 <div className="videos__wrapper">
-                  {(layout === "equal" || layout === "double" || notApproved) && source}
-                  {(layout === "equal" || layout === "double" || notApproved) && kliOlami}
+                  {(layout === "equal" || layout === "double" || notApproved) && panelContent}
+                  {(layout === "equal" || layout === "double" || notApproved) && !showScreen && kliOlami}
                   {!notApproved && remoteVideos}
                 </div>
               </div>
@@ -2073,7 +2402,7 @@ class VirtualMqttClient extends Component {
     if (this.context.hideSelf)
       noOfVideos -= 1;
 
-    if (room !== "" && shidur && attachedSource) {
+    if ((room !== "" && shidur && attachedSource) || this.isScreenShown()) {
       if ("double" === layout) {
         noOfVideos += 4;
       } else if ("equal" === layout) {
