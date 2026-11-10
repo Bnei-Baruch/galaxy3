@@ -112,6 +112,9 @@ const parseDisplay = (display) => {
   if (typeof display !== "string") return display || {};
   try { return JSON.parse(display); } catch (_) { return {}; }
 };
+// Screen publisher bitrate (Janus REMB cap for the screen handle). Without it the
+// room default (made for small camera tiles) applies and the encoder starves.
+const SCREEN_BITRATE = 1500000;
 const isScreenFeed = (feed) => parseDisplay(feed.display).role === SCREEN_ROLE;
 // Sound is mandatory for screen share (it's mainly used to play lesson clips),
 // and only desktop Chromium browsers (Chrome, Edge, Opera, ...) can capture it:
@@ -1007,7 +1010,7 @@ class VirtualMqttClient extends Component {
       capture = await navigator.mediaDevices.getDisplayMedia({
         // Open the picker on the "Chrome tab" pane: a clip played in a tab gives
         // clean tab audio without the room's own sound.
-        video: {displaySurface: "browser", frameRate: {ideal: 10, max: 15}, width: {max: 1920}, height: {max: 1080}},
+        video: {displaySurface: "browser", frameRate: {ideal: 25, max: 30}, width: {max: 1280}, height: {max: 720}},
         audio: {
           echoCancellation: false, noiseSuppression: false, autoGainControl: false,
           // Chromium: don't capture the audio played by this tab (the room itself).
@@ -1047,7 +1050,9 @@ class VirtualMqttClient extends Component {
       alert(t("oldClient.screenShareNoAudio"));
       return;
     }
-    try { vTrack.contentHint = "detail"; } catch (_) { /* not supported */ }
+    // Mostly lesson clips (video), so keep the frame rate and let the resolution
+    // adapt to the bandwidth ("detail" keeps resolution and drops frames instead).
+    try { vTrack.contentHint = "motion"; } catch (_) { /* not supported */ }
     // Browser's own "Stop sharing" button.
     vTrack.onended = () => this.stopScreenShare();
 
@@ -1079,12 +1084,31 @@ class VirtualMqttClient extends Component {
       this.screenFeedId = data && data.id;
       await screenroom.publish(new MediaStream([vTrack]), new MediaStream([aTrack]));
       log.info("[screen] screen share published, feed:", this.screenFeedId);
+      await screenroom.setBitrate(SCREEN_BITRATE)
+        .catch((err) => log.warn("[screen] setBitrate failed:", err?.data?.error || err?.message || err));
+      this.setScreenSenderParams(screenroom);
     } catch (err) {
       log.error("[screen] screen share failed:", err);
       if (this.screenroom === screenroom) {
         this.stopScreenShare();
         alert(t("oldClient.screenShareFailed"));
       }
+    }
+  };
+
+  // Encoder hints for the screen video sender: own max bitrate (matching the Janus
+  // cap) and prefer keeping the frame rate over the resolution.
+  setScreenSenderParams = (screenroom) => {
+    const sender = screenroom?.pc?.getSenders().find((s) => s.track && s.track.kind === "video");
+    if (!sender || !sender.getParameters) return;
+    try {
+      const params = sender.getParameters();
+      if (!params.encodings || params.encodings.length === 0) params.encodings = [{}];
+      params.encodings[0].maxBitrate = SCREEN_BITRATE;
+      params.degradationPreference = "maintain-framerate";
+      sender.setParameters(params).catch((err) => log.debug("[screen] setParameters failed:", err && err.message));
+    } catch (err) {
+      log.debug("[screen] setParameters threw:", err && err.message);
     }
   };
 
