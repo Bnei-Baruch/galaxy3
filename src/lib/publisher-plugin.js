@@ -15,6 +15,7 @@ export class PublisherPlugin extends EventEmitter {
     this.subTo = null
     this.unsubFrom = null
     this.talkEvent = null
+    this.metaEvent = null
     this.iceState = null
     this.iceFailed = null
     // Serialize renegotiations (configure): overlapping createOffer/setLocalDescription
@@ -190,6 +191,17 @@ export class PublisherPlugin extends EventEmitter {
         log.debug('[publisher] error set bitrate', error)
         reject(error)
       })
+    })
+  }
+
+  // Replace this publisher's metadata (SDP-less configure). Janus replaces the
+  // whole object and notifies all other room participants with
+  // {videoroom: "event", id, metadata} (VideoRoom >= 1.3.0).
+  updateMetadata(metadata) {
+    const body = {request: "configure", metadata};
+    return this.transaction('message', { body }, 'event').then((param) => {
+      log.debug("[publisher] metadata updated: ", param)
+      return param && param.data
     })
   }
 
@@ -390,6 +402,12 @@ export class PublisherPlugin extends EventEmitter {
     if(data?.videoroom === "stopped-talking") {
       log.debug('[publisher] stopped talking: ', data.id)
       this.talkEvent(data.id, false)
+    }
+
+    // Another participant changed its metadata (configure with metadata).
+    if(data?.videoroom === "event" && data?.id && data?.metadata && !data?.publishers) {
+      log.debug('[publisher] metadata changed: ', data.id, data.metadata)
+      if (typeof this.metaEvent === "function") this.metaEvent(data.id, data.metadata)
     }
   }
 
