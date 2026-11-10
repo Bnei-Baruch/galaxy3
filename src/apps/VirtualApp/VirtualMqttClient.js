@@ -113,7 +113,16 @@ const parseDisplay = (display) => {
   try { return JSON.parse(display); } catch (_) { return {}; }
 };
 const isScreenFeed = (feed) => parseDisplay(feed.display).role === SCREEN_ROLE;
-const isScreenShareSupported = () => !!(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia);
+// Sound is mandatory for screen share (it's mainly used to play lesson clips),
+// and only desktop Chromium browsers (Chrome, Edge, Opera, ...) can capture it:
+// tab audio on every OS, whole-screen system audio on Windows (and recent macOS).
+// Firefox and Safari never provide audio from getDisplayMedia.
+const isChromiumDesktop = () => {
+  const uad = navigator.userAgentData;
+  return !!uad && !uad.mobile && Array.isArray(uad.brands) && uad.brands.some((b) => /Chromium/i.test(b.brand));
+};
+const isScreenShareSupported = () =>
+  !!(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) && isChromiumDesktop();
 const monitoringData = new MonitoringData();
 // Wire MonitoringData -> Sentry so captureNetworkEvent can pull a connection
 // snapshot (rtt/jitter/loss/category/iceCandidate/...) at the moment of failure.
@@ -996,13 +1005,20 @@ class VirtualMqttClient extends Component {
     let capture;
     try {
       capture = await navigator.mediaDevices.getDisplayMedia({
-        video: {frameRate: {ideal: 10, max: 15}, width: {max: 1920}, height: {max: 1080}},
+        // Open the picker on the "Chrome tab" pane: a clip played in a tab gives
+        // clean tab audio without the room's own sound.
+        video: {displaySurface: "browser", frameRate: {ideal: 10, max: 15}, width: {max: 1920}, height: {max: 1080}},
         audio: {
           echoCancellation: false, noiseSuppression: false, autoGainControl: false,
           // Chromium: don't capture the audio played by this tab (the room itself).
           restrictOwnAudio: true,
         },
         systemAudio: "include",
+        // Sharing the room tab itself makes no sense (mirror effect + room audio).
+        selfBrowserSurface: "exclude",
+        preferCurrentTab: false,
+        // Let the user switch the shared tab without stopping the share.
+        surfaceSwitching: "include",
       });
     } catch (err) {
       log.info("[screen] getDisplayMedia cancelled/failed:", err && err.name);
@@ -1020,6 +1036,15 @@ class VirtualMqttClient extends Component {
     const aTrack = capture.getAudioTracks()[0];
     if (!vTrack) {
       capture.getTracks().forEach((tr) => tr.stop());
+      return;
+    }
+    // No sound - no share: the user picked a window, didn't tick "Share audio",
+    // or the OS can't capture system audio for the whole screen.
+    if (!aTrack) {
+      const surface = vTrack.getSettings ? vTrack.getSettings().displaySurface : "";
+      capture.getTracks().forEach((tr) => tr.stop());
+      log.info("[screen] no audio track captured, surface:", surface);
+      alert(t("oldClient.screenShareNoAudio"));
       return;
     }
     try { vTrack.contentHint = "detail"; } catch (_) { /* not supported */ }
@@ -1052,8 +1077,8 @@ class VirtualMqttClient extends Component {
       const data = await screenroom.join(room, d, meta);
       if (this.screenroom !== screenroom) return;
       this.screenFeedId = data && data.id;
-      await screenroom.publish(new MediaStream([vTrack]), aTrack ? new MediaStream([aTrack]) : null);
-      log.info("[screen] screen share published, feed:", this.screenFeedId, "audio:", !!aTrack);
+      await screenroom.publish(new MediaStream([vTrack]), new MediaStream([aTrack]));
+      log.info("[screen] screen share published, feed:", this.screenFeedId);
     } catch (err) {
       log.error("[screen] screen share failed:", err);
       if (this.screenroom === screenroom) {

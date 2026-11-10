@@ -12,7 +12,7 @@ const ScreenShare = ({mode, name, action, disabled}) => {
   const {t} = useTranslation();
 
   const titles = {
-    start: t("oldClient.shareScreen"),
+    start: `${t("oldClient.shareScreen")} - ${t("oldClient.shareScreenHint")}`,
     stop: t("oldClient.stopShareScreen"),
     busy: t("oldClient.screenShareBusy", {name: name || ""}),
     show: t("oldClient.showSharedScreen", {name: name || ""}),
