@@ -21,9 +21,15 @@ const fsButtonStyle = {
   border: "none", borderRadius: 4, background: "rgba(0,0,0,0.6)", color: "#fff",
 };
 
+const stopBarStyle = {
+  position: "absolute", bottom: 12, left: 0, right: 0, zIndex: 2,
+  display: "flex", alignItems: "center", justifyContent: "center", gap: "12px",
+  pointerEvents: "none",
+};
+
 // Shared screen shown in place of the broadcast panel.
-// isMine: the local user is the one sharing — show a notice instead of a
-// preview (a preview of the whole screen would produce an infinite mirror).
+// isMine: the local user is the one sharing - stream is a local video-only
+// preview (muted: the sharer already hears the clip locally), with a Stop button.
 const ScreenShareView = ({stream, isMine, name, onStop, isDoubleSize}) => {
   const {t} = useTranslation();
   const wrapperRef = useRef(null);
@@ -47,6 +53,7 @@ const ScreenShareView = ({stream, isMine, name, onStop, isDoubleSize}) => {
   }, []);
 
   const fullScreen = wrapperRef.current ? isFullScreen(wrapperRef.current) : false;
+  const label = isMine ? t("oldClient.youAreSharing") : t("oldClient.sharedScreenOf", {name: name || ""});
 
   return (
     <div
@@ -54,40 +61,43 @@ const ScreenShareView = ({stream, isMine, name, onStop, isDoubleSize}) => {
       ref={wrapperRef}
       style={{background: "#000"}}
     >
-      {isMine ? (
-        <div style={overlayStyle}>
-          <span style={{fontWeight: 700, fontSize: "1.4em"}}>{t("oldClient.youAreSharing")}</span>
-          <Button variant="contained" color="error" startIcon={<StopScreenShare/>} onClick={onStop}>
+      <div style={labelStyle}>{label}</div>
+      <button
+        style={fsButtonStyle}
+        title={t("oldClient.openFullScreen")}
+        onClick={() => toggleFullScreen(wrapperRef.current)}
+      >
+        {fullScreen ? <FullscreenExit/> : <Fullscreen/>}
+      </button>
+      {!stream && (
+        <div style={{...overlayStyle, zIndex: 1}}>
+          <CircularProgress size={28} style={{color: "#ffb300"}}/>
+          <span>{t("oldClient.screenShareConnecting")}</span>
+        </div>
+      )}
+      {isMine && (
+        <div style={stopBarStyle}>
+          <Button
+            variant="contained"
+            color="error"
+            startIcon={<StopScreenShare/>}
+            onClick={onStop}
+            style={{pointerEvents: "auto"}}
+          >
             {t("oldClient.stopShareScreen")}
           </Button>
         </div>
-      ) : (
-        <>
-          <div style={labelStyle}>{t("oldClient.sharedScreenOf", {name: name || ""})}</div>
-          <button
-            style={fsButtonStyle}
-            title={t("oldClient.openFullScreen")}
-            onClick={() => toggleFullScreen(wrapperRef.current)}
-          >
-            {fullScreen ? <FullscreenExit/> : <Fullscreen/>}
-          </button>
-          {!stream && (
-            <div style={{...overlayStyle, zIndex: 1}}>
-              <CircularProgress size={28} style={{color: "#ffb300"}}/>
-              <span>{t("oldClient.screenShareConnecting")}</span>
-            </div>
-          )}
-          <div className="mediaplayer" style={{width: "100%", height: "100%"}}>
-            <video
-              ref={videoRef}
-              autoPlay={true}
-              playsInline={true}
-              controls={false}
-              style={{width: "100%", height: "100%", objectFit: "contain", background: "#000"}}
-            />
-          </div>
-        </>
       )}
+      <div className="mediaplayer" style={{width: "100%", height: "100%"}}>
+        <video
+          ref={videoRef}
+          autoPlay={true}
+          playsInline={true}
+          muted={isMine}
+          controls={false}
+          style={{width: "100%", height: "100%", objectFit: "contain", background: "#000"}}
+        />
+      </div>
     </div>
   );
 };

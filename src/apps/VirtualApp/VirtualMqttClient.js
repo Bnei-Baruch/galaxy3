@@ -200,6 +200,7 @@ class VirtualMqttClient extends Component {
       screenSharing: false, // we are publishing our screen
       screenFeed: null,     // the screen feed currently shared in the room (ours or someone else's)
       screenStream: null,   // remote MediaStream of screenFeed
+      screenPreview: null,  // local video-only preview of our own shared screen
       panelSource: null,    // while screenFeed exists: "screen" | "broadcast" - what the broadcast panel shows
     };
 
@@ -1069,7 +1070,8 @@ class VirtualMqttClient extends Component {
 
     this.screenroom = screenroom;
     this.screenCapture = capture;
-    this.setState({screenSharing: true});
+    // Video-only preview for ourselves (no sound - we already hear it locally).
+    this.setState({screenSharing: true, screenPreview: new MediaStream([vTrack])});
 
     try {
       await janus.attach(screenroom);
@@ -1147,7 +1149,7 @@ class VirtualMqttClient extends Component {
       }
     }
 
-    if (this.state.screenSharing) this.setState({screenSharing: false});
+    if (this.state.screenSharing || this.state.screenPreview) this.setState({screenSharing: false, screenPreview: null});
   };
 
   // A screen feed appeared in the room (from makeSubscription).
@@ -2230,17 +2232,18 @@ class VirtualMqttClient extends Component {
 
   renderNewVersionContent = (layout, isDeb, source, otherFeedHasQuestion, noOfVideos, remoteVideos) => {
     const {i18n} = this.props;
-    const {attachedSource, chatVisible, room, shidur, user, rightAsideName, leftAsideSize, leftAsideName, isKliOlamiShown, kliOlamiAttached, screenFeed, screenStream} = this.state;
+    const {attachedSource, chatVisible, room, shidur, user, rightAsideName, leftAsideSize, leftAsideName, isKliOlamiShown, kliOlamiAttached, screenFeed, screenStream, screenPreview} = this.state;
 
     const notApproved = user && user.role !== userRolesEnum.user;
 
     // Shared screen replaces the broadcast (and quad) in the broadcast panel.
     const showScreen = this.isScreenShown();
+    const isMyScreen = !!screenFeed && screenFeed.id === this.screenFeedId;
     const screenView = showScreen && (
       <ScreenShareView
         key="screen"
-        stream={screenStream}
-        isMine={!!screenFeed && screenFeed.id === this.screenFeedId}
+        stream={isMyScreen ? screenPreview : screenStream}
+        isMine={isMyScreen}
         name={screenFeed?.display?.display}
         onStop={this.stopScreenShare}
         isDoubleSize={"double" === layout}
