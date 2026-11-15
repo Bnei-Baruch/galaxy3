@@ -21,6 +21,14 @@ import VirtualChat from "./VirtualChat";
 import {
   media_object,
   NO_VIDEO_OPTION_VALUE,
+  SCREEN_SHARE_BITRATE,
+  SCREEN_SHARE_CONTENT_HINT,
+  SCREEN_SHARE_DEGRADATION,
+  SCREEN_SHARE_FPS,
+  SCREEN_SHARE_HEIGHT,
+  SCREEN_SHARE_LEAVE_TIMEOUT,
+  SCREEN_SHARE_ROLE,
+  SCREEN_SHARE_WIDTH,
   sketchesByLang,
   VIDEO_360P_OPTION_VALUE,
   VIDEO_IS_AV1_360P_OPTION_VALUE
@@ -105,17 +113,11 @@ const sortAndFilterFeeds = (feeds) =>
 
 const userFeeds = (feeds) => feeds.filter((feed) => feed.display.role === userRolesEnum.user);
 
-// Screen share is published as a separate VideoRoom participant with this display role.
-// Shidur / AudioOut / VideoOut / WebOut only handle role "user" feeds, so they ignore it.
-const SCREEN_ROLE = "screen";
 const parseDisplay = (display) => {
   if (typeof display !== "string") return display || {};
   try { return JSON.parse(display); } catch (_) { return {}; }
 };
-// Screen publisher bitrate (Janus REMB cap for the screen handle). Without it the
-// room default (made for small camera tiles) applies and the encoder starves.
-const SCREEN_BITRATE = 1500000;
-const isScreenFeed = (feed) => parseDisplay(feed.display).role === SCREEN_ROLE;
+const isScreenFeed = (feed) => parseDisplay(feed.display).role === SCREEN_SHARE_ROLE;
 // Sound is mandatory for screen share (it's mainly used to play lesson clips),
 // and only desktop Chromium browsers (Chrome, Edge, Opera, ...) can capture it:
 // tab audio on every OS, whole-screen system audio on Windows (and recent macOS).
@@ -1011,7 +1013,7 @@ class VirtualMqttClient extends Component {
       capture = await navigator.mediaDevices.getDisplayMedia({
         // Open the picker on the "Chrome tab" pane: a clip played in a tab gives
         // clean tab audio without the room's own sound.
-        video: {displaySurface: "browser", frameRate: {ideal: 25, max: 30}, width: {max: 1280}, height: {max: 720}},
+        video: {displaySurface: "browser", frameRate: {ideal: SCREEN_SHARE_FPS, max: SCREEN_SHARE_FPS}, width: {max: SCREEN_SHARE_WIDTH}, height: {max: SCREEN_SHARE_HEIGHT}},
         audio: {
           echoCancellation: false, noiseSuppression: false, autoGainControl: false,
           // Chromium: don't capture the audio played by this tab (the room itself).
@@ -1051,9 +1053,8 @@ class VirtualMqttClient extends Component {
       alert(t("oldClient.screenShareNoAudio"));
       return;
     }
-    // Mostly lesson clips (video), so keep the frame rate and let the resolution
-    // adapt to the bandwidth ("detail" keeps resolution and drops frames instead).
-    try { vTrack.contentHint = "motion"; } catch (_) { /* not supported */ }
+    // Encoder hint, see SCREEN_SHARE_CONTENT_HINT in consts.
+    try { vTrack.contentHint = SCREEN_SHARE_CONTENT_HINT; } catch (_) { /* not supported */ }
     // Browser's own "Stop sharing" button.
     vTrack.onended = () => this.stopScreenShare();
 
@@ -1077,7 +1078,7 @@ class VirtualMqttClient extends Component {
       await janus.attach(screenroom);
       if (this.screenroom !== screenroom) return;
       const d = {
-        id: user.id, timestamp: Date.now(), role: SCREEN_ROLE,
+        id: user.id, timestamp: Date.now(), role: SCREEN_SHARE_ROLE,
         display: user.username, is_group: false, is_desktop: true,
       };
       const meta = {owner: user.id, rfid: user.rfid, display: user.username};
@@ -1086,7 +1087,7 @@ class VirtualMqttClient extends Component {
       this.screenFeedId = data && data.id;
       await screenroom.publish(new MediaStream([vTrack]), new MediaStream([aTrack]));
       log.info("[screen] screen share published, feed:", this.screenFeedId);
-      await screenroom.setBitrate(SCREEN_BITRATE)
+      await screenroom.setBitrate(SCREEN_SHARE_BITRATE)
         .catch((err) => log.warn("[screen] setBitrate failed:", err?.data?.error || err?.message || err));
       this.setScreenSenderParams(screenroom);
     } catch (err) {
@@ -1106,8 +1107,8 @@ class VirtualMqttClient extends Component {
     try {
       const params = sender.getParameters();
       if (!params.encodings || params.encodings.length === 0) params.encodings = [{}];
-      params.encodings[0].maxBitrate = SCREEN_BITRATE;
-      params.degradationPreference = "maintain-framerate";
+      params.encodings[0].maxBitrate = SCREEN_SHARE_BITRATE;
+      params.degradationPreference = SCREEN_SHARE_DEGRADATION;
       sender.setParameters(params).catch((err) => log.debug("[screen] setParameters failed:", err && err.message));
     } catch (err) {
       log.debug("[screen] setParameters threw:", err && err.message);
@@ -1139,8 +1140,8 @@ class VirtualMqttClient extends Component {
           screenroom.detach();
         }
       };
-      // leave() is best-effort: don't wait for a slow ack more than 3s.
-      setTimeout(detach, 3000);
+      // leave() is best-effort: don't wait for a slow ack too long.
+      setTimeout(detach, SCREEN_SHARE_LEAVE_TIMEOUT);
       const lp = screenroom.roomId ? screenroom.leave() : null;
       if (lp && typeof lp.then === "function") {
         lp.then(detach, detach);

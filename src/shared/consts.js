@@ -9,6 +9,23 @@ export const USERNAME_ALREADY_EXIST_ERROR_CODE = 420;
 export const ALREADY_IN_ROOM_ERROR_CODE = 421;
 export const NOTRL_STREAM_ID = 64;
 
+// Screen share (VirtualApp)
+// Published as a separate VideoRoom participant with this display role.
+// Shidur / AudioOut / VideoOut / WebOut only handle role "user" feeds, so they ignore it.
+export const SCREEN_SHARE_ROLE = "screen";
+// Capture size and frame rate (upper limits for getDisplayMedia).
+export const SCREEN_SHARE_WIDTH = 1920;
+export const SCREEN_SHARE_HEIGHT = 1080;
+export const SCREEN_SHARE_FPS = 15;
+// Janus REMB cap for the screen handle and the video sender maxBitrate (bps).
+export const SCREEN_SHARE_BITRATE = 600000;
+// Encoder hints: "motion" + "maintain-framerate" keep the clip smooth and lower the
+// resolution under low bandwidth; "detail" + "maintain-resolution" keep text sharp.
+export const SCREEN_SHARE_CONTENT_HINT = "detail";
+export const SCREEN_SHARE_DEGRADATION = "maintain-resolution";
+// Max wait for the screen handle leave() ack before detaching (ms).
+export const SCREEN_SHARE_LEAVE_TIMEOUT = 3000;
+
 export const SHIDUR_ID = "4ab867e5-46f9-47b9-bd6d-47a6df784d92";
 export const SNDMAN_ID = "720f133f-b8e2-49a8-a148-7bd80763ae55";
 export const SDIOUT_ID = "91966d26-0777-4179-9773-d7cd54sdiout";
