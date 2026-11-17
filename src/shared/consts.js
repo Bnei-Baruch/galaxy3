@@ -25,6 +25,8 @@ export const SCREEN_SHARE_CONTENT_HINT = "detail";
 export const SCREEN_SHARE_DEGRADATION = "maintain-resolution";
 // Max wait for the screen handle leave() ack before detaching (ms).
 export const SCREEN_SHARE_LEAVE_TIMEOUT = 3000;
+// localStorage key: the "New" badge on the share button was already seen (clicked once).
+export const SCREEN_SHARE_NEW_BADGE_KEY = "screen_share_new_seen";
 
 export const SHIDUR_ID = "4ab867e5-46f9-47b9-bd6d-47a6df784d92";
 export const SNDMAN_ID = "720f133f-b8e2-49a8-a148-7bd80763ae55";
