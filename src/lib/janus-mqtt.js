@@ -280,6 +280,8 @@ export class JanusMqtt {
       } catch (_e) { /* never let one bad reject break the whole cleanup */ }
     })
     this.transactions = {}
+    // Capture before nulling: the sessionId listener is removed below.
+    const sessionId = this.sessionId
     this.sessionId = null
     this.isConnected = false
 
@@ -289,7 +291,7 @@ export class JanusMqtt {
 
     try { mqtt.mq.removeListener(this.srv, this.onMessage) } catch (_e) {}
     try { if (this.user.mit) mqtt.mq.removeListener(this.user.mit, this.onMessage) } catch (_e) {}
-    try { mqtt.mq.removeListener(this.sessionId, this.onMessage) } catch (_e) {}
+    try { if (sessionId) mqtt.mq.removeListener(sessionId, this.onMessage) } catch (_e) {}
   }
 
   onMessage(message, tD) {
