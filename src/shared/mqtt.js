@@ -59,7 +59,7 @@ class MqttMsg {
       clientId: id,
       protocolId: "MQTT",
       protocolVersion: 5,
-      clean: true,
+      clean: false,
       username: user.email,
       password: token,
       transformWsUrl: transformUrl,
