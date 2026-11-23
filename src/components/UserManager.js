@@ -25,9 +25,13 @@ kc.onTokenExpired = () => {
   renewToken(0);
 };
 
+export const AUTH_LOGOUT_EVENT = "kc-auth-logout";
+
 kc.onAuthLogout = () => {
-  api.setAccessToken(null);
-  kc.logout();
+  const event = new Event(AUTH_LOGOUT_EVENT, {cancelable: true});
+  if (window.dispatchEvent(event)) {
+    kc.login({redirectUri: window.location.href});
+  }
 };
 
 const renewToken = (retry) => {
@@ -39,6 +43,7 @@ const renewToken = (retry) => {
       }
     })
     .catch(() => {
+      if (!kc.refreshToken) return;
       if (retry > 10) {
         kc.clearToken();
       } else {

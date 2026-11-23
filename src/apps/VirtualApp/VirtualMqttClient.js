@@ -94,6 +94,7 @@ import ScreenShare from "./buttons/ScreenShare";
 import ScreenShareView from "./components/ScreenShareView";
 import OnboardingDoor from "./components/OnboardingDoor.js";
 import {CountrySelectionDialog, SKIP_COUNTRY_DIALOG_KEY} from "./components/CountrySelectionDialog.js";
+import {REJOIN_ROOM_KEY, SessionEndedDialog} from "./components/SessionEndedDialog";
 
 const sortAndFilterFeeds = (feeds) =>
   feeds
@@ -390,7 +391,10 @@ class VirtualMqttClient extends Component {
       api.fetchAvailableRooms({with_num_users: true}).then(data => {
         const {rooms} = data;
         this.setState({rooms});
-        this.initDevices();
+        // Set by SessionEndedDialog before the re-login redirect: return the user to the room
+        const rejoin = sessionStorage.getItem(REJOIN_ROOM_KEY) === "true";
+        sessionStorage.removeItem(REJOIN_ROOM_KEY);
+        const devicesReady = this.initDevices();
         const {selected_room} = this.state;
         if (selected_room !== "") {
           const room = rooms.find((r) => r.room === selected_room);
@@ -400,6 +404,10 @@ class VirtualMqttClient extends Component {
             user.group = room.description;
             this.setState({delay: false, user});
             updateSentryUser(user);
+            if (rejoin) {
+              log.info("[client] rejoining room after re-login: ", selected_room);
+              devicesReady.then(() => this.initClient(false));
+            }
           } else {
             this.setState({selected_room: "", delay: false});
           }
@@ -681,7 +689,7 @@ class VirtualMqttClient extends Component {
   initDevices = () => {
     const {t} = this.props;
 
-    devices.init((media, prevAudioDevice) => {
+    return devices.init((media, prevAudioDevice) => {
       this.setState({media});
       setTimeout(() => {
         if (media.audio.device) {
@@ -2484,6 +2492,7 @@ class VirtualMqttClient extends Component {
         {this.renderPip()}
         <PopUp show={show_notification} setClose={() => this.setState({show_notification: false})}/>
         <MobileAppPopup/>
+        <SessionEndedDialog inRoom={Boolean(room)}/>
         <BroadcastNotification show={show_message} msg={broadcast_message} setClose={() => this.setState({show_message: false})} />
         <CountrySelectionDialog
           isOpen={this.state.showCountryDialog}
