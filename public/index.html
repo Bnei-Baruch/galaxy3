@@ -2,6 +2,10 @@
 <html translate="no">
   <head>
     <meta charset="utf-8" name="google" content="notranslate">
+    <!-- CookieYes first: it sets the Google consent defaults before GA4 loads -->
+    <script id="cookieyes" type="text/javascript" src="https://cdn-cookieyes.com/client_data/a9c25416407614458185eb275249a998/script.js"></script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Y68YMNWH9N"></script>
+    <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-Y68YMNWH9N');</script>
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=RymjnOGQQM">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=RymjnOGQQM">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=RymjnOGQQM">
@@ -10,13 +14,6 @@
     <link rel="shortcut icon" href="/favicon.ico?v=RymjnOGQQM">
     <meta name="msapplication-TileColor" content="#f0e3e6">
     <meta name="theme-color" content="#f0e3e6">
-    <!-- Google Tag Manager -->
-    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-              new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-            j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-            'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-    })(window,document,'script','dataLayer','GTM-NHH6KKD');</script>
-    <!-- End Google Tag Manager -->
     <title>Arvut</title>
     <script>
       if(window.location.pathname === "/user/") document.title = "Arvut TEN";
@@ -30,12 +27,8 @@
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
-    <!-- Google Tag Manager (noscript) -->
-    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-NHH6KKD"
-                      height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-    <!-- End Google Tag Manager (noscript) -->
-     <!-- Facebook Pixel Code -->
-<script>
+     <!-- Facebook Pixel Code (runs only after advertisement consent) -->
+<script type="text/plain" data-cookieyes="cookieyes-advertisement">
   !function(f,b,e,v,n,t,s)
   {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
   n.callMethod.apply(n,arguments):n.queue.push(arguments)};

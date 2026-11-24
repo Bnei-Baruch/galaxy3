@@ -113,17 +113,16 @@ export const Slide = ({ content, isLtr, isQuestion, controls, slideSize, alterna
       return;
     }
 
-    const resizeObserver = new ResizeObserver(entries => {
-      for (let entry of entries) {
-        handleResize();
-      }
-    });
+    const win = outerRef.current.ownerDocument.defaultView || window;
+    const resizeObserver = new win.ResizeObserver(() => handleResize());
     resizeObserver.observe(outerRef.current);
+    win.addEventListener("resize", handleResize);
 
     handleResize();
 
     return () => {
       resizeObserver.disconnect();
+      win.removeEventListener("resize", handleResize);
     };
   }, [handleResize, outerRef]);
 

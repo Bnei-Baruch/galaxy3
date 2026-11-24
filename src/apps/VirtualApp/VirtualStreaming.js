@@ -12,6 +12,7 @@ import {isFullScreen, toggleFullScreen} from "./FullScreenHelper";
 import audioOnly from "../../shared/audio_only.svg";
 import {SubtitlesContainer} from "./subtitles/SubtitlesContainer";
 import {getNextVideosByIsAv1, getVideoOptionsByIsAv1} from "../../shared/tools";
+import {isPipSupported} from "./PipWindow";
 
 class VirtualStreaming extends Component {
   state = {
@@ -196,7 +197,7 @@ class VirtualStreaming extends Component {
   };
 
   render() {
-    const {attached, closeShidur, t, videos, layout, audios, setAudio, isDoubleSize, isAv1} = this.props;
+    const {attached, openPip, closeShidur, t, videos, layout, audios, setAudio, isDoubleSize, isAv1} = this.props;
     const {room, talking, showControls, reconnecting} = this.state;
 
     if (!room) {
@@ -358,6 +359,11 @@ class VirtualStreaming extends Component {
                 <button onClick={this.toggleFullScreen}>
                   <Icon name={isFullScreen(this.videoWrapper) ? "compress" : "expand"}/>
                 </button>
+                {attached && openPip && isPipSupported() && (
+                  <button onClick={openPip} title={t("oldClient.pip")}>
+                    <Icon name="clone outline"/>
+                  </button>
+                )}
                 {!attached ? null : (
                   <button onClick={this.toggleNewWindow}>
                     <Icon name="external square"/>

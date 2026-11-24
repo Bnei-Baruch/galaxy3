@@ -25,6 +25,7 @@ import {SelectViewLanguage} from "../components/SelectViewLanguage";
 import {AccountCircle, Mic, Videocam} from "@mui/icons-material";
 import {ThemeContext} from "../components/ThemeSwitcher/ThemeSwitcher";
 import {Support} from "../components/Support";
+import {CookieSettings} from "../../../components/CookieSettings";
 import JanusStream from "../../../shared/streaming-utils";
 
 const settingsList = vsettings_list.map(({key, text, value}) => ({key, text, value: JSON.stringify(value)}));
@@ -231,6 +232,9 @@ const Settings = (props) => {
           </Grid>
           <Grid item>
             <Support/>
+          </Grid>
+          <Grid item>
+            <CookieSettings/>
           </Grid>
         </Grid>
       </Grid>

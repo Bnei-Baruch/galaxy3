@@ -186,8 +186,8 @@ $vh: 9;
     // In fullscreen mode with a group, scale everything up proportionally
     &.has-group {
       .video--group {
-        width: 1458px !important;  // Double the normal size (729px * 2)
-        height: 820px !important;  // Double the normal size (410px * 2)
+        width: 1320px !important;  // 16:9, sized so group + users row fill the space below the title
+        height: 743px !important;
         
         // Single group takes full width
         &:not(.video--group--multiple) {
@@ -205,9 +205,9 @@ $vh: 9;
       
       // Smaller regular users to fit below title and group
       .video:not(.video--group) {
-        width: 177px !important;  // Width for 100px height at 16:9 ratio
-        height: 100px !important;
-        flex: 0 0 177px !important;
+        width: 320px !important;  // Width for 180px height at 16:9 ratio
+        height: 180px !important;
+        flex: 0 0 320px !important;
       }
     }
   }
