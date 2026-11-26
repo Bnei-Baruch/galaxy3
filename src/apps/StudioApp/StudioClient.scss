@@ -1,0 +1,49 @@
+.studio-client {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: #1b1c1d;
+  color: #fff;
+
+  &__login {
+    padding-top: 20vh;
+  }
+
+  &__bar.ui.segment {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    padding: 8px 12px;
+    background: #2b2c2d;
+  }
+
+  &__grid {
+    display: grid;
+    flex: 1;
+    gap: 4px;
+    padding: 4px;
+    min-height: 0;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    grid-auto-rows: 1fr;
+  }
+
+  &__tile {
+    position: relative;
+    min-height: 0;
+    background: #000;
+
+    video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+  }
+
+  &__label.ui.label {
+    position: absolute;
+    left: 8px;
+    bottom: 8px;
+  }
+}

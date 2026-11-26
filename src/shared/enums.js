@@ -28,5 +28,7 @@ export const getUserRole = () => {
 };
 
 export const isServiceID = (id) => {
-  return [SNDMAN_ID, SDIOUT_ID, QSTOUT_ID, STORAN_ID, AUDOUT_ID, SHIDUR_ID, "webout", "QSTOUT_ID", "SDIOUT_ID", "SHIDUR_ID", "wquad"].includes(id);
+  return [SNDMAN_ID, SDIOUT_ID, QSTOUT_ID, STORAN_ID, AUDOUT_ID, SHIDUR_ID, "webout", "QSTOUT_ID", "SDIOUT_ID", "SHIDUR_ID", "wquad"].includes(id) ||
+    // Studio quad, one per event: squad-<eventId> (apps/StudioApp/quad)
+    (typeof id === "string" && id.startsWith("squad-"));
 };

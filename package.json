@@ -61,6 +61,9 @@
     "start:wclient": "REACT_APP_GALAXY_APP=wclient yarn start",
     "start:wadmin": "REACT_APP_GALAXY_APP=wadmin yarn start",
     "start:wquad": "REACT_APP_GALAXY_APP=wquad yarn start",
+    "start:studio": "REACT_APP_GALAXY_APP=studio yarn start",
+    "start:sadmin": "REACT_APP_GALAXY_APP=sadmin yarn start",
+    "start:squad": "REACT_APP_GALAXY_APP=squad yarn start",
     "build": "webpack --mode=production",
     "build:virtual": "REACT_APP_GALAXY_APP=virtual yarn build",
     "build:galaxy": "REACT_APP_GALAXY_APP=galaxy yarn build",
@@ -73,6 +76,9 @@
     "build:wclient": "REACT_APP_GALAXY_APP=wclient yarn build",
     "build:wadmin": "REACT_APP_GALAXY_APP=wadmin yarn build",
     "build:wquad": "REACT_APP_GALAXY_APP=wquad yarn build",
+    "build:studio": "REACT_APP_GALAXY_APP=studio yarn build",
+    "build:sadmin": "REACT_APP_GALAXY_APP=sadmin yarn build",
+    "build:squad": "REACT_APP_GALAXY_APP=squad yarn build",
     "deploy": "webpack --mode=production && scripts/deploy.sh"
   },
   "browserslist": {

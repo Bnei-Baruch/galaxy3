@@ -12,7 +12,8 @@ class QuadStream extends Component {
     super(props);
     this.state = {
       fullScreen: false,
-      stream: null,
+      // Studio mode passes the quad of the event as a prop (see apps/StudioApp).
+      stream: props.stream !== undefined ? props.stream : null,
       showControls: true,
     };
 
@@ -24,7 +25,7 @@ class QuadStream extends Component {
   hideControlsTimer = null;
 
   componentDidMount() {
-    if (!this.state.stream) JanusStream.initQuadStream((stream) => this.setState({stream}));
+    if (this.props.stream === undefined && !this.state.stream) JanusStream.initQuadStream((stream) => this.setState({stream}));
     // Start hide timer on mount
     this.showControlsTemporarily();
   }
@@ -32,7 +33,7 @@ class QuadStream extends Component {
   componentWillUnmount() {
     this.clearHideTimer();
     if (this.videoWrapper) {
-      JanusStream.toggle("quad");
+      if (this.props.stream === undefined) JanusStream.toggle("quad");
       const doc = this.videoWrapper.ownerDocument;
       const win = doc.defaultView;
       win.removeEventListener("resize", this.handleFullScreenChange);
@@ -49,6 +50,9 @@ class QuadStream extends Component {
   }
 
   componentDidUpdate(prevProps, prevState) {
+    if (this.props.stream !== undefined && prevProps.stream !== this.props.stream) {
+      this.setState({stream: this.props.stream});
+    }
     // Start hide timer when switching between attached/detached modes
     if (prevProps.attached !== this.props.attached) {
       this.showControlsTemporarily();
@@ -62,6 +66,7 @@ class QuadStream extends Component {
     return (
       nextProps.attached !== this.props.attached ||
       nextProps.isDoubleSize !== this.props.isDoubleSize ||
+      nextProps.stream !== this.props.stream ||
       nextState.stream !== this.state.stream ||
       nextState.fullScreen !== this.state.fullScreen ||
       nextState.showControls !== this.state.showControls

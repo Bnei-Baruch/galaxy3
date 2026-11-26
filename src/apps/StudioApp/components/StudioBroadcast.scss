@@ -1,0 +1,116 @@
+.studio-broadcast {
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  min-height: 200px;
+  background: #000;
+  overflow: hidden;
+
+  video {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background: #000;
+  }
+}
+
+.studio-broadcast__people {
+  display: flex;
+  flex: 1 1 100%;
+  gap: 4px;
+  transition: flex-basis 0.4s ease;
+}
+
+.studio-tile {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  opacity: 1;
+  transition: opacity 0.4s ease, flex-basis 0.4s ease;
+
+  // Hidden tiles keep playing (hosts' audio stays on in the "screen" layout).
+  &--hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
+.studio-tile__empty {
+  position: absolute;
+  inset: 0;
+  background: #111;
+}
+
+.studio-tile__label {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 0.9em;
+}
+
+// hosts: host1 | host2 (| guest)
+.studio-broadcast--hosts {
+  .studio-tile--screen {
+    flex: 0 0 0;
+  }
+}
+
+// screen_hosts: big screen, people in a narrow column on the side.
+.studio-broadcast--screen_hosts {
+  .studio-tile--screen {
+    flex: 1 1 75%;
+    animation: studio-screen-in 0.4s ease;
+  }
+
+  .studio-broadcast__people {
+    flex: 0 0 25%;
+    flex-direction: column;
+  }
+}
+
+// screen: the screen fills everything, the guest (if any) is a small PiP.
+.studio-broadcast--screen {
+  .studio-tile--screen {
+    flex: 1 1 100%;
+    animation: studio-screen-in 0.4s ease;
+  }
+
+  .studio-broadcast__people {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    width: 22%;
+    height: 22%;
+    flex-direction: column;
+  }
+}
+
+@keyframes studio-screen-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+// Event indicator in the VirtualApp top bar.
+.top-toolbar__studio {
+  max-width: 30ch;
+  overflow: hidden;
+  color: #d32f2f;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}

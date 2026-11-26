@@ -95,6 +95,9 @@ import ScreenShareView from "./components/ScreenShareView";
 import OnboardingDoor from "./components/OnboardingDoor.js";
 import {CountrySelectionDialog, SKIP_COUNTRY_DIALOG_KEY} from "./components/CountrySelectionDialog.js";
 import {REJOIN_ROOM_KEY, SessionEndedDialog} from "./components/SessionEndedDialog";
+import {findEventForRoom, StudioStore} from "../StudioApp/studio";
+import StudioStream from "../StudioApp/StudioStream";
+import StudioBroadcast from "../StudioApp/components/StudioBroadcast";
 
 const sortAndFilterFeeds = (feeds) =>
   feeds
@@ -205,7 +208,16 @@ class VirtualMqttClient extends Component {
       screenStream: null,   // remote MediaStream of screenFeed
       screenPreview: null,  // local video-only preview of our own shared screen
       panelSource: null,    // while screenFeed exists: "screen" | "broadcast" - what the broadcast panel shows
+      // Studio mode (apps/StudioApp/README.md)
+      studioEvents: {},     // all studio events from MQTT
+      studioEvent: null,    // active event that includes our room
+      studioStreams: {},    // slot -> MediaStream (host1, host2, screen, guest, quad)
     };
+
+    // Studio runtime (not rendered)
+    this.studioStore = null;
+    this.studioStream = null;
+    this.studioUnmutedMic = false; // we unmuted the mic because we went on air as the studio guest
 
     // Screen share runtime (not rendered)
     this.screenroom = null;      // our screen PublisherPlugin
@@ -242,6 +254,8 @@ class VirtualMqttClient extends Component {
   }
 
   componentWillUnmount() {
+    if (this.studioStore) this.studioStore.stop();
+    if (this.studioStream) this.studioStream.stop();
     this.clearHideBarsTimer();
     this.unregisterAutoPip();
     closePipWindow();
@@ -260,6 +274,9 @@ class VirtualMqttClient extends Component {
   }
 
   componentDidUpdate(prevProps, prevState) {
+    if (prevState.room !== this.state.room || prevState.studioEvents !== this.state.studioEvents) {
+      this.syncStudio();
+    }
     const {videoroom, localVideoTrack, localAudioTrack, user} = this.state;
     if (videoroom !== prevState.videoroom || localVideoTrack !== prevState.localVideoTrack || localAudioTrack !== prevState.localAudioTrack || JSON.stringify(user) !== JSON.stringify(prevState.user)) {
       monitoringData.setConnection(videoroom, localAudioTrack, localVideoTrack, user, JanusStream);
@@ -446,6 +463,10 @@ class VirtualMqttClient extends Component {
         mqtt.watch((message) => {
           this.handleCmdData(message);
         });
+
+        // Studio mode: retained events, layout and guest (apps/StudioApp/studio.js)
+        this.studioStore = new StudioStore((studioEvents) => this.setState({studioEvents}));
+        this.studioStore.start();
 
         // Public chat
         mqtt.mq.on("MqttChatEvent", (data) => {
@@ -1674,8 +1695,76 @@ class VirtualMqttClient extends Component {
     this.setState({muteOtherCams: !muteOtherCams});
   };
 
+  // ---- Studio mode ----------------------------------------------------------
+
+  // Enter / update / leave the studio mode of our room. Called when the room or
+  // the studio events change.
+  syncStudio = () => {
+    const {studioEvents, studioEvent: prev, room, user, shidur} = this.state;
+    const event = room !== "" ? findEventForRoom(studioEvents, room) : null;
+    if (!event && !prev) return;
+
+    if (event && !prev) {
+      log.info("[studio] enter event:", event.id, event.name);
+      JanusStream.suspend(true);
+      if (!this.studioStream) this.studioStream = new StudioStream(user, this.onStudioStream);
+      if (shidur) this.studioStream.start(event);
+    } else if (!event && prev) {
+      log.info("[studio] leave event:", prev.id);
+      if (this.studioStream) this.studioStream.stop();
+      JanusStream.suspend(false);
+      // On room exit the broadcast is restarted by the next join, not here.
+      if (shidur && room !== "") JanusStream.initStreaming();
+    } else if (shidur) {
+      // Same or another event: start() is a no-op when the str/mountpoints didn't change.
+      this.studioStream.start(event);
+    }
+
+    this.setState({studioEvent: event});
+    this.syncStudioGuest(event);
+  };
+
+  onStudioStream = (slot, stream) => {
+    this.setState((state) => ({studioStreams: {...state.studioStreams, [slot]: stream}}));
+  };
+
+  isStudioGuest = (event = this.state.studioEvent) => {
+    const {user} = this.state;
+    return !!(event && event.guest && user && event.guest.id === user.id);
+  };
+
+  // The studio guest is forwarded from their room feed, so their mic must be on.
+  // We remember that we unmuted it and mute it back when they go off air.
+  syncStudioGuest = (event) => {
+    const isGuest = this.isStudioGuest(event);
+    if (isGuest && this.state.muted) {
+      log.info("[studio] we are on air, unmute mic");
+      this.studioUnmutedMic = true;
+      this.micMute();
+    } else if (!isGuest && this.studioUnmutedMic) {
+      this.studioUnmutedMic = false;
+      if (!this.state.muted) this.micMute();
+    }
+  };
+
+  // Neighbours of the studio guest hear them through the studio broadcast, so the
+  // guest's feed in our room is muted locally (otherwise they would be heard twice).
+  isStudioGuestFeed = (feed) => {
+    const {studioEvent, room} = this.state;
+    const guest = studioEvent && studioEvent.guest;
+    return !!(guest && Number(guest.room) === Number(room) && feed?.display?.id === guest.id);
+  };
+
   toggleShidur = () => {
-    const {shidur} = this.state;
+    const {shidur, studioEvent} = this.state;
+    if (studioEvent) {
+      // In the studio mode the broadcast button turns the studio streams on/off.
+      if (!this.studioStream) return;
+      if (shidur) this.studioStream.stop();
+      else this.studioStream.start(studioEvent);
+      this.setState({shidur: !shidur});
+      return;
+    }
     const stateUpdate = {shidur: !shidur};
     // While a screen is shared, the panel shows either the broadcast or the screen.
     if (this.screenFeed) stateUpdate.panelSource = shidur ? "screen" : "broadcast";
@@ -1864,6 +1953,7 @@ class VirtualMqttClient extends Component {
           key={"a" + id}
           ref={remoteAudioId}
           id={remoteAudioId}
+          muted={this.isStudioGuestFeed(feed)}
           autoPlay={true}
           controls={false}
           playsInline={true}
@@ -2103,6 +2193,15 @@ class VirtualMqttClient extends Component {
             user={user}
             i18n={i18n}
           />
+          {this.state.studioEvent && (
+            <Typography
+              component="span"
+              className="top-toolbar__item top-toolbar__studio"
+              title={this.state.studioEvent.name}
+            >
+              ● {this.state.studioEvent.name}
+            </Typography>
+          )}
           <ButtonMD
             color="info"
             variant="contained"
@@ -2260,8 +2359,12 @@ class VirtualMqttClient extends Component {
     );
     const panelContent = showScreen ? screenView : source;
 
+    const {studioEvent, studioStreams} = this.state;
     const kliOlami = !!room && isKliOlamiShown && (
       <QuadStream
+        // Remount when switching to/from the studio quad (different stream source).
+        key={studioEvent ? "studio-quad" : "quad"}
+        stream={studioEvent ? studioStreams.quad || null : undefined}
         close={() => this.toggleQuad(false)}
         toggleAttach={(val = !kliOlamiAttached) => this.setState({kliOlamiAttached: val})}
         attached={kliOlamiAttached}
@@ -2406,6 +2509,16 @@ class VirtualMqttClient extends Component {
             <PlayCircleOutline style={{fontSize: "20em", color: grey[200]}} />
           </IconButton>
         </Grid>
+      );
+    } else if (room !== "" && shidur && this.state.studioEvent) {
+      const {studioEvent, studioStreams} = this.state;
+      source = (
+        <StudioBroadcast
+          streams={studioStreams}
+          layout={studioEvent.layout}
+          guest={studioEvent.guest}
+          isGuest={this.isStudioGuest()}
+        />
       );
     } else if ((room !== "" && shidur) || notApproved) {
       source = (

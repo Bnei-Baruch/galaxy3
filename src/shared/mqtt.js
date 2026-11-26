@@ -182,7 +182,10 @@ class MqttMsg {
         case "webinar":
         case "galaxy":
           // FIXME: we need send cmd messages to separate topic
-          if (service === "room" && target === "chat")
+          if (root === "galaxy" && service === "studio")
+            // Studio mode: galaxy/studio/<eventId>[/layout|/guest], payload may be empty (cleared).
+            this.mq.emit("MqttStudioEvent", {id, target, data});
+          else if (service === "room" && target === "chat")
             this.mq.emit("MqttChatEvent", data);
           else if (service === "room" && target !== "chat" || service === "service" && id !== "user") {
             try {
