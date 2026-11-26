@@ -17,6 +17,9 @@ const apps = {
   wclient: lazy(() => import('./apps/WebinarApp/WebinarClient')),
   wadmin: lazy(() => import('./apps/WebinarApp/admin/AdminClient')),
   wquad: lazy(() => import('./apps/WebinarApp/QuadOut')),
+  studio: lazy(() => import('./apps/StudioApp/StudioClient')),
+  sadmin: lazy(() => import('./apps/StudioApp/admin/StudioAdmin')),
+  squad: lazy(() => import('./apps/StudioApp/quad/StudioQuadOut')),
 };
 
 class App extends Component {

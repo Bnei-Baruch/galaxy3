@@ -77,13 +77,22 @@ class JanusStream {
     this.trlBoostElement.playinline = true;
 
     this.showOn = null;
+    // Studio mode (apps/StudioApp): while the room is in an active studio event
+    // the main broadcast stays off, even if an init is still in flight.
+    this.suspended = false;
   }
+
+  suspend = (on) => {
+    this.suspended = on;
+    if (on) this.toggle("shidur");
+  };
 
   setUser = (user) => {
     this.user = user;
   };
 
   initStreaming = (srv) => {
+    if (this.suspended) return;
     this.clean();
     this.reconnectAttempts = 0;
     this.initStrServer(srv, () => {
@@ -267,6 +276,7 @@ class JanusStream {
   };
 
   initVideoStream = () => {
+    if (this.suspended) return;
     if (this.videos === NO_VIDEO_OPTION_VALUE) return;
     this.videoJanusStream = new StreamingPlugin(this.config?.iceServers);
     this.videoJanusStream.onStatus = () => {
@@ -275,6 +285,7 @@ class JanusStream {
     this.janus.attach(this.videoJanusStream).then((data) => {
       log.debug("[shidur] attach video", data);
       this.videoJanusStream.watch(this.videos).then((stream) => {
+        if (this.suspended) return this.toggle("shidur");
         this.videoMediaStream = stream;
         this.attachVideoStream_(this.videoElement, /* reattach= */ false);
         this._markRecovered("video");
@@ -283,6 +294,7 @@ class JanusStream {
   };
 
   initAudioStream = () => {
+    if (this.suspended) return;
     this.audioJanusStream = new StreamingPlugin(this.config?.iceServers);
     this.audioJanusStream.onStatus = () => {
       this._handleStreamReconnect("audio", () => this.initAudioStream());
@@ -290,6 +302,7 @@ class JanusStream {
     this.janus.attach(this.audioJanusStream).then((data) => {
       log.debug("[shidur] attach audio", data);
       this.audioJanusStream.watch(this.audios).then((stream) => {
+        if (this.suspended) return this.toggle("shidur");
         this.audioMediaStream = stream;
         this.attachAudioStream_(this.audioElement, /* reattach= */ false);
         this._markRecovered("audio");
@@ -298,6 +311,7 @@ class JanusStream {
   };
 
   initTranslationStream = (streamId) => {
+    if (this.suspended) return;
     this.trlAudioJanusStream = new StreamingPlugin(this.config?.iceServers);
     this.trlAudioJanusStream.onStatus = () => {
       this._handleStreamReconnect("translation", () => this.initTranslationStream(streamId));
@@ -305,6 +319,7 @@ class JanusStream {
     this.janus.attach(this.trlAudioJanusStream).then((data) => {
       log.debug("[shidur] attach translation", data);
       this.trlAudioJanusStream.watch(streamId).then((stream) => {
+        if (this.suspended) return this.toggle("shidur");
         this.trlAudioMediaStream = stream;
         this.attachTrlAudioStream_(this.trlAudioElement, /* reattach= */ false);
         this.trlBoostMediaStream = this._boostTrlGain(stream);
